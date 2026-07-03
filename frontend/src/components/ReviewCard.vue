@@ -35,7 +35,7 @@ function timeAgo(dateStr: string): string {
         class="review-card__avatar"
       />
       <div v-else class="review-card__avatar review-card__avatar--placeholder">
-        {{ (review.user_name || 'U')[0].toUpperCase() }}
+        {{ (review.user_name || 'U').charAt(0).toUpperCase() }}
       </div>
       <div class="review-card__info">
         <span class="review-card__name">{{ review.user_name || 'Usuario' }}</span>

@@ -1,11 +1,9 @@
 import { useAuthStore } from '../stores/auth';
 import { useApi } from './useApi';
-import { useRouter } from 'vue-router';
 
 export function useAuth() {
   const authStore = useAuthStore();
   const api = useApi();
-  const router = useRouter();
 
   async function checkAuth() {
     if (!authStore.token) return false;
@@ -14,7 +12,7 @@ export function useAuth() {
       const response = await api.get('/auth/me');
       authStore.user = response.data;
       return true;
-    } catch (error) {
+    } catch {
       authStore.logout();
       return false;
     }
