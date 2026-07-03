@@ -34,7 +34,8 @@ async function fetchData() {
 async function addSchedule(start: string, end: string, spots: number) {
   loading.value = true;
   try {
-    await api.post(`/tours/${tourId.value}/schedules`, {
+    await api.post(`/schedules`, {
+      tour_id: Number(tourId.value),
       start_time: start,
       end_time: end,
       available_spots: spots
@@ -52,7 +53,7 @@ async function deleteSchedule(id: number) {
   if (!confirm('¿Seguro que deseas eliminar este horario?')) return;
   loading.value = true;
   try {
-    await api.delete(`/tours/${tourId.value}/schedules/${id}`);
+    await api.delete(`/schedules/${id}`);
     await fetchData();
   } catch (e) {
     console.error(e);

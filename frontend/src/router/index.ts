@@ -104,9 +104,17 @@ const router = createRouter({
   ],
 });
 
-router.beforeEach((to, from, next) => {
+let isInitialLoad = true;
+
+router.beforeEach(async (to, _from, next) => {
   const authStore = useAuthStore();
-  
+
+  // On first load, if we have a token but no user object, fetch the user
+  if (isInitialLoad && authStore.token && !authStore.user) {
+    isInitialLoad = false;
+    await authStore.fetchMe();
+  }
+
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next({ name: 'login', query: { redirect: to.fullPath } });
   } else if (to.meta.requiresGuide && !authStore.isGuide) {

@@ -19,7 +19,7 @@ onMounted(async () => {
 async function fetchBookings() {
   loading.value = true;
   try {
-    const res = await api.get('/guide/bookings');
+    const res = await api.get('/bookings');
     bookings.value = res.data || [];
   } catch (e) {
     console.error(e);

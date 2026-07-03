@@ -27,7 +27,11 @@ onMounted(async () => {
   if (authStore.user) {
     initForm();
   }
-  await favoritesStore.fetchFavorites();
+  try {
+    await favoritesStore.fetchFavorites();
+  } catch {
+    // Ignore — favorites tab will show empty state
+  }
 });
 
 function initForm() {
@@ -78,7 +82,7 @@ function handleLogout() {
           class="profile-avatar" 
         />
         <div v-else class="profile-avatar profile-avatar--placeholder">
-          {{ authStore.user.first_name[0] }}
+          {{ (authStore.user.first_name || 'U').charAt(0) }}
         </div>
       </div>
       <div class="profile-meta">

@@ -124,13 +124,13 @@ async function handleBook() {
         <div class="counter">
           <button 
             class="counter-btn" 
-            @click="if (guestCount > 1) guestCount--"
+            @click="guestCount > 1 && guestCount--"
             :disabled="guestCount <= 1"
           >-</button>
           <span class="counter-val">{{ guestCount }}</span>
           <button 
             class="counter-btn" 
-            @click="if (guestCount < (selectedSchedule?.available_spots || 1)) guestCount++"
+            @click="guestCount < (selectedSchedule?.available_spots || 1) && guestCount++"
             :disabled="guestCount >= (selectedSchedule?.available_spots || 1)"
           >+</button>
         </div>

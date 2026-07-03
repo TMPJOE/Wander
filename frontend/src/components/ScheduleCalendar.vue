@@ -18,9 +18,22 @@ const durationHours = ref(2);
 
 function handleAdd() {
   if (!date.value || !time.value) return;
-  const start = new Date(`${date.value}T${time.value}:00`).toISOString();
+  
+  const dateParts = date.value.split('-');
+  const timeParts = time.value.split(':');
+  
+  const year = Number(dateParts[0]);
+  const month = Number(dateParts[1]);
+  const day = Number(dateParts[2]);
+  
+  const hours = Number(timeParts[0]);
+  const minutes = Number(timeParts[1]);
+  
+  const startObj = new Date(year, month - 1, day, hours, minutes, 0);
+  const start = startObj.toISOString();
+  
   // Simple end time calculation (duration hours later)
-  const end = new Date(new Date(start).getTime() + durationHours.value * 3600000).toISOString();
+  const end = new Date(startObj.getTime() + durationHours.value * 3600000).toISOString();
   
   emit('add', start, end, spots.value);
   
@@ -34,20 +47,20 @@ function handleAdd() {
     <h3 class="text-lg font-semibold mb-4">Agregar Horario</h3>
     
     <form @submit.prevent="handleAdd" class="add-form mb-6">
-      <div class="grid grid-cols-4 gap-3">
-        <div class="form-group col-span-2 sm:col-span-1">
+      <div class="schedule-form-row">
+        <div class="form-group date-col">
           <label class="form-label">Fecha</label>
           <input v-model="date" type="date" class="form-input" required />
         </div>
-        <div class="form-group col-span-2 sm:col-span-1">
+        <div class="form-group time-col">
           <label class="form-label">Hora</label>
           <input v-model="time" type="time" class="form-input" required />
         </div>
-        <div class="form-group col-span-2 sm:col-span-1">
+        <div class="form-group spots-col">
           <label class="form-label">Lugares</label>
-          <input v-model="spots" type="number" class="form-input" min="1" required />
+          <input v-model.number="spots" type="number" class="form-input" min="1" required />
         </div>
-        <div class="form-group col-span-2 sm:col-span-1 flex items-end">
+        <div class="form-group btn-col">
           <button type="submit" class="btn btn-primary w-full" :disabled="loading">
             Añadir
           </button>
@@ -94,15 +107,23 @@ function handleAdd() {
 .text-error { color: var(--color-error); }
 .w-full { width: 100%; }
 
-.grid { display: grid; }
-.grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-.gap-3 { gap: var(--spacing-3); }
-.col-span-2 { grid-column: span 2; }
-@media (min-width: 640px) {
-  .sm\:col-span-1 { grid-column: span 1; }
+.schedule-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--spacing-3);
 }
-.flex { display: flex; }
-.items-end { align-items: flex-end; }
+.date-col, .time-col {
+  flex: 1;
+  min-width: 130px;
+}
+.spots-col {
+  width: 90px;
+}
+.btn-col {
+  flex: 1;
+  min-width: 100px;
+}
 
 .schedules-list {
   display: flex;

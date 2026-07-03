@@ -2,10 +2,12 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"wander/backend/api"
 	"wander/backend/internal/config"
@@ -87,6 +89,46 @@ func main() {
 
 	// Setup routes.
 	mux := api.SetupRoutes(h, cfg.JWTSecret)
+
+	// Serve frontend static files (production build).
+	// Look for dist/ relative to cwd (project root or backend dir).
+	distDir := filepath.Join(cwd, "frontend", "dist")
+	if _, err := os.Stat(distDir); os.IsNotExist(err) {
+		distDir = filepath.Join(cwd, "..", "frontend", "dist") // fallback if running from backend/
+	}
+
+	if info, err := os.Stat(distDir); err == nil && info.IsDir() {
+		slog.Info("serving frontend static files", "path", distDir)
+		fs := http.FileServer(http.Dir(distDir))
+
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			// If it's an API route, skip (already handled by specific routes)
+			if strings.HasPrefix(r.URL.Path, "/api/") {
+				http.NotFound(w, r)
+				return
+			}
+
+			// Try to serve the static file
+			filePath := filepath.Join(distDir, r.URL.Path)
+			if _, err := os.Stat(filePath); err == nil {
+				fs.ServeHTTP(w, r)
+				return
+			}
+
+			// Fallback: serve index.html for SPA client-side routing
+			indexPath := filepath.Join(distDir, "index.html")
+			f, err := os.Open(indexPath)
+			if err != nil {
+				http.NotFound(w, r)
+				return
+			}
+			defer f.Close()
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			io.Copy(w, f)
+		})
+	} else {
+		slog.Warn("frontend dist/ not found, serving API only", "checked", distDir)
+	}
 
 	// Apply middleware.
 	var server http.Handler

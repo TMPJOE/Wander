@@ -53,8 +53,8 @@ function getImageUrl(images: string) {
         <div v-for="tour in tours" :key="tour.id" class="tour-item card p-3 flex gap-3">
           <img :src="getImageUrl(tour.images)" class="tour-img" />
           <div class="tour-info">
-            <h3 class="font-semibold text-sm line-clamp-1">{{ tour.title }}</h3>
-            <p class="text-xs text-secondary mt-1">${{ tour.price_per_person }} MXN • {{ tour.duration_minutes }} min</p>
+            <h3 class="font-semibold text-lg leading-tight">{{ tour.title }}</h3>
+            <p class="text-xs text-secondary mt-1">${{ tour.price_per_person }} PAB • {{ tour.duration_minutes }} min</p>
             
             <div class="flex gap-2 mt-auto pt-2">
               <button class="btn btn-outline btn-xs flex-1" @click="router.push(`/guide/tours/${tour.id}/edit`)">

@@ -29,6 +29,7 @@ const form = ref({
   what_included: [] as string[],
   meeting_point: '',
   images: [] as string[],
+  is_published: true,
 });
 
 const newIncluded = ref('');
@@ -58,6 +59,7 @@ onMounted(async () => {
       what_included: typeof d.what_included === 'string' ? JSON.parse(d.what_included || '[]') : (d.what_included || []),
       meeting_point: d.meeting_point || '',
       images: typeof d.images === 'string' ? JSON.parse(d.images || '[]') : (d.images || []),
+      is_published: d.is_published !== undefined ? d.is_published : true,
     };
   }
 });
@@ -152,7 +154,7 @@ function handleSubmit() {
 
     <div class="grid-3 gap-4">
       <div class="form-group">
-        <label class="form-label">Precio (MXN)</label>
+        <label class="form-label">Precio (PAB)</label>
         <input v-model="form.price_per_person" type="number" class="form-input" required min="0" />
       </div>
 
@@ -208,6 +210,11 @@ function handleSubmit() {
           </button>
         </div>
       </div>
+    </div>
+    
+    <div class="form-group flex items-center gap-2 mt-4">
+      <input type="checkbox" id="is_published" v-model="form.is_published" />
+      <label for="is_published" class="form-label mb-0" style="margin-bottom: 0;">Publicar Tour inmediatamente</label>
     </div>
 
     <div class="flex justify-end gap-3 mt-6">
