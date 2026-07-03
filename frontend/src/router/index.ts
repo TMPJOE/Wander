@@ -1,23 +1,119 @@
-import { createRouter, createWebHistory } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { createRouter, createWebHistory } from 'vue-router';
+import { useAuthStore } from '../stores/auth';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'home',
-      component: HomeView,
+      name: 'explore',
+      component: () => import('../views/ExploreView.vue'),
     },
     {
-      path: '/about',
-      name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue'),
+      path: '/tours/:id',
+      name: 'tour-detail',
+      component: () => import('../views/TourDetailView.vue'),
     },
+    {
+      path: '/tours/:id/book',
+      name: 'book-tour',
+      component: () => import('../views/BookingView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/booking-success/:id',
+      name: 'booking-success',
+      component: () => import('../views/BookingSuccessView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/bookings',
+      name: 'my-bookings',
+      component: () => import('../views/MyBookingsView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/messages',
+      name: 'messages',
+      component: () => import('../views/MessagesView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/messages/:userId',
+      name: 'chat',
+      component: () => import('../views/ChatView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: () => import('../views/ProfileView.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/LoginView.vue'),
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/RegisterView.vue'),
+    },
+    {
+      path: '/guide/dashboard',
+      name: 'guide-dashboard',
+      component: () => import('../views/GuideDashboardView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/guide/tours',
+      name: 'guide-tours',
+      component: () => import('../views/GuideToursView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/guide/tours/new',
+      name: 'tour-form-new',
+      component: () => import('../views/TourFormView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/guide/tours/:id/edit',
+      name: 'tour-form-edit',
+      component: () => import('../views/TourFormView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/guide/tours/:id/schedules',
+      name: 'schedule-manager',
+      component: () => import('../views/ScheduleManagerView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/guide/bookings',
+      name: 'guide-bookings',
+      component: () => import('../views/GuideBookingsView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true }
+    },
+    {
+      path: '/category/:slug',
+      name: 'category',
+      component: () => import('../views/CategoryView.vue'),
+    }
   ],
-})
+});
 
-export default router
+router.beforeEach((to, from, next) => {
+  const authStore = useAuthStore();
+  
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    next({ name: 'login', query: { redirect: to.fullPath } });
+  } else if (to.meta.requiresGuide && !authStore.isGuide) {
+    next({ name: 'explore' });
+  } else {
+    next();
+  }
+});
+
+export default router;
