@@ -2,23 +2,29 @@
 
 Bring the Stitch "Local Guide Hub" project to life as a working full-stack application. Go backend with PostgreSQL (pgx driver), Vue 3 + Vite frontend. Media handled client-side (no S3/MinIO). Logging via `slog`.
 
-## User Review Required
+## Project Context & Decisions
 
 > [!IMPORTANT]
-> The Stitch UI has 8 mobile screens. Per your direction, we are **not** strictly imitating the UI — the screens serve as an overview. We're building the full data model and the screens needed for guides to create/manage tours, plus all the interfaces implied by the UI but not shown.
+> We are building the full data model and the screens needed for guides to create/manage tours, plus all the interfaces implied by the UI. The styling must **exactly match** the Stitch UI design.
 
 > [!IMPORTANT]  
-> **Auth strategy for demo**: We'll use JWT (already in config). Simple email+password registration/login. The `User` model gets a `role` field (`traveler` | `guide` | `admin`) to gate guide-specific flows.
+> **Auth strategy**: We'll use JWT. Simple email+password registration/login. The `User` model gets a `role` field (`traveler` | `guide`). `admin` role will only be added if exclusive actions are required later.
 
 > [!WARNING]
-> **PostgreSQL must be running locally** before the backend can start. The existing `.env` has `wander_db` / `wander_user` / `wander_pass`. You'll need to create the DB + user manually, or I can add a setup script.
+> **PostgreSQL must be running locally** before the backend can start.
 
-## Open Questions
+## Implementation Guidelines
+- **Styling:** Follow the Stitch UI style exactly.
+- **Language:** The UI will be completely in Spanish.
+- **Seeding & Media:** Include a seed data script. Images will be linked from the frontend to the database.
+- **Messaging:** Basic REST-based messaging setup (polling) for future real-time chat expansion.
 
-> [!IMPORTANT]
-> 1. **Seeding**: Do you want a seed script that populates the DB with demo categories, guides, and tours so the app has data on first run?
-> 2. **Language**: The Stitch screens are in Spanish (Explorar, Reservas, etc.). Should the app stay in Spanish or switch to English?
-> 3. **Messaging**: The "Mensajes" screen implies real-time chat. For a demo, should I do simple REST-based messaging (poll), or skip messaging entirely for now?
+---
+
+## Status Guide
+
+Files marked with **[DONE]** have been successfully implemented.
+
 
 ---
 
@@ -28,8 +34,8 @@ Bring the Stitch "Local Guide Hub" project to life as a working full-stack appli
 
 PostgreSQL schema with migrations using raw SQL files (no ORM). Uses `pgx/v5` as the driver with `pgxpool` for connection pooling.
 
-#### [NEW] [000001_init_schema.up.sql](file:///c:/Users/josed/Documents/Projects/Wander/backend/migrations/000001_init_schema.up.sql)
-#### [NEW] [000001_init_schema.down.sql](file:///c:/Users/josed/Documents/Projects/Wander/backend/migrations/000001_init_schema.down.sql)
+#### [DONE] [NEW] [000001_init_schema.up.sql](file:///c:/Users/josed/Documents/Projects/Wander/backend/migrations/000001_init_schema.up.sql)
+#### [DONE] [NEW] [000001_init_schema.down.sql](file:///c:/Users/josed/Documents/Projects/Wander/backend/migrations/000001_init_schema.down.sql)
 
 Tables:
 | Table | Purpose |
@@ -47,17 +53,17 @@ Tables:
 
 ### Backend — Core Infrastructure
 
-#### [MODIFY] [go.mod](file:///c:/Users/josed/Documents/Projects/Wander/backend/go.mod)
+#### [DONE] [MODIFY] [go.mod](file:///c:/Users/josed/Documents/Projects/Wander/backend/go.mod)
 - Add `github.com/jackc/pgx/v5` + `github.com/golang-jwt/jwt/v5` + `golang.org/x/crypto` (bcrypt)
 - Remove `github.com/go-chi/chi/v5` and `github.com/go-chi/cors` (we're using stdlib `net/http` + our own CORS middleware already)
 
-#### [MODIFY] [config.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/config/config.go)
+#### [DONE] [MODIFY] [config.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/config/config.go)
 - Add `DatabaseURL()` method returning pgx-compatible connection string
 
-#### [NEW] [database.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/config/database.go)
+#### [DONE] [NEW] [database.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/config/database.go)
 - `pgxpool.New()` initialization, connection health check, auto-run migrations from `migrations/` folder
 
-#### [MODIFY] [main.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/cmd/server/main.go)
+#### [DONE] [MODIFY] [main.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/cmd/server/main.go)
 - Replace in-memory repo with pgx pool
 - Wire all new services/handlers
 - Use `slog` for structured startup logging
@@ -67,27 +73,27 @@ Tables:
 
 ### Backend — Logging (slog)
 
-#### [MODIFY] [logger.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/logger.go)
+#### [DONE] [MODIFY] [logger.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/logger.go)
 - Replace `log.Printf` with `slog.Info` structured logging (method, path, status, duration, remote_addr)
 
-#### [MODIFY] [recovery.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/recovery.go)
+#### [DONE] [MODIFY] [recovery.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/recovery.go)
 - Replace `fmt.Printf` with `slog.Error` for panic recovery
 
 ---
 
 ### Backend — Models
 
-#### [MODIFY] [user.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/user.go)
+#### [DONE] [MODIFY] [user.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/user.go)
 - Add `Role`, `Bio`, `Phone`, `AvatarURL`, `Languages` fields
 
-#### [NEW] [category.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/category.go)
-#### [NEW] [tour.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/tour.go)
+#### [DONE] [NEW] [category.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/category.go)
+#### [DONE] [NEW] [tour.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/tour.go)
 - Tour + TourCreateRequest + TourUpdateRequest + TourFilter (for browsing with category, price range, difficulty, location)
-#### [NEW] [tour_schedule.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/tour_schedule.go)
-#### [NEW] [booking.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/booking.go)
-#### [NEW] [review.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/review.go)
-#### [NEW] [message.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/message.go)
-#### [NEW] [favorite.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/favorite.go)
+#### [DONE] [NEW] [tour_schedule.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/tour_schedule.go)
+#### [DONE] [NEW] [booking.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/booking.go)
+#### [DONE] [NEW] [review.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/review.go)
+#### [DONE] [NEW] [message.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/message.go)
+#### [DONE] [NEW] [favorite.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/models/favorite.go)
 
 ---
 
@@ -95,82 +101,82 @@ Tables:
 
 All repos get a **PostgreSQL implementation** using `pgxpool.Pool`. The existing `UserRepository` interface stays, but the in-memory impl is replaced.
 
-#### [MODIFY] [user_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/user_repo.go)
+#### [DONE] [MODIFY] [user_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/user_repo.go)
 - Keep interface, replace `InMemoryUserRepository` with `PgUserRepository`
 
-#### [NEW] [category_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/category_repo.go)
-#### [NEW] [tour_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/tour_repo.go)
+#### [DONE] [NEW] [category_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/category_repo.go)
+#### [DONE] [NEW] [tour_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/tour_repo.go)
 - List with filters (category, price range, difficulty, search query, location), pagination
 - GetByGuideID for guide dashboard
-#### [NEW] [tour_schedule_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/tour_schedule_repo.go)
-#### [NEW] [booking_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/booking_repo.go)
-#### [NEW] [review_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/review_repo.go)
-#### [NEW] [message_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/message_repo.go)
-#### [NEW] [favorite_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/favorite_repo.go)
+#### [DONE] [NEW] [tour_schedule_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/tour_schedule_repo.go)
+#### [DONE] [NEW] [booking_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/booking_repo.go)
+#### [DONE] [NEW] [review_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/review_repo.go)
+#### [DONE] [NEW] [message_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/message_repo.go)
+#### [DONE] [NEW] [favorite_repo.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/repository/favorite_repo.go)
 
 ---
 
 ### Backend — Services
 
-#### [MODIFY] [user_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/user_service.go)
+#### [DONE] [MODIFY] [user_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/user_service.go)
 - Use bcrypt for password hashing
 - Add Login method (returns JWT)
 
-#### [NEW] [auth_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/auth_service.go)
+#### [DONE] [NEW] [auth_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/auth_service.go)
 - JWT generation/validation, token claims with user ID + role
 
-#### [NEW] [category_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/category_service.go)
-#### [NEW] [tour_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/tour_service.go)
+#### [DONE] [NEW] [category_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/category_service.go)
+#### [DONE] [NEW] [tour_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/tour_service.go)
 - CRUD + filtering/search + ownership validation (only guide's own tours)
-#### [NEW] [booking_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/booking_service.go)
+#### [DONE] [NEW] [booking_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/booking_service.go)
 - Create booking (check availability), cancel, confirm, list by user/guide
-#### [NEW] [review_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/review_service.go)
-#### [NEW] [message_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/message_service.go)
-#### [NEW] [favorite_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/favorite_service.go)
+#### [DONE] [NEW] [review_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/review_service.go)
+#### [DONE] [NEW] [message_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/message_service.go)
+#### [DONE] [NEW] [favorite_service.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/service/favorite_service.go)
 
 ---
 
 ### Backend — Handlers
 
-#### [MODIFY] [handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/handler.go)
+#### [DONE] [MODIFY] [handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/handler.go)
 - Wire all new sub-handlers
 
-#### [MODIFY] [user_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/user_handler.go)
+#### [DONE] [MODIFY] [user_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/user_handler.go)
 - Add profile update, get current user (from JWT context)
 
-#### [NEW] [auth_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/auth_handler.go)
+#### [DONE] [NEW] [auth_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/auth_handler.go)
 - `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me`
 
-#### [NEW] [category_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/category_handler.go)
+#### [DONE] [NEW] [category_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/category_handler.go)
 - `GET /api/v1/categories`
 
-#### [NEW] [tour_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/tour_handler.go)
+#### [DONE] [NEW] [tour_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/tour_handler.go)
 - Public: `GET /api/v1/tours` (filter/search), `GET /api/v1/tours/{id}`
 - Guide: `POST /api/v1/tours`, `PUT /api/v1/tours/{id}`, `DELETE /api/v1/tours/{id}`
 - Guide: `GET /api/v1/guide/tours` (my tours)
 
-#### [NEW] [schedule_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/schedule_handler.go)
+#### [DONE] [NEW] [schedule_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/schedule_handler.go)
 - `GET /api/v1/tours/{tourId}/schedules`
 - Guide: `POST /api/v1/tours/{tourId}/schedules`, `PUT .../{id}`, `DELETE .../{id}`
 
-#### [NEW] [booking_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/booking_handler.go)
+#### [DONE] [NEW] [booking_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/booking_handler.go)
 - `POST /api/v1/bookings`, `GET /api/v1/bookings` (my bookings), `PATCH /api/v1/bookings/{id}/cancel`
 - Guide: `GET /api/v1/guide/bookings`, `PATCH /api/v1/guide/bookings/{id}/confirm`
 
-#### [NEW] [review_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/review_handler.go)
+#### [DONE] [NEW] [review_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/review_handler.go)
 - `POST /api/v1/tours/{tourId}/reviews`, `GET /api/v1/tours/{tourId}/reviews`
 
-#### [NEW] [message_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/message_handler.go)
+#### [DONE] [NEW] [message_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/message_handler.go)
 - `GET /api/v1/messages/conversations`, `GET /api/v1/messages/{userId}`, `POST /api/v1/messages/{userId}`
 
-#### [NEW] [favorite_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/favorite_handler.go)
+#### [DONE] [NEW] [favorite_handler.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/handler/favorite_handler.go)
 - `POST /api/v1/favorites/{tourId}`, `DELETE /api/v1/favorites/{tourId}`, `GET /api/v1/favorites`
 
 ---
 
 ### Backend — Auth Middleware
 
-#### [MODIFY] [auth.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/auth.go)
+#### [DONE] [MODIFY] [auth.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/internal/middleware/auth.go)
 - Actual JWT validation, extract user ID + role into `context.Context`
 - Add `RequireRole("guide")` middleware for guide-only routes
 
@@ -178,7 +184,7 @@ All repos get a **PostgreSQL implementation** using `pgxpool.Pool`. The existing
 
 ### Backend — Routes
 
-#### [MODIFY] [routes.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/api/routes.go)
+#### [DONE] [MODIFY] [routes.go](file:///c:/Users/josed/Documents/Projects/Wander/backend/api/routes.go)
 - Reorganize into public routes, authenticated routes, and guide-only routes
 - All routes under `/api/v1/` prefix
 
@@ -218,17 +224,17 @@ The frontend is a Vue 3 + Vite + Pinia app. We build the screens needed to inter
 
 **New Pinia stores:**
 
-#### [NEW] `stores/auth.ts` — JWT token management, current user state, login/logout/register actions
-#### [NEW] `stores/tours.ts` — Tour listing, filters, current tour detail, CRUD for guides
-#### [NEW] `stores/bookings.ts` — User bookings, guide bookings, create/cancel
-#### [NEW] `stores/categories.ts` — Category list
-#### [NEW] `stores/messages.ts` — Conversations, messages
-#### [NEW] `stores/favorites.ts` — Favorited tours
+#### [DONE] [NEW] `stores/auth.ts` — JWT token management, current user state, login/logout/register actions
+#### [DONE] [NEW] `stores/tours.ts` — Tour listing, filters, current tour detail, CRUD for guides
+#### [DONE] [NEW] `stores/bookings.ts` — User bookings, guide bookings, create/cancel
+#### [DONE] [NEW] `stores/categories.ts` — Category list
+#### [DONE] [NEW] `stores/messages.ts` — Conversations, messages
+#### [DONE] [NEW] `stores/favorites.ts` — Favorited tours
 
 **New composables:**
 
-#### [NEW] `composables/useApi.ts` — Axios/fetch wrapper with JWT header injection, base URL from env
-#### [NEW] `composables/useAuth.ts` — Auth guard logic, role check
+#### [DONE] [NEW] `composables/useApi.ts` — Axios/fetch wrapper with JWT header injection, base URL from env
+#### [DONE] [NEW] `composables/useAuth.ts` — Auth guard logic, role check
 
 **New components (reusable):**
 
@@ -251,8 +257,8 @@ The frontend is a Vue 3 + Vite + Pinia app. We build the screens needed to inter
 
 **Styles:**
 
-#### [NEW] `assets/design-tokens.css` — CSS custom properties from the Stitch design system (terracotta/emerald palette, Inter typography, spacing, elevation)
-#### [MODIFY] `assets/main.css` — Reset + global styles using design tokens
+#### [DONE] [NEW] `assets/design-tokens.css` — CSS custom properties from the Stitch design system (terracotta/emerald palette, Inter typography, spacing, elevation)
+#### [DONE] [MODIFY] `assets/main.css` — Reset + global styles using design tokens
 
 ---
 
