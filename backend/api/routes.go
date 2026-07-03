@@ -62,17 +62,18 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	guideMux.HandleFunc("PATCH /bookings/{id}/confirm", h.BookingHandler.Confirm)
 
 	// Register sub-muxes
-	mux.Handle("/api/v1/users/", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/users", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/bookings/", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/bookings", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/favorites/", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/favorites", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/messages/", authMiddleware(travelerMux))
-	mux.Handle("/api/v1/messages", authMiddleware(travelerMux))
+	travelerGroup := authMiddleware(http.StripPrefix("/api/v1", travelerMux))
+	mux.Handle("/api/v1/users/", travelerGroup)
+	mux.Handle("/api/v1/users", travelerGroup)
+	mux.Handle("/api/v1/bookings/", travelerGroup)
+	mux.Handle("/api/v1/bookings", travelerGroup)
+	mux.Handle("/api/v1/favorites/", travelerGroup)
+	mux.Handle("/api/v1/favorites", travelerGroup)
+	mux.Handle("/api/v1/messages/", travelerGroup)
+	mux.Handle("/api/v1/messages", travelerGroup)
 
 	// Guide endpoint routing group
-	guideGroup := authMiddleware(middleware.RequireRole("guide")(guideMux))
+	guideGroup := authMiddleware(middleware.RequireRole("guide")(http.StripPrefix("/api/v1", guideMux)))
 	mux.Handle("/api/v1/tours/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			// Public GET falls back to root routing

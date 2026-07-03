@@ -11,7 +11,15 @@ func CORS(allowedOrigins []string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			origin := r.Header.Get("Origin")
 			for _, allowed := range allowedOrigins {
-				if strings.TrimSpace(allowed) == origin {
+				allowed = strings.TrimSpace(allowed)
+				if allowed == "*" {
+					if origin != "" {
+						w.Header().Set("Access-Control-Allow-Origin", origin)
+					} else {
+						w.Header().Set("Access-Control-Allow-Origin", "*")
+					}
+					break
+				} else if allowed == origin {
 					w.Header().Set("Access-Control-Allow-Origin", origin)
 					break
 				}

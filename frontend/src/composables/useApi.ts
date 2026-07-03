@@ -2,7 +2,7 @@ import axios from 'axios';
 import { useAuthStore } from '../stores/auth';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1',
+  baseURL: import.meta.env.VITE_API_URL || '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -19,6 +19,9 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use((response) => {
+  if (response.data && response.data.success === true && response.data.data !== undefined) {
+    response.data = response.data.data;
+  }
   return response;
 }, (error) => {
   if (error.response && error.response.status === 401) {
