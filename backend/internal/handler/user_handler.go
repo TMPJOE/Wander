@@ -5,113 +5,91 @@ import (
 	"net/http"
 	"strconv"
 
+	"wander/backend/internal/middleware"
 	"wander/backend/internal/models"
 	"wander/backend/internal/service"
 	"wander/backend/internal/utils"
 )
 
-// UserHandler handles user-related HTTP requests.
 type UserHandler struct {
 	service *service.UserService
 }
 
-// NewUserHandler creates a new UserHandler.
 func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-// RegisterRoutes registers user routes on the provided mux.
 func (h *UserHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /users", h.List)
-	mux.HandleFunc("POST /users", h.Create)
+	// Group under prefix handled externally or register fully
+	mux.HandleFunc("GET /users/me", h.GetMe)
+	mux.HandleFunc("PUT /users/me", h.UpdateMe)
 	mux.HandleFunc("GET /users/{id}", h.GetByID)
-	mux.HandleFunc("PUT /users/{id}", h.Update)
-	mux.HandleFunc("DELETE /users/{id}", h.Delete)
 }
 
-// Create handles POST /users.
-func (h *UserHandler) Create(w http.ResponseWriter, r *http.Request) {
-	var req models.UserCreateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.SendError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
 		return
 	}
 
-	user, err := h.service.Create(r.Context(), req)
+	user, err := h.service.GetByID(r.Context(), userID)
 	if err != nil {
-		utils.SendError(w, http.StatusConflict, "Failed to create user", err.Error())
+		utils.SendError(w, http.StatusNotFound, "Usuario no encontrado", err.Error())
 		return
 	}
 
-	utils.SendSuccess(w, http.StatusCreated, "User created successfully", user)
+	utils.SendSuccess(w, http.StatusOK, "Perfil recuperado", user)
 }
 
-// GetByID handles GET /users/{id}.
-func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.SendError(w, http.StatusBadRequest, "Invalid user ID", err.Error())
-		return
-	}
-
-	user, err := h.service.GetByID(r.Context(), id)
-	if err != nil {
-		utils.SendError(w, http.StatusNotFound, "User not found", err.Error())
-		return
-	}
-
-	utils.SendSuccess(w, http.StatusOK, "User retrieved successfully", user)
-}
-
-// Update handles PUT /users/{id}.
-func (h *UserHandler) Update(w http.ResponseWriter, r *http.Request) {
-	idStr := r.PathValue("id")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		utils.SendError(w, http.StatusBadRequest, "Invalid user ID", err.Error())
+func (h *UserHandler) UpdateMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
 		return
 	}
 
 	var req models.UserUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		utils.SendError(w, http.StatusBadRequest, "Invalid request body", err.Error())
+		utils.SendError(w, http.StatusBadRequest, "Request incorrecto", err.Error())
 		return
 	}
 
-	user, err := h.service.Update(r.Context(), id, req)
+	user, err := h.service.Update(r.Context(), userID, req)
 	if err != nil {
-		utils.SendError(w, http.StatusNotFound, "Failed to update user", err.Error())
+		utils.SendError(w, http.StatusInternalServerError, "Error al actualizar", err.Error())
 		return
 	}
 
-	utils.SendSuccess(w, http.StatusOK, "User updated successfully", user)
+	utils.SendSuccess(w, http.StatusOK, "Perfil actualizado", user)
 }
 
-// Delete handles DELETE /users/{id}.
-func (h *UserHandler) Delete(w http.ResponseWriter, r *http.Request) {
+func (h *UserHandler) GetByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
-		utils.SendError(w, http.StatusBadRequest, "Invalid user ID", err.Error())
+		utils.SendError(w, http.StatusBadRequest, "ID inválido", err.Error())
 		return
 	}
 
-	if err := h.service.Delete(r.Context(), id); err != nil {
-		utils.SendError(w, http.StatusNotFound, "Failed to delete user", err.Error())
-		return
-	}
-
-	utils.SendSuccess(w, http.StatusOK, "User deleted successfully", nil)
-}
-
-// List handles GET /users.
-func (h *UserHandler) List(w http.ResponseWriter, r *http.Request) {
-	users, err := h.service.List(r.Context(), 100, 0)
+	user, err := h.service.GetByID(r.Context(), id)
 	if err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Failed to list users", err.Error())
+		utils.SendError(w, http.StatusNotFound, "Usuario no encontrado", err.Error())
 		return
 	}
 
-	utils.SendSuccess(w, http.StatusOK, "Users retrieved successfully", users)
+	// Filter sensitive fields for public view
+	publicUser := models.User{
+		ID:        user.ID,
+		Username:  user.Username,
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Role:      user.Role,
+		Bio:       user.Bio,
+		AvatarURL: user.AvatarURL,
+		Languages: user.Languages,
+		CreatedAt: user.CreatedAt,
+	}
+
+	utils.SendSuccess(w, http.StatusOK, "Usuario recuperado", publicUser)
 }

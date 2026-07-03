@@ -8,13 +8,39 @@ import (
 
 // Handler holds all HTTP handlers.
 type Handler struct {
-	UserHandler *UserHandler
+	AuthHandler     *AuthHandler
+	UserHandler     *UserHandler
+	CategoryHandler *CategoryHandler
+	TourHandler     *TourHandler
+	ScheduleHandler *TourScheduleHandler
+	BookingHandler  *BookingHandler
+	ReviewHandler   *ReviewHandler
+	FavoriteHandler *FavoriteHandler
+	MessageHandler  *MessageHandler
 }
 
 // NewHandler creates a new Handler with all sub-handlers.
-func NewHandler(userService *service.UserService) *Handler {
+func NewHandler(
+	authService *service.AuthService,
+	userService *service.UserService,
+	categoryService *service.CategoryService,
+	tourService *service.TourService,
+	scheduleService *service.TourScheduleService,
+	bookingService *service.BookingService,
+	reviewService *service.ReviewService,
+	favoriteService *service.FavoriteService,
+	messageService *service.MessageService,
+) *Handler {
 	return &Handler{
-		UserHandler: NewUserHandler(userService),
+		AuthHandler:     NewAuthHandler(authService),
+		UserHandler:     NewUserHandler(userService),
+		CategoryHandler: NewCategoryHandler(categoryService),
+		TourHandler:     NewTourHandler(tourService),
+		ScheduleHandler: NewTourScheduleHandler(scheduleService),
+		BookingHandler:  NewBookingHandler(bookingService),
+		ReviewHandler:   NewReviewHandler(reviewService),
+		FavoriteHandler: NewFavoriteHandler(favoriteService),
+		MessageHandler:  NewMessageHandler(messageService),
 	}
 }
 

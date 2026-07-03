@@ -1,26 +1,25 @@
 package middleware
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 )
 
-// Logger logs HTTP requests.
+// Logger logs HTTP requests using structured logging (slog).
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		// Wrap response writer to capture status code.
 		wrapped := &responseWriter{w, http.StatusOK}
 		next.ServeHTTP(wrapped, r)
 
-		log.Printf("[%s] %s %s %d %s",
-			r.Method,
-			r.URL.Path,
-			r.RemoteAddr,
-			wrapped.statusCode,
-			time.Since(start),
+		slog.Info("http request",
+			slog.String("method", r.Method),
+			slog.String("path", r.URL.Path),
+			slog.String("remote_addr", r.RemoteAddr),
+			slog.Int("status", wrapped.statusCode),
+			slog.Duration("duration", time.Since(start)),
 		)
 	})
 }
