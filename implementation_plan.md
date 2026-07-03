@@ -194,10 +194,10 @@ All repos get a **PostgreSQL implementation** using `pgxpool.Pool`. The existing
 
 The frontend is a Vue 3 + Vite + Pinia app. We build the screens needed to interact with the backend, inspired by but not slavishly copying the Stitch designs.
 
-#### [MODIFY] [App.vue](file:///c:/Users/josed/Documents/Projects/Wander/frontend/src/App.vue)
+#### [DONE] [MODIFY] [App.vue](file:///c:/Users/josed/Documents/Projects/Wander/frontend/src/App.vue)
 - Replace boilerplate with app shell: sticky bottom nav (Explorar, Reservas, Mensajes, Perfil), top header, RouterView
 
-#### [MODIFY] [index.ts](file:///c:/Users/josed/Documents/Projects/Wander/frontend/src/router/index.ts)
+#### [DONE] [MODIFY] [index.ts](file:///c:/Users/josed/Documents/Projects/Wander/frontend/src/router/index.ts)
 - Full route table with auth guards
 
 **New views (pages):**
