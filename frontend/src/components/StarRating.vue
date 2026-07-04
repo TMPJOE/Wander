@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Star } from '@lucide/vue';
+import { computed } from 'vue'
+import { Star } from '@lucide/vue'
 
 const props = defineProps<{
-  rating: number;
-  max?: number;
-  size?: number;
-  interactive?: boolean;
-}>();
+  rating: number
+  max?: number
+  size?: number
+  interactive?: boolean
+}>()
 
 const emit = defineEmits<{
-  rate: [value: number];
-}>();
+  rate: [value: number]
+}>()
 
-const max = computed(() => props.max || 5);
-const size = computed(() => props.size || 16);
+const max = computed(() => props.max || 5)
+const size = computed(() => props.size || 32)
 
 function starType(index: number): 'full' | 'half' | 'empty' {
-  if (index <= Math.floor(props.rating)) return 'full';
-  if (index === Math.ceil(props.rating) && props.rating % 1 >= 0.25) return 'half';
-  return 'empty';
+  if (index <= Math.floor(props.rating)) return 'full'
+  if (index === Math.ceil(props.rating) && props.rating % 1 >= 0.25) return 'half'
+  return 'empty'
 }
 </script>
 
@@ -40,7 +40,11 @@ function starType(index: number): 'full' | 'half' | 'empty' {
       type="button"
       @click="interactive && emit('rate', i)"
     >
-      <Star :size="size" :stroke-width="starType(i) === 'empty' ? 1.5 : 0" :fill="starType(i) !== 'empty' ? 'currentColor' : 'none'" />
+      <Star
+        :size="size"
+        :stroke-width="starType(i) === 'empty' ? 1.5 : 0"
+        :fill="starType(i) !== 'empty' ? 'currentColor' : 'none'"
+      />
     </button>
   </div>
 </template>
@@ -54,7 +58,9 @@ function starType(index: number): 'full' | 'half' | 'empty' {
 
 .star-rating__star {
   color: var(--color-star-empty);
-  transition: color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    transform var(--transition-fast);
   padding: 0;
   display: flex;
   align-items: center;

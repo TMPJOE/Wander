@@ -96,6 +96,12 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 			http.DefaultServeMux.ServeHTTP(w, r)
 			return
 		}
+		// POST reviews should go to travelerGroup (any authenticated user can review)
+		if r.Method == http.MethodPost && strings.Contains(r.URL.Path, "/reviews") {
+			travelerGroup.ServeHTTP(w, r)
+			return
+		}
+		// All other POST/PATCH/DELETE on tours are guide-only
 		guideGroup.ServeHTTP(w, r)
 	}))
 	mux.Handle("/api/v1/tours", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -9,7 +9,17 @@ import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import StarRating from '../components/StarRating.vue'
-import { LogOut, Settings, Heart, Compass, Save, Calendar, Users, CreditCard, MapPin } from '@lucide/vue'
+import {
+  LogOut,
+  Settings,
+  Heart,
+  Compass,
+  Save,
+  Calendar,
+  Users,
+  CreditCard,
+  MapPin,
+} from '@lucide/vue'
 
 const authStore = useAuthStore()
 const favoritesStore = useFavoritesStore()
@@ -283,11 +293,15 @@ const handleSettingsClick = () => {
                 </div>
                 <div class="detail-item">
                   <Users :size="14" class="detail-icon" />
-                  <span>{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span>
+                  <span
+                    >{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span
+                  >
                 </div>
                 <div class="detail-item">
                   <CreditCard :size="14" class="detail-icon" />
-                  <span class="font-semibold">${{ booking.total_price.toLocaleString('es-MX') }}</span>
+                  <span class="font-semibold"
+                    >${{ booking.total_price.toLocaleString('es-MX') }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -308,7 +322,7 @@ const handleSettingsClick = () => {
 
           <div v-if="activeBookingForm === booking.id" class="adv-card__review-form">
             <div class="form-group mb-2">
-              <label class="form-label">Calificación</label>
+              <label class="adv-card__title">Calificación</label>
               <StarRating
                 :rating="formFor(booking.id).rating"
                 interactive
@@ -408,6 +422,20 @@ const handleSettingsClick = () => {
 </template>
 
 <style scoped>
+.btn-outline:hover:not(:disabled) {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+.btn-primary {
+  margin-top: var(--spacing-2);
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
+  padding: var(--spacing-3) var(--spacing-6);
+}
+
 .container {
   padding: 0 var(--content-padding);
 }
@@ -692,7 +720,7 @@ const handleSettingsClick = () => {
 .adv-card__review-form {
   margin: 0 var(--spacing-3) var(--spacing-3);
   padding: var(--spacing-4);
-  background: var(--color-secondary-50);
+  background: var(--color-warning-bg);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
