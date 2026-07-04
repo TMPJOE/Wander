@@ -1,28 +1,26 @@
 <script setup lang="ts">
-import { onMounted, ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ArrowLeft } from '@lucide/vue';
-import { useToursStore } from '../stores/tours';
-import { useCategoriesStore } from '../stores/categories';
-import TourCard from '../components/TourCard.vue';
+import { onMounted, ref, computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft } from '@lucide/vue'
+import { useToursStore } from '../stores/tours'
+import { useCategoriesStore } from '../stores/categories'
+import TourCard from '../components/TourCard.vue'
 
-const route = useRoute();
-const router = useRouter();
-const toursStore = useToursStore();
-const categoriesStore = useCategoriesStore();
+const route = useRoute()
+const router = useRouter()
+const toursStore = useToursStore()
+const categoriesStore = useCategoriesStore()
 
-const slug = computed(() => route.params.slug as string);
+const slug = computed(() => route.params.slug as string)
 
-const category = computed(() =>
-  categoriesStore.categories.find(c => c.slug === slug.value)
-);
+const category = computed(() => categoriesStore.categories.find((c) => c.slug === slug.value))
 
 onMounted(async () => {
   if (!categoriesStore.categories.length) {
-    await categoriesStore.fetchCategories();
+    await categoriesStore.fetchCategories()
   }
-  toursStore.fetchTours({ category_slug: slug.value });
-});
+  toursStore.fetchTours({ category_slug: slug.value })
+})
 </script>
 
 <template>
@@ -38,21 +36,17 @@ onMounted(async () => {
     <section class="container">
       <div v-if="toursStore.loading" class="tour-grid">
         <div v-for="i in 4" :key="i" class="tour-skeleton">
-          <div class="skeleton" style="aspect-ratio: 4/3;"></div>
-          <div style="padding: var(--spacing-3);">
-            <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px;"></div>
-            <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px;"></div>
-            <div class="skeleton" style="height: 12px; width: 40%;"></div>
+          <div class="skeleton" style="aspect-ratio: 4/3"></div>
+          <div style="padding: var(--spacing-3)">
+            <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px"></div>
+            <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px"></div>
+            <div class="skeleton" style="height: 12px; width: 40%"></div>
           </div>
         </div>
       </div>
 
       <div v-else-if="toursStore.tours.length" class="tour-grid">
-        <TourCard
-          v-for="tour in toursStore.tours"
-          :key="tour.id"
-          :tour="tour"
-        />
+        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" :allow-like="true" />
       </div>
 
       <div v-else class="empty">

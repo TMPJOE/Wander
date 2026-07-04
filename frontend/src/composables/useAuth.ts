@@ -1,44 +1,43 @@
-import { useAuthStore } from '../stores/auth';
-import { useApi } from './useApi';
+import { useAuthStore } from '../stores/auth'
+import { useApi } from './useApi'
 
 export function useAuth() {
-  const authStore = useAuthStore();
-  const api = useApi();
+  const authStore = useAuthStore()
+  const api = useApi()
 
   async function checkAuth() {
-    if (!authStore.token) return false;
-    
+    if (!authStore.token) return false
+
     try {
-      const response = await api.get('/auth/me');
-      authStore.user = response.data;
-      return true;
+      const response = await api.get('/auth/me')
+      authStore.user = response.data
+      return true
     } catch {
-      authStore.logout();
-      return false;
+      authStore.logout()
+      return false
     }
   }
 
-  function requireAuth(to: any, from: any, next: any) {
+  function requireAuth(to: any) {
     if (!authStore.isAuthenticated) {
-      next({ name: 'login', query: { redirect: to.fullPath } });
-    } else {
-      next();
+      return { name: 'login', query: { redirect: to.fullPath } }
     }
+    return true
   }
 
-  function requireGuide(to: any, from: any, next: any) {
+  function requireGuide(to: any) {
     if (!authStore.isAuthenticated) {
-      next({ name: 'login', query: { redirect: to.fullPath } });
-    } else if (!authStore.isGuide) {
-      next({ name: 'explore' }); // Redirect non-guides to home
-    } else {
-      next();
+      return { name: 'login', query: { redirect: to.fullPath } }
     }
+    if (!authStore.isGuide) {
+      return { name: 'explore' } // Redirect non-guides to home
+    }
+    return true
   }
 
   return {
     checkAuth,
     requireAuth,
     requireGuide,
-  };
+  }
 }

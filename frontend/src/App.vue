@@ -28,7 +28,9 @@ onMounted(async () => {
     <main class="app-main">
       <RouterView v-slot="{ Component, route: viewRoute }">
         <Transition name="fade" mode="out-in">
-          <component :is="Component" :key="viewRoute.path" />
+          <div :key="viewRoute.path" class="route-view-wrapper">
+            <component :is="Component" />
+          </div>
         </Transition>
       </RouterView>
     </main>

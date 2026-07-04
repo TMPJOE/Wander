@@ -128,6 +128,7 @@ const handleSettingsClick = () => {
           v-for="fav in favoritesStore.favorites"
           :key="fav.id"
           :tour="{ ...fav, is_favorited: true }"
+          :allow-like="false"
         />
       </div>
       <div v-else class="empty-favorites">

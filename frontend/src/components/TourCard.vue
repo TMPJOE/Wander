@@ -1,67 +1,106 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { Heart, MapPin, Clock, Star } from '@lucide/vue';
-import { useFavoritesStore } from '../stores/favorites';
-import { useAuthStore } from '../stores/auth';
+import { computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { Heart, MapPin, Clock, Star } from '@lucide/vue'
+import { useFavoritesStore } from '../stores/favorites'
+import { useAuthStore } from '../stores/auth'
 
 const props = defineProps<{
   tour: {
-    id: number;
-    title: string;
-    location: string;
-    price_per_person: number;
-    duration_minutes: number;
-    images: string | string[];
-    avg_rating: number;
-    review_count: number;
-    difficulty?: string;
-    category_name?: string;
-    is_favorited?: boolean;
-    guide_name?: string;
-  };
-}>();
+    id: number
+    title: string
+    location: string
+    price_per_person: number
+    duration_minutes: number
+    images: string | string[]
+    avg_rating: number
+    review_count: number
+    difficulty?: string
+    category_name?: string
+    is_favorited?: boolean
+    guide_name?: string
+  }
+  allowLike?: boolean
+}>()
 
-const router = useRouter();
-const favoritesStore = useFavoritesStore();
-const authStore = useAuthStore();
+const router = useRouter()
+const favoritesStore = useFavoritesStore()
+const authStore = useAuthStore()
+
+const isFavorited = computed(() => {
+  const id = String(props.tour.id)
+  return favoritesStore.favorites.some((f: any) => {
+    const favId = String(f.tour_id ?? f.tour?.id ?? f.id ?? '')
+    return favId === id
+  })
+})
+
+const allowLike = computed(() => {
+  return props.allowLike !== false
+})
+
+import { ref } from 'vue'
+const justLiked = ref(false)
 
 const imageUrl = computed(() => {
-  const imgs = typeof props.tour.images === 'string'
-    ? JSON.parse(props.tour.images || '[]')
-    : (props.tour.images || []);
-  return imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop';
-});
+  const imgs =
+    typeof props.tour.images === 'string'
+      ? JSON.parse(props.tour.images || '[]')
+      : props.tour.images || []
+  return (
+    imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+  )
+})
 
 const formattedDuration = computed(() => {
-  const h = Math.floor(props.tour.duration_minutes / 60);
-  const m = props.tour.duration_minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m ? `${h}h ${m}m` : `${h}h`;
-});
+  const h = Math.floor(props.tour.duration_minutes / 60)
+  const m = props.tour.duration_minutes % 60
+  if (h === 0) return `${m} min`
+  return m ? `${h}h ${m}m` : `${h}h`
+})
 
 const formattedPrice = computed(() => {
-  return `$${props.tour.price_per_person.toLocaleString('es-MX')}`;
-});
+  return `$${props.tour.price_per_person.toLocaleString('es-MX')}`
+})
 
 const difficultyLabel: Record<string, string> = {
   easy: 'Fácil',
   moderate: 'Moderado',
   challenging: 'Desafiante',
   extreme: 'Extremo',
-};
+}
 
 function goToDetail() {
-  router.push(`/tours/${props.tour.id}`);
+  router.push(`/tours/${props.tour.id}`)
 }
 
 async function toggleFavorite(e: Event) {
-  e.stopPropagation();
+  e.stopPropagation()
   if (!authStore.isAuthenticated) {
-    router.push({ name: 'login' });
-    return;
+    router.push({ name: 'login' })
+    return
   }
-  await favoritesStore.toggleFavorite(String(props.tour.id), !!props.tour.is_favorited);
+
+  const currentlyFavorited = isFavorited.value || !!props.tour.is_favorited
+
+  // If liking is disabled (e.g., Profile view) and the item is not already favorited,
+  // prevent adding a favorite. Allow unliking always.
+  if (!allowLike.value && !currentlyFavorited) return
+
+  // Optimistic local animation for like
+  if (!currentlyFavorited) {
+    justLiked.value = true
+    setTimeout(() => (justLiked.value = false), 700)
+  }
+
+  try {
+    const ok = await favoritesStore.toggleFavorite(String(props.tour.id), currentlyFavorited)
+    ok // no-op to satisfy linter
+  } catch (e) {
+    // rollback animation if API failed and surface error for debugging
+    console.error('Failed toggling favorite', e)
+    justLiked.value = false
+  }
 }
 </script>
 
@@ -69,12 +108,18 @@ async function toggleFavorite(e: Event) {
   <article class="tour-card" @click="goToDetail">
     <div class="tour-card__image-wrap">
       <img :src="imageUrl" :alt="tour.title" class="tour-card__image" loading="lazy" />
-      <button class="tour-card__fav" @click="toggleFavorite">
+      <button
+        :class="[
+          'tour-card__fav',
+          { 'tour-card__fav--liked': isFavorited, 'animate-like': justLiked },
+        ]"
+        @click="toggleFavorite"
+      >
         <Heart
           :size="20"
-          :stroke-width="tour.is_favorited ? 0 : 2"
-          :fill="tour.is_favorited ? 'var(--color-primary)' : 'none'"
-          :color="tour.is_favorited ? 'var(--color-primary)' : 'white'"
+          :stroke-width="isFavorited ? 0 : 2"
+          :fill="isFavorited ? 'var(--color-primary)' : 'none'"
+          :color="isFavorited ? 'var(--color-primary)' : 'white'"
         />
       </button>
       <span v-if="tour.difficulty" class="tour-card__badge">
@@ -117,7 +162,9 @@ async function toggleFavorite(e: Event) {
   border-radius: var(--radius-xl);
   overflow: hidden;
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
   box-shadow: var(--shadow-sm);
 }
 
@@ -167,6 +214,29 @@ async function toggleFavorite(e: Event) {
 .tour-card__fav:hover {
   background: rgba(0, 0, 0, 0.4);
   transform: scale(1.1);
+}
+
+.tour-card__fav--liked {
+  background: rgba(208, 83, 66, 0.12);
+}
+
+@keyframes heart-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.35);
+  }
+  70% {
+    transform: scale(0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-like {
+  animation: heart-pop 0.7s cubic-bezier(0.2, 0.9, 0.3, 1);
 }
 
 .tour-card__badge {

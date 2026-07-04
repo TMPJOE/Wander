@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { useFavoritesStore } from '../stores/favorites'
 import { Search, SlidersHorizontal, MapPin } from '@lucide/vue'
 import { useToursStore } from '../stores/tours'
 import { useCategoriesStore } from '../stores/categories'
@@ -10,6 +11,7 @@ import type { FilterValues } from '../components/FilterDrawer.vue'
 
 const toursStore = useToursStore()
 const categoriesStore = useCategoriesStore()
+const favoritesStore = useFavoritesStore()
 
 const searchQuery = ref('')
 const activeCategory = ref('')
@@ -23,6 +25,12 @@ const currentFilters = ref<FilterValues>({
 
 onMounted(async () => {
   await Promise.all([categoriesStore.fetchCategories(), toursStore.fetchTours()])
+  // Ensure favorites are available so cards render correct liked state
+  try {
+    await favoritesStore.fetchFavorites()
+  } catch {
+    /* ignore */
+  }
 })
 
 function selectCategory(slug: string) {
@@ -137,7 +145,7 @@ function fetchWithFilters() {
 
       <!-- Tour Cards -->
       <div v-else-if="toursStore.tours.length" class="tour-grid">
-        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" />
+        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" :allow-like="true" />
       </div>
 
       <!-- Empty State -->
