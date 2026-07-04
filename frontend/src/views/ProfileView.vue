@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useFavoritesStore } from '../stores/favorites'
@@ -19,6 +19,8 @@ import {
   Users,
   CreditCard,
   MapPin,
+  Edit2,
+  Star,
 } from '@lucide/vue'
 
 const authStore = useAuthStore()
@@ -44,6 +46,16 @@ const profileForm = ref({
   bio: '',
   phone: '',
 })
+
+// Helper to find review for a booking
+function getReviewForBooking(bookingId: number) {
+  return adventures.value.find((r) => r.booking_id === bookingId || r.tour_id === bookingId)
+}
+
+// Check if booking has a review
+function hasReview(bookingId: number) {
+  return !!getReviewForBooking(bookingId)
+}
 
 onMounted(async () => {
   if (authStore.user) {
@@ -89,10 +101,11 @@ watch(activeTab, async (tab) => {
       )
       // initialize per-booking form state
       completedBookings.value.forEach((b: any) => {
-        bookingReviewForm.value[b.id] = bookingReviewForm.value[b.id] || {
-          rating: 0,
-          title: '',
-          comment: '',
+        const existingReview = getReviewForBooking(b.id)
+        bookingReviewForm.value[b.id] = {
+          rating: existingReview?.rating || 0,
+          title: existingReview?.title || '',
+          comment: existingReview?.comment || '',
         }
       })
     } catch (e) {
@@ -107,8 +120,21 @@ async function submitReviewForBooking(booking: any) {
     alert('Calificación y comentario son obligatorios.')
     return
   }
+
+  const existingReview = getReviewForBooking(booking.id)
+
   try {
-    await api.post(`/tours/${booking.tour_id}/reviews`, form)
+    if (existingReview) {
+      // Update existing review
+      await api.put(`/reviews/${existingReview.id}`, form)
+    } else {
+      // Create new review
+      await api.post(`/tours/${booking.tour_id}/reviews`, {
+        ...form,
+        booking_id: booking.id,
+      })
+    }
+
     // refresh lists
     await fetchAdventures()
     await bookingsStore.fetchMyBookings()
@@ -118,7 +144,20 @@ async function submitReviewForBooking(booking: any) {
     activeBookingForm.value = null
   } catch (e) {
     console.error('Failed to submit review from profile', e)
-    alert('Error al enviar reseña. Asegúrate de haber completado el tour y no haber reseñado ya.')
+    alert('Error al enviar reseña.')
+  }
+}
+
+function openReviewForm(booking: any) {
+  activeBookingForm.value = booking.id
+  // Pre-fill form with existing review if any
+  const existingReview = getReviewForBooking(booking.id)
+  if (existingReview) {
+    bookingReviewForm.value[booking.id] = {
+      rating: existingReview.rating || 0,
+      title: existingReview.title || '',
+      comment: existingReview.comment || '',
+    }
   }
 }
 
@@ -307,13 +346,30 @@ const handleSettingsClick = () => {
             </div>
           </div>
 
+          <!-- Display existing review in card -->
+          <div v-if="hasReview(booking.id)" class="adv-card__review-display">
+            <div class="review-header">
+              <div class="review-stars">
+                <Star
+                  v-for="i in 5"
+                  :key="i"
+                  :size="16"
+                  :class="{ 'star-filled': i <= getReviewForBooking(booking.id).rating }"
+                />
+              </div>
+              <span class="review-title">{{ getReviewForBooking(booking.id).title }}</span>
+            </div>
+            <p class="review-comment">{{ getReviewForBooking(booking.id).comment }}</p>
+          </div>
+
           <div class="adv-card__footer">
             <button
               v-if="activeBookingForm !== booking.id"
               class="btn btn-outline btn-md"
-              @click="activeBookingForm = booking.id"
+              @click="openReviewForm(booking)"
             >
-              Escribir reseña
+              <Edit2 :size="16" />
+              {{ hasReview(booking.id) ? 'Editar reseña' : 'Escribir reseña' }}
             </button>
             <button v-else class="btn btn-ghost btn-md" @click="activeBookingForm = null">
               Cerrar
@@ -343,22 +399,19 @@ const handleSettingsClick = () => {
             </div>
             <div class="flex justify-end">
               <button class="btn btn-primary btn-sm" @click="submitReviewForBooking(booking)">
-                Publicar reseña
+                <Save :size="14" />
+                {{ hasReview(booking.id) ? 'Actualizar' : 'Publicar' }} reseña
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div v-if="!adventuresLoading && adventures.length" class="grid gap-4">
-        <ReviewCard v-for="review in adventures" :key="review.id" :review="review" />
-      </div>
-
       <EmptyState
-        v-else-if="!adventuresLoading && !adventures.length && !completedBookings.length"
+        v-if="!adventuresLoading && !completedBookings.length"
         :icon="Compass"
         title="Sin aventuras aún"
-        message="Aún no has escrito reseñas. Comparte tu experiencia después de un tour completado."
+        message="Completa un tour para comenzar a compartir tu experiencia."
       >
         <button class="btn btn-primary" @click="router.push('/')">Explorar tours</button>
       </EmptyState>
@@ -715,6 +768,49 @@ const handleSettingsClick = () => {
   padding-bottom: var(--spacing-3);
   display: flex;
   justify-content: flex-end;
+}
+
+/* Review display in card */
+.adv-card__review-display {
+  margin: 0 var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border-left: 4px solid var(--color-warning);
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.review-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.review-stars svg {
+  color: var(--color-border);
+}
+
+.review-stars .star-filled {
+  color: var(--color-warning);
+  fill: var(--color-warning);
+}
+
+.review-title {
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.review-comment {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin: 0;
 }
 
 .adv-card__review-form {
