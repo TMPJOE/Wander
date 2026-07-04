@@ -1,10 +1,14 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useFavoritesStore } from '../stores/favorites'
+import { useBookingsStore } from '../stores/bookings'
 import { useApi } from '../composables/useApi'
 import TourCard from '../components/TourCard.vue'
+import ReviewCard from '../components/ReviewCard.vue'
+import EmptyState from '../components/EmptyState.vue'
+import StarRating from '../components/StarRating.vue'
 import { LogOut, Settings, Heart, Save } from '@lucide/vue'
 
 const authStore = useAuthStore()
@@ -13,6 +17,14 @@ const api = useApi()
 const router = useRouter()
 
 const activeTab = ref('favorites')
+const adventures = ref<any[]>([])
+const adventuresLoading = ref(false)
+const bookingsStore = useBookingsStore()
+const completedBookings = ref<any[]>([])
+const bookingReviewForm = ref<{ [k: number]: { rating: number; title: string; comment: string } }>(
+  {},
+)
+const activeBookingForm = ref<number | null>(null)
 const isEditing = ref(false)
 const saving = ref(false)
 
@@ -42,6 +54,69 @@ function initForm() {
     bio: authStore.user.bio || '',
     phone: authStore.user.phone || '',
   }
+}
+
+async function fetchAdventures() {
+  adventuresLoading.value = true
+  try {
+    const res = await api.get('/reviews/me')
+    adventures.value = res.data || []
+  } catch (e) {
+    console.error('Failed to fetch adventures', e)
+  } finally {
+    adventuresLoading.value = false
+  }
+}
+
+watch(activeTab, async (tab) => {
+  if (tab === 'adventures') {
+    if (adventures.value.length === 0) await fetchAdventures()
+    // ensure we have bookings to allow creating reviews from profile
+    try {
+      await bookingsStore.fetchMyBookings()
+      completedBookings.value = (bookingsStore.bookings || []).filter(
+        (b: any) => b.status === 'completed',
+      )
+      // initialize per-booking form state
+      completedBookings.value.forEach((b: any) => {
+        bookingReviewForm.value[b.id] = bookingReviewForm.value[b.id] || {
+          rating: 0,
+          title: '',
+          comment: '',
+        }
+      })
+    } catch (e) {
+      console.error('Failed to fetch bookings for adventures tab', e)
+    }
+  }
+})
+
+async function submitReviewForBooking(booking: any) {
+  const form = bookingReviewForm.value[booking.id]
+  if (!form || !form.rating || !form.comment.trim()) {
+    alert('Calificación y comentario son obligatorios.')
+    return
+  }
+  try {
+    await api.post(`/tours/${booking.tour_id}/reviews`, form)
+    // refresh lists
+    await fetchAdventures()
+    await bookingsStore.fetchMyBookings()
+    completedBookings.value = (bookingsStore.bookings || []).filter(
+      (b: any) => b.status === 'completed',
+    )
+    activeBookingForm.value = null
+  } catch (e) {
+    console.error('Failed to submit review from profile', e)
+    alert('Error al enviar reseña. Asegúrate de haber completado el tour y no haber reseñado ya.')
+  }
+}
+
+function formFor(id: number) {
+  if (!bookingReviewForm.value[id]) {
+    bookingReviewForm.value[id] = { rating: 0, title: '', comment: '' }
+  }
+  return bookingReviewForm.value[id]
 }
 
 async function saveProfile() {
@@ -110,6 +185,14 @@ const handleSettingsClick = () => {
       </button>
       <button
         class="tab-btn"
+        :class="{ 'tab-btn--active': activeTab === 'adventures' }"
+        @click="activeTab = 'adventures'"
+      >
+        <Heart :size="18" />
+        Mis Aventuras
+      </button>
+      <button
+        class="tab-btn"
         :class="{ 'tab-btn--active': activeTab === 'settings' }"
         @click="handleSettingsClick"
       >
@@ -136,6 +219,80 @@ const handleSettingsClick = () => {
         <p class="empty-text">Aún no tienes tours favoritos</p>
         <button class="btn btn-outline mt-3" @click="router.push('/')">Explorar tours</button>
       </div>
+    </div>
+
+    <!-- Tab Content: Adventures -->
+    <div class="container py-4" v-if="activeTab === 'adventures'">
+      <div v-if="adventuresLoading" class="flex flex-col gap-4">
+        <div v-for="i in 3" :key="i" class="skeleton h-28 rounded-lg"></div>
+      </div>
+
+      <!-- Completed bookings: allow creating reviews here -->
+      <div v-if="!adventuresLoading && completedBookings.length" class="grid gap-3 mb-4">
+        <div v-for="booking in completedBookings" :key="booking.id" class="card p-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <div class="text-sm font-semibold">{{ booking.tour_title }}</div>
+              <div class="text-xs text-secondary">
+                {{ new Date(booking.schedule_start).toLocaleDateString('es-MX') }}
+              </div>
+            </div>
+            <div>
+              <button
+                v-if="activeBookingForm !== booking.id"
+                class="btn btn-outline btn-sm"
+                @click="activeBookingForm = booking.id"
+              >
+                Escribir reseña
+              </button>
+              <button v-else class="btn btn-ghost btn-sm" @click="activeBookingForm = null">
+                Cerrar
+              </button>
+            </div>
+          </div>
+
+          <div v-if="activeBookingForm === booking.id" class="mt-3">
+            <div class="form-group mb-2">
+              <label class="form-label">Calificación</label>
+              <StarRating
+                :rating="formFor(booking.id).rating"
+                interactive
+                @rate="(v) => (formFor(booking.id).rating = v)"
+              />
+            </div>
+            <div class="form-group mb-2">
+              <label class="form-label">Título</label>
+              <input v-model="formFor(booking.id).title" type="text" class="form-input" />
+            </div>
+            <div class="form-group mb-2">
+              <label class="form-label">Comentario</label>
+              <textarea
+                v-model="formFor(booking.id).comment"
+                class="form-input form-textarea"
+                rows="3"
+              ></textarea>
+            </div>
+            <div class="flex justify-end">
+              <button class="btn btn-primary btn-sm" @click="submitReviewForBooking(booking)">
+                Publicar reseña
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!adventuresLoading && adventures.length" class="grid gap-4">
+        <ReviewCard v-for="review in adventures" :key="review.id" :review="review" />
+      </div>
+
+      <EmptyState
+        v-else
+        :icon="Heart"
+        title="Sin aventuras aún"
+        message="Aún no has escrito reseñas. Comparte tu experiencia después de un tour completado."
+      >
+        <button class="btn btn-primary" @click="router.push('/')">Explorar tours</button>
+      </EmptyState>
     </div>
 
     <!-- Tab Content: Settings -->

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue'
+import { onMounted, computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useToursStore } from '../stores/tours'
 import { useAuthStore } from '../stores/auth'
@@ -30,6 +30,9 @@ const api = useApi()
 const reviews = ref<any[]>([])
 const reviewsLoading = ref(false)
 const schedules = ref<any[]>([])
+const reviewForm = ref({ rating: 0, title: '', comment: '' })
+const myReview = ref<any | null>(null)
+const reviewSubmitting = ref(false)
 
 const tourId = computed(() => route.params.id as string)
 
@@ -85,6 +88,51 @@ async function fetchReviews() {
     /* empty */
   } finally {
     reviewsLoading.value = false
+  }
+}
+
+watch([reviews, () => authStore.user], () => {
+  if (!authStore.user) {
+    myReview.value = null
+    return
+  }
+  const existing = reviews.value.find((review) => review.user_id === authStore.user?.id) || null
+  myReview.value = existing
+  if (existing) {
+    reviewForm.value = {
+      rating: existing.rating,
+      title: existing.title || '',
+      comment: existing.comment || '',
+    }
+  } else {
+    reviewForm.value = { rating: 0, title: '', comment: '' }
+  }
+})
+
+async function submitReview() {
+  if (!authStore.isAuthenticated) {
+    router.push({ name: 'login', query: { redirect: `/tours/${tourId.value}` } })
+    return
+  }
+
+  if (!reviewForm.value.rating || !reviewForm.value.comment.trim()) {
+    alert('Calificación y comentario son obligatorios.')
+    return
+  }
+
+  reviewSubmitting.value = true
+  try {
+    if (myReview.value) {
+      await api.patch(`/reviews/${myReview.value.id}`, reviewForm.value)
+    } else {
+      await api.post(`/tours/${tourId.value}/reviews`, reviewForm.value)
+    }
+    await fetchReviews()
+  } catch (e) {
+    console.error(e)
+    alert('No se pudo enviar la reseña. Asegúrate de haber completado una reserva.')
+  } finally {
+    reviewSubmitting.value = false
   }
 }
 
@@ -248,6 +296,56 @@ function messageGuide() {
             >
               +{{ schedules.length - 3 }} fechas más
             </p>
+          </div>
+        </div>
+
+        <!-- Review Form -->
+        <div class="tour-detail__section">
+          <div class="section-header" style="margin-bottom: var(--spacing-3)">
+            <h2 class="tour-detail__section-title" style="margin-bottom: 0">Tu reseña</h2>
+          </div>
+          <div class="review-form card p-4">
+            <p class="text-sm text-secondary mb-3">
+              {{
+                myReview
+                  ? 'Edita tu reseña existente'
+                  : 'Comparte tu experiencia si has completado un tour'
+              }}
+            </p>
+            <div class="form-group mb-3">
+              <label class="form-label">Calificación</label>
+              <StarRating
+                :rating="reviewForm.rating"
+                interactive
+                @rate="(value) => (reviewForm.rating = value)"
+              />
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">Título</label>
+              <input
+                v-model="reviewForm.title"
+                type="text"
+                class="form-input"
+                placeholder="Resumen breve"
+              />
+            </div>
+            <div class="form-group mb-3">
+              <label class="form-label">Comentario</label>
+              <textarea
+                v-model="reviewForm.comment"
+                class="form-input form-textarea"
+                rows="4"
+                placeholder="Cuéntale a otros viajeros sobre tu experiencia"
+              ></textarea>
+            </div>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click="submitReview"
+              :disabled="reviewSubmitting"
+            >
+              {{ myReview ? 'Actualizar reseña' : 'Publicar reseña' }}
+            </button>
           </div>
         </div>
 

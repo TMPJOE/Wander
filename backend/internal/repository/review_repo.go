@@ -4,13 +4,16 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"wander/backend/internal/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type ReviewRepository interface {
 	Create(ctx context.Context, userID int, tourID int, bookingID *int, req models.ReviewCreateRequest) (*models.Review, error)
+	Update(ctx context.Context, reviewID int, userID int, req models.ReviewCreateRequest) (*models.Review, error)
 	ListByTourID(ctx context.Context, tourID int) ([]models.Review, error)
+	ListByUserID(ctx context.Context, userID int) ([]models.Review, error)
 }
 
 type PgReviewRepository struct {
@@ -23,13 +26,13 @@ func NewPgReviewRepository(pool *pgxpool.Pool) ReviewRepository {
 
 func (r *PgReviewRepository) Create(ctx context.Context, userID int, tourID int, bookingID *int, req models.ReviewCreateRequest) (*models.Review, error) {
 	query := `
-		INSERT INTO reviews (user_id, tour_id, booking_id, rating, comment)
-		VALUES ($1, $2, $3, $4, $5)
-		RETURNING id, user_id, tour_id, booking_id, rating, comment, created_at
+		INSERT INTO reviews (user_id, tour_id, booking_id, rating, title, comment)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id, user_id, tour_id, booking_id, rating, title, comment, created_at
 	`
 	res := &models.Review{}
-	err := r.pool.QueryRow(ctx, query, userID, tourID, bookingID, req.Rating, req.Comment).Scan(
-		&res.ID, &res.UserID, &res.TourID, &res.BookingID, &res.Rating, &res.Comment, &res.CreatedAt,
+	err := r.pool.QueryRow(ctx, query, userID, tourID, bookingID, req.Rating, req.Title, req.Comment).Scan(
+		&res.ID, &res.UserID, &res.TourID, &res.BookingID, &res.Rating, &res.Title, &res.Comment, &res.CreatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create review: %w", err)
@@ -37,9 +40,57 @@ func (r *PgReviewRepository) Create(ctx context.Context, userID int, tourID int,
 	return res, nil
 }
 
+func (r *PgReviewRepository) Update(ctx context.Context, reviewID int, userID int, req models.ReviewCreateRequest) (*models.Review, error) {
+	query := `
+		UPDATE reviews
+		SET rating = $1, title = $2, comment = $3
+		WHERE id = $4 AND user_id = $5
+		RETURNING id, user_id, tour_id, booking_id, rating, title, comment, created_at
+	`
+	res := &models.Review{}
+	err := r.pool.QueryRow(ctx, query, req.Rating, req.Title, req.Comment, reviewID, userID).Scan(
+		&res.ID, &res.UserID, &res.TourID, &res.BookingID, &res.Rating, &res.Title, &res.Comment, &res.CreatedAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update review: %w", err)
+	}
+	return res, nil
+}
+
+func (r *PgReviewRepository) ListByUserID(ctx context.Context, userID int) ([]models.Review, error) {
+	query := `
+		SELECT r.id, r.user_id, r.tour_id, r.booking_id, r.rating, r.title, r.comment, r.created_at,
+		       t.title as tour_title
+		FROM reviews r
+		JOIN tours t ON r.tour_id = t.id
+		WHERE r.user_id = $1
+		ORDER BY r.created_at DESC
+	`
+
+	rows, err := r.pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("list reviews user: %w", err)
+	}
+	defer rows.Close()
+
+	var reviews []models.Review
+	for rows.Next() {
+		var rev models.Review
+		err := rows.Scan(
+			&rev.ID, &rev.UserID, &rev.TourID, &rev.BookingID, &rev.Rating, &rev.Title, &rev.Comment, &rev.CreatedAt,
+			&rev.TourTitle,
+		)
+		if err != nil {
+			return nil, err
+		}
+		reviews = append(reviews, rev)
+	}
+	return reviews, nil
+}
+
 func (r *PgReviewRepository) ListByTourID(ctx context.Context, tourID int) ([]models.Review, error) {
 	query := `
-		SELECT r.id, r.user_id, r.tour_id, r.booking_id, r.rating, r.comment, r.created_at,
+		SELECT r.id, r.user_id, r.tour_id, r.booking_id, r.rating, r.title, r.comment, r.created_at,
 		       u.first_name || ' ' || u.last_name as user_name, u.avatar_url as user_avatar
 		FROM reviews r
 		JOIN users u ON r.user_id = u.id
@@ -56,7 +107,7 @@ func (r *PgReviewRepository) ListByTourID(ctx context.Context, tourID int) ([]mo
 	for rows.Next() {
 		var rev models.Review
 		err := rows.Scan(
-			&rev.ID, &rev.UserID, &rev.TourID, &rev.BookingID, &rev.Rating, &rev.Comment, &rev.CreatedAt,
+			&rev.ID, &rev.UserID, &rev.TourID, &rev.BookingID, &rev.Rating, &rev.Title, &rev.Comment, &rev.CreatedAt,
 			&rev.UserName, &rev.UserAvatar,
 		)
 		if err != nil {

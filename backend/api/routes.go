@@ -38,6 +38,8 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	travelerMux.HandleFunc("PATCH /bookings/{id}/cancel", h.BookingHandler.Cancel)
 
 	travelerMux.HandleFunc("POST /tours/{tourId}/reviews", h.ReviewHandler.Create)
+	travelerMux.HandleFunc("PATCH /reviews/{id}", h.ReviewHandler.Update)
+	travelerMux.HandleFunc("GET /reviews/me", h.ReviewHandler.ListByUser)
 
 	travelerMux.HandleFunc("GET /favorites", h.FavoriteHandler.List)
 	travelerMux.HandleFunc("POST /favorites/{tourId}", h.FavoriteHandler.Add)
@@ -85,6 +87,8 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	mux.Handle("/api/v1/favorites", travelerGroup)
 	mux.Handle("/api/v1/messages/", travelerGroup)
 	mux.Handle("/api/v1/messages", travelerGroup)
+	mux.Handle("/api/v1/reviews/", travelerGroup)
+	mux.Handle("/api/v1/reviews", travelerGroup)
 
 	mux.Handle("/api/v1/tours/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {

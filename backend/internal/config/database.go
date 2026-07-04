@@ -87,6 +87,16 @@ func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
 
 		_, err = pool.Exec(ctx, string(sqlBytes))
 		if err != nil {
+			// If the migration fails because the object already exists (e.g. column added manually),
+			// consider the migration effectively applied and record it so subsequent runs skip it.
+			if strings.Contains(err.Error(), "already exists") {
+				slog.Warn("migration execution reported existing object; recording as applied", "version", version, "error", err)
+				_, insErr := pool.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1)", version)
+				if insErr != nil {
+					return fmt.Errorf("record migration %s after partial apply: %w", version, insErr)
+				}
+				continue
+			}
 			return fmt.Errorf("execute migration %s: %w", fileName, err)
 		}
 

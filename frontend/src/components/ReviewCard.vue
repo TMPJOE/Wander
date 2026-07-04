@@ -1,27 +1,29 @@
 <script setup lang="ts">
-import StarRating from './StarRating.vue';
+import StarRating from './StarRating.vue'
 
 defineProps<{
   review: {
-    id: number;
-    rating: number;
-    comment: string;
-    created_at: string;
-    user_name?: string;
-    user_avatar?: string;
-  };
-}>();
+    id: number
+    rating: number
+    title?: string
+    comment: string
+    created_at: string
+    tour_title?: string
+    user_name?: string
+    user_avatar?: string
+  }
+}>()
 
 function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `Hace ${mins} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Hace ${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `Hace ${days}d`;
-  const months = Math.floor(days / 30);
-  return `Hace ${months} mes${months > 1 ? 'es' : ''}`;
+  const diff = Date.now() - new Date(dateStr).getTime()
+  const mins = Math.floor(diff / 60000)
+  if (mins < 60) return `Hace ${mins} min`
+  const hours = Math.floor(mins / 60)
+  if (hours < 24) return `Hace ${hours}h`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `Hace ${days}d`
+  const months = Math.floor(days / 30)
+  return `Hace ${months} mes${months > 1 ? 'es' : ''}`
 }
 </script>
 
@@ -43,6 +45,8 @@ function timeAgo(dateStr: string): string {
       </div>
       <StarRating :rating="review.rating" :size="14" />
     </div>
+    <p v-if="review.tour_title" class="review-card__tour-title">{{ review.tour_title }}</p>
+    <p v-if="review.title" class="review-card__title">{{ review.title }}</p>
     <p class="review-card__comment">{{ review.comment }}</p>
   </div>
 </template>
@@ -86,6 +90,20 @@ function timeAgo(dateStr: string): string {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.review-card__tour-title {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-1);
+  text-transform: uppercase;
+  letter-spacing: var(--letter-spacing-wide);
+}
+
+.review-card__title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-2);
 }
 
 .review-card__name {
