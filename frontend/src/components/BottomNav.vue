@@ -1,29 +1,41 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import { Compass, CalendarDays, MessageCircle, User, LayoutDashboard } from '@lucide/vue';
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { Compass, CalendarDays, MessageCircle, User, LayoutDashboard } from '@lucide/vue'
 
-const route = useRoute();
-const router = useRouter();
-const authStore = useAuthStore();
+const route = useRoute()
+const router = useRouter()
+const authStore = useAuthStore()
 
 interface NavItem {
-  name: string;
-  icon: typeof Compass;
-  route: string;
-  label: string;
-  requiresAuth?: boolean;
-  requiresGuide?: boolean;
+  name: string
+  icon: typeof Compass
+  route: string
+  label: string
+  requiresAuth?: boolean
+  requiresGuide?: boolean
 }
 
 const tabs = computed<NavItem[]>(() => {
   const items: NavItem[] = [
     { name: 'explore', icon: Compass, route: '/', label: 'Explorar' },
-    { name: 'my-bookings', icon: CalendarDays, route: '/bookings', label: 'Reservas', requiresAuth: true },
-    { name: 'messages', icon: MessageCircle, route: '/messages', label: 'Mensajes', requiresAuth: true },
+    {
+      name: 'my-bookings',
+      icon: CalendarDays,
+      route: '/bookings',
+      label: 'Reservas',
+      requiresAuth: true,
+    },
+    {
+      name: 'messages',
+      icon: MessageCircle,
+      route: '/messages',
+      label: 'Mensajes',
+      requiresAuth: true,
+    },
     { name: 'profile', icon: User, route: '/profile', label: 'Perfil', requiresAuth: true },
-  ];
+  ]
 
   if (authStore.isGuide) {
     items.splice(1, 0, {
@@ -32,23 +44,23 @@ const tabs = computed<NavItem[]>(() => {
       route: '/guide/dashboard',
       label: 'Panel',
       requiresGuide: true,
-    });
+    })
   }
 
-  return items;
-});
+  return items
+})
 
 function isActive(tab: NavItem): boolean {
-  if (tab.route === '/') return route.path === '/';
-  return route.path.startsWith(tab.route);
+  if (tab.route === '/') return route.path === '/'
+  return route.path.startsWith(tab.route)
 }
 
 function navigate(tab: NavItem) {
   if (tab.requiresAuth && !authStore.isAuthenticated) {
-    router.push({ name: 'login', query: { redirect: tab.route } });
-    return;
+    router.push({ name: 'login', query: { redirect: tab.route } })
+    return
   }
-  router.push(tab.route);
+  router.push(tab.route)
 }
 </script>
 
@@ -132,6 +144,7 @@ function navigate(tab: NavItem) {
 /* ─── Desktop: convert the fixed bottom bar into a left sidebar ─── */
 @media (min-width: 1024px) {
   .bottom-nav {
+    border-left: 1px solid var(--color-border-light);
     position: sticky;
     top: 0;
     align-self: flex-start;

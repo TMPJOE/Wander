@@ -115,7 +115,6 @@ button {
   .page {
     /* On desktop the side nav lives outside the content column, so reset
        the left offset and let the centered container handle alignment. */
-    padding-left: var(--content-padding);
   }
 }
 

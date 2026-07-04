@@ -159,7 +159,15 @@ function fetchWithFilters() {
 
 .explore__hero {
   padding: var(--spacing-8) 0 var(--spacing-4);
-  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-background) 100%);
+  background: linear-gradient(
+    308deg,
+    #f9f7f5 0%,
+    #f9f7f5 15%,
+    #e8b2a9 22%,
+    #e8b1a9 28%,
+    #f7f0ee 70%,
+    #f9f7f5 100%
+  );
 }
 
 .explore__greeting {

@@ -44,8 +44,8 @@ onMounted(async () => {
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
-  max-width: var(--max-width);
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   position: relative;
   background: var(--color-background);
 }
@@ -58,7 +58,7 @@ onMounted(async () => {
   padding-bottom: var(--bottom-nav-height);
 }
 
-/* Desktop: sidebar nav sits beside content inside the centered shell. */
+/* Desktop: sidebar nav sits beside content and spans the full viewport width. */
 @media (min-width: 1024px) {
   .app-shell {
     flex-direction: row;
@@ -68,6 +68,8 @@ onMounted(async () => {
     padding-bottom: 0;
     flex: 1;
     min-width: 0;
+    max-width: calc(100vw - var(--nav-width));
+    width: 100%;
   }
 }
 </style>

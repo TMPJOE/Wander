@@ -515,6 +515,14 @@ function messageGuide() {
   z-index: var(--z-sticky);
 }
 
+@media (min-width: 1024px) {
+  .book-bar {
+    right: var(--nav-width);
+    max-width: none;
+    width: auto;
+  }
+}
+
 .book-bar__price {
   display: flex;
   align-items: baseline;
