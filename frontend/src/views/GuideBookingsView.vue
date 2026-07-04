@@ -33,13 +33,33 @@ const filteredBookings = computed(() => {
   return bookings.value.filter((b) => b.status === filter.value)
 })
 
-async function updateStatus(id: number, status: string) {
+async function confirmBooking(id: number) {
   try {
-    await api.patch(`/guide/bookings/${id}/confirm`, { status })
+    await api.patch(`/bookings/${id}/confirm`)
     await fetchBookings()
   } catch (e) {
     console.error(e)
-    alert('Error al actualizar estado')
+    alert('Error al confirmar reserva')
+  }
+}
+
+async function rejectBooking(id: number) {
+  try {
+    await api.patch(`/bookings/${id}/reject`)
+    await fetchBookings()
+  } catch (e) {
+    console.error(e)
+    alert('Error al rechazar reserva')
+  }
+}
+
+async function completeBooking(id: number) {
+  try {
+    await api.patch(`/bookings/${id}/complete`)
+    await fetchBookings()
+  } catch (e) {
+    console.error(e)
+    alert('Error al marcar como completada')
   }
 }
 
@@ -138,13 +158,13 @@ function formatTime(dateStr: string) {
             <div class="flex gap-2" v-if="booking.status === 'pending'">
               <button
                 class="btn btn-error btn-xs flex items-center gap-1"
-                @click="updateStatus(booking.id, 'cancelled')"
+                @click="rejectBooking(booking.id)"
               >
                 <X :size="14" /> Rechazar
               </button>
               <button
                 class="btn btn-success btn-xs flex items-center gap-1"
-                @click="updateStatus(booking.id, 'confirmed')"
+                @click="confirmBooking(booking.id)"
               >
                 <Check :size="14" /> Confirmar
               </button>
@@ -152,7 +172,7 @@ function formatTime(dateStr: string) {
             <div v-else-if="booking.status === 'confirmed'">
               <button
                 class="btn btn-primary btn-xs flex items-center gap-1"
-                @click="updateStatus(booking.id, 'completed')"
+                @click="completeBooking(booking.id)"
               >
                 <Check :size="14" /> Marcar completado
               </button>

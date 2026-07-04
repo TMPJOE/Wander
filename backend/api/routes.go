@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strings"
 
 	"wander/backend/internal/handler"
 	"wander/backend/internal/middleware"
@@ -60,20 +61,31 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	guideMux.HandleFunc("DELETE /schedules/{id}", h.ScheduleHandler.Delete)
 
 	guideMux.HandleFunc("PATCH /bookings/{id}/confirm", h.BookingHandler.Confirm)
+	guideMux.HandleFunc("PATCH /bookings/{id}/complete", h.BookingHandler.Complete)
+	guideMux.HandleFunc("PATCH /bookings/{id}/reject", h.BookingHandler.Reject)
+
+	// Guide endpoint routing group (declared early so guide-only PATCH routes on
+	// shared paths like /bookings/ can dispatch into it below).
+	guideGroup := authMiddleware(middleware.RequireRole("guide")(http.StripPrefix("/api/v1", guideMux)))
 
 	// Register sub-muxes
 	travelerGroup := authMiddleware(http.StripPrefix("/api/v1", travelerMux))
 	mux.Handle("/api/v1/users/", travelerGroup)
 	mux.Handle("/api/v1/users", travelerGroup)
-	mux.Handle("/api/v1/bookings/", travelerGroup)
+	mux.Handle("/api/v1/bookings/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// PATCH confirm/complete/reject are guide-only; everything else is traveler.
+		if r.Method == http.MethodPatch && (strings.HasSuffix(r.URL.Path, "/confirm") || strings.HasSuffix(r.URL.Path, "/complete") || strings.HasSuffix(r.URL.Path, "/reject")) {
+			guideGroup.ServeHTTP(w, r)
+			return
+		}
+		travelerGroup.ServeHTTP(w, r)
+	}))
 	mux.Handle("/api/v1/bookings", travelerGroup)
 	mux.Handle("/api/v1/favorites/", travelerGroup)
 	mux.Handle("/api/v1/favorites", travelerGroup)
 	mux.Handle("/api/v1/messages/", travelerGroup)
 	mux.Handle("/api/v1/messages", travelerGroup)
 
-	// Guide endpoint routing group
-	guideGroup := authMiddleware(middleware.RequireRole("guide")(http.StripPrefix("/api/v1", guideMux)))
 	mux.Handle("/api/v1/tours/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
 			// Public GET falls back to root routing

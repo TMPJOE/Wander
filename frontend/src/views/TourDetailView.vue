@@ -113,156 +113,161 @@ function messageGuide() {
 
 <template>
   <div class="page tour-detail" v-if="tour">
-    <!-- Gallery -->
-    <div class="tour-detail__gallery">
-      <ImageGallery :images="images" />
-      <button class="tour-detail__back" @click="router.back()">
-        <ArrowLeft :size="20" />
-      </button>
-    </div>
-
-    <div class="container tour-detail__content">
-      <!-- Header -->
-      <div class="tour-detail__header">
-        <span v-if="tour.category_name" class="badge badge-secondary">{{
-          tour.category_name
-        }}</span>
-        <h1 class="tour-detail__title">{{ tour.title }}</h1>
-
-        <div class="tour-detail__meta">
-          <span class="tour-detail__meta-item">
-            <MapPin :size="14" :stroke-width="2" />
-            {{ tour.location }}
-          </span>
-          <span v-if="tour.avg_rating > 0" class="tour-detail__meta-item">
-            <Star :size="14" :stroke-width="0" fill="var(--color-star)" />
-            {{ tour.avg_rating.toFixed(1) }} ({{ tour.review_count }} reseñas)
-          </span>
-        </div>
+    <div class="layered-card">
+      <!-- Gallery -->
+      <div class="tour-detail__gallery">
+        <ImageGallery :images="images" />
+        <button class="tour-detail__back" @click="router.back()">
+          <ArrowLeft :size="20" />
+        </button>
       </div>
 
-      <!-- Quick Stats -->
-      <div class="tour-detail__stats">
-        <div class="stat-item">
-          <Clock :size="18" :stroke-width="1.8" />
-          <div>
-            <span class="stat-item__value">{{ formattedDuration }}</span>
-            <span class="stat-item__label">Duración</span>
-          </div>
-        </div>
-        <div class="stat-item">
-          <Users :size="18" :stroke-width="1.8" />
-          <div>
-            <span class="stat-item__value">{{ tour.max_guests }}</span>
-            <span class="stat-item__label">Máx. personas</span>
-          </div>
-        </div>
-        <div class="stat-item">
-          <Languages :size="18" :stroke-width="1.8" />
-          <div>
-            <span class="stat-item__value">{{ (tour.languages || []).join(', ') || '—' }}</span>
-            <span class="stat-item__label">Idioma</span>
-          </div>
-        </div>
-      </div>
+      <div class="container tour-detail__content">
+        <!-- Header -->
+        <div class="tour-detail__header">
+          <span v-if="tour.category_name" class="badge badge-secondary">{{
+            tour.category_name
+          }}</span>
+          <h1 class="tour-detail__title">{{ tour.title }}</h1>
 
-      <!-- Difficulty -->
-      <div v-if="tour.difficulty" class="tour-detail__section">
-        <span class="badge" :class="difficultyLabels[tour.difficulty]?.class || 'badge-secondary'">
-          {{ difficultyLabels[tour.difficulty]?.label || tour.difficulty }}
-        </span>
-      </div>
-
-      <!-- Description -->
-      <div class="tour-detail__section">
-        <h2 class="tour-detail__section-title">Descripción</h2>
-        <p class="tour-detail__description">{{ tour.description }}</p>
-      </div>
-
-      <!-- What's Included -->
-      <div v-if="whatIncluded.length" class="tour-detail__section">
-        <h2 class="tour-detail__section-title">¿Qué incluye?</h2>
-        <ul class="included-list">
-          <li v-for="(item, i) in whatIncluded" :key="i" class="included-item">
-            <CheckCircle2 :size="16" :stroke-width="2" class="included-icon" />
-            {{ item }}
-          </li>
-        </ul>
-      </div>
-
-      <!-- Meeting Point -->
-      <div v-if="tour.meeting_point" class="tour-detail__section">
-        <h2 class="tour-detail__section-title">Punto de encuentro</h2>
-        <div class="meeting-point">
-          <MapPin :size="16" :stroke-width="2" class="meeting-point__icon" />
-          <span>{{ tour.meeting_point }}</span>
-        </div>
-      </div>
-
-      <!-- Guide -->
-      <div class="tour-detail__section">
-        <h2 class="tour-detail__section-title">Tu guía</h2>
-        <GuideCard
-          :guide="{
-            id: tour.guide_id,
-            first_name: tour.guide_name?.split(' ')[0] || 'Guía',
-            last_name: tour.guide_name?.split(' ').slice(1).join(' ') || '',
-            avatar_url: tour.guide_avatar,
-            languages: tour.languages,
-          }"
-          @message="messageGuide"
-        />
-      </div>
-
-      <!-- Available Dates -->
-      <div v-if="schedules.length" class="tour-detail__section">
-        <h2 class="tour-detail__section-title">Fechas disponibles</h2>
-        <div class="schedule-preview">
-          <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-chip">
-            <span class="schedule-chip__date">
-              {{
-                new Date(s.start_time).toLocaleDateString('es-MX', {
-                  day: 'numeric',
-                  month: 'short',
-                })
-              }}
+          <div class="tour-detail__meta">
+            <span class="tour-detail__meta-item">
+              <MapPin :size="14" :stroke-width="2" />
+              {{ tour.location }}
             </span>
-            <span class="schedule-chip__time">
-              {{
-                new Date(s.start_time).toLocaleTimeString('es-MX', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })
-              }}
+            <span v-if="tour.avg_rating > 0" class="tour-detail__meta-item">
+              <Star :size="14" :stroke-width="0" fill="var(--color-star)" />
+              {{ tour.avg_rating.toFixed(1) }} ({{ tour.review_count }} reseñas)
             </span>
-            <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
           </div>
-          <p
-            v-if="schedules.length > 3"
-            class="text-muted"
-            style="font-size: var(--font-size-xs); margin-top: var(--spacing-2)"
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="tour-detail__stats">
+          <div class="stat-item">
+            <Clock :size="18" :stroke-width="1.8" />
+            <div>
+              <span class="stat-item__value">{{ formattedDuration }}</span>
+              <span class="stat-item__label">Duración</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <Users :size="18" :stroke-width="1.8" />
+            <div>
+              <span class="stat-item__value">{{ tour.max_guests }}</span>
+              <span class="stat-item__label">Máx. personas</span>
+            </div>
+          </div>
+          <div class="stat-item">
+            <Languages :size="18" :stroke-width="1.8" />
+            <div>
+              <span class="stat-item__value">{{ (tour.languages || []).join(', ') || '—' }}</span>
+              <span class="stat-item__label">Idioma</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Difficulty -->
+        <div v-if="tour.difficulty" class="tour-detail__section">
+          <span
+            class="badge"
+            :class="difficultyLabels[tour.difficulty]?.class || 'badge-secondary'"
           >
-            +{{ schedules.length - 3 }} fechas más
+            {{ difficultyLabels[tour.difficulty]?.label || tour.difficulty }}
+          </span>
+        </div>
+
+        <!-- Description -->
+        <div class="tour-detail__section">
+          <h2 class="tour-detail__section-title">Descripción</h2>
+          <p class="tour-detail__description">{{ tour.description }}</p>
+        </div>
+
+        <!-- What's Included -->
+        <div v-if="whatIncluded.length" class="tour-detail__section">
+          <h2 class="tour-detail__section-title">¿Qué incluye?</h2>
+          <ul class="included-list">
+            <li v-for="(item, i) in whatIncluded" :key="i" class="included-item">
+              <CheckCircle2 :size="16" :stroke-width="2" class="included-icon" />
+              {{ item }}
+            </li>
+          </ul>
+        </div>
+
+        <!-- Meeting Point -->
+        <div v-if="tour.meeting_point" class="tour-detail__section">
+          <h2 class="tour-detail__section-title">Punto de encuentro</h2>
+          <div class="meeting-point">
+            <MapPin :size="16" :stroke-width="2" class="meeting-point__icon" />
+            <span>{{ tour.meeting_point }}</span>
+          </div>
+        </div>
+
+        <!-- Guide -->
+        <div class="tour-detail__section">
+          <h2 class="tour-detail__section-title">Tu guía</h2>
+          <GuideCard
+            :guide="{
+              id: tour.guide_id,
+              first_name: tour.guide_name?.split(' ')[0] || 'Guía',
+              last_name: tour.guide_name?.split(' ').slice(1).join(' ') || '',
+              avatar_url: tour.guide_avatar,
+              languages: tour.languages,
+            }"
+            @message="messageGuide"
+          />
+        </div>
+
+        <!-- Available Dates -->
+        <div v-if="schedules.length" class="tour-detail__section">
+          <h2 class="tour-detail__section-title">Fechas disponibles</h2>
+          <div class="schedule-preview">
+            <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-chip">
+              <span class="schedule-chip__date">
+                {{
+                  new Date(s.start_time).toLocaleDateString('es-MX', {
+                    day: 'numeric',
+                    month: 'short',
+                  })
+                }}
+              </span>
+              <span class="schedule-chip__time">
+                {{
+                  new Date(s.start_time).toLocaleTimeString('es-MX', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                }}
+              </span>
+              <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
+            </div>
+            <p
+              v-if="schedules.length > 3"
+              class="text-muted"
+              style="font-size: var(--font-size-xs); margin-top: var(--spacing-2)"
+            >
+              +{{ schedules.length - 3 }} fechas más
+            </p>
+          </div>
+        </div>
+
+        <!-- Reviews -->
+        <div class="tour-detail__section">
+          <div class="section-header" style="margin-bottom: var(--spacing-3)">
+            <h2 class="tour-detail__section-title" style="margin-bottom: 0">
+              Reseñas
+              <span v-if="reviews.length" class="tour-detail__review-count"
+                >({{ reviews.length }})</span
+              >
+            </h2>
+          </div>
+          <div v-if="reviews.length" class="reviews-list">
+            <ReviewCard v-for="review in reviews.slice(0, 5)" :key="review.id" :review="review" />
+          </div>
+          <p v-else class="text-muted" style="font-size: var(--font-size-sm)">
+            Aún no hay reseñas para este tour.
           </p>
         </div>
-      </div>
-
-      <!-- Reviews -->
-      <div class="tour-detail__section">
-        <div class="section-header" style="margin-bottom: var(--spacing-3)">
-          <h2 class="tour-detail__section-title" style="margin-bottom: 0">
-            Reseñas
-            <span v-if="reviews.length" class="tour-detail__review-count"
-              >({{ reviews.length }})</span
-            >
-          </h2>
-        </div>
-        <div v-if="reviews.length" class="reviews-list">
-          <ReviewCard v-for="review in reviews.slice(0, 5)" :key="review.id" :review="review" />
-        </div>
-        <p v-else class="text-muted" style="font-size: var(--font-size-sm)">
-          Aún no hay reseñas para este tour.
-        </p>
       </div>
     </div>
 
@@ -297,6 +302,8 @@ function messageGuide() {
   margin: 0 auto;
 }
 
+.layered-card {
+}
 .tour-detail__gallery {
   position: relative;
 }
@@ -324,6 +331,9 @@ function messageGuide() {
 }
 
 .tour-detail__content {
+  z-index: 2;
+  position: relative;
+  margin-top: calc(-30px - var(--bottom-nav-height));
   padding-left: var(--content-padding);
   padding-right: var(--content-padding);
   padding-top: var(--spacing-5);

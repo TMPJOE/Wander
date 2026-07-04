@@ -25,6 +25,8 @@ func (h *BookingHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /bookings/{id}", h.GetByID)
 	mux.HandleFunc("PATCH /bookings/{id}/cancel", h.Cancel)
 	mux.HandleFunc("PATCH /bookings/{id}/confirm", h.Confirm)
+	mux.HandleFunc("PATCH /bookings/{id}/complete", h.Complete)
+	mux.HandleFunc("PATCH /bookings/{id}/reject", h.Reject)
 }
 
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
@@ -134,4 +136,50 @@ func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	utils.SendSuccess(w, http.StatusOK, "Reserva confirmada exitosamente", nil)
+}
+
+func (h *BookingHandler) Complete(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "ID inválido", err.Error())
+		return
+	}
+
+	guideID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
+		return
+	}
+
+	err = h.service.Complete(r.Context(), id, guideID)
+	if err != nil {
+		utils.SendError(w, http.StatusInternalServerError, "Error al marcar completada", err.Error())
+		return
+	}
+
+	utils.SendSuccess(w, http.StatusOK, "Reserva marcada como completada", nil)
+}
+
+func (h *BookingHandler) Reject(w http.ResponseWriter, r *http.Request) {
+	idStr := r.PathValue("id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		utils.SendError(w, http.StatusBadRequest, "ID inválido", err.Error())
+		return
+	}
+
+	guideID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
+		return
+	}
+
+	err = h.service.Reject(r.Context(), id, guideID)
+	if err != nil {
+		utils.SendError(w, http.StatusInternalServerError, "Error al rechazar", err.Error())
+		return
+	}
+
+	utils.SendSuccess(w, http.StatusOK, "Reserva rechazada exitosamente", nil)
 }

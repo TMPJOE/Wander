@@ -133,3 +133,52 @@ func (s *BookingService) Confirm(ctx context.Context, id int, guideID int) error
 
 	return s.repo.UpdateStatus(ctx, id, "confirmed")
 }
+
+func (s *BookingService) Complete(ctx context.Context, id int, guideID int) error {
+	b, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	tour, err := s.tourRepo.GetByID(ctx, b.TourID, 0)
+	if err != nil {
+		return err
+	}
+
+	if tour.GuideID != guideID {
+		return models.ErrForbidden
+	}
+
+	if b.Status != "confirmed" {
+		return fmt.Errorf("booking is not confirmed: %w", models.ErrConflict)
+	}
+
+	return s.repo.UpdateStatus(ctx, id, "completed")
+}
+
+func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error {
+	b, err := s.repo.GetByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	tour, err := s.tourRepo.GetByID(ctx, b.TourID, 0)
+	if err != nil {
+		return err
+	}
+
+	if tour.GuideID != guideID {
+		return models.ErrForbidden
+	}
+
+	if b.Status == "cancelled" || b.Status == "completed" {
+		return fmt.Errorf("booking already %s: %w", b.Status, models.ErrConflict)
+	}
+
+	if err := s.repo.UpdateStatus(ctx, id, "cancelled"); err != nil {
+		return err
+	}
+
+	// Restore spots to the schedule.
+	return s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
+}
