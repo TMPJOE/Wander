@@ -18,52 +18,52 @@ const DEFAULT_PALETTE: CategoryPalette = {
 
 const CATEGORY_PALETTES: Record<string, CategoryPalette> = {
   gastronomia: {
-    primary: '#e07a3c',
-    primaryDark: '#b85e23',
-    primaryLight: '#ee9a6a',
-    primary50: '#fdf3ee',
-    primary100: '#fbe1d2',
-    rgb: '224, 122, 60',
+    primary: '#d63031', // Rojo tomate vibrante
+    primaryDark: '#a82425',
+    primaryLight: '#e85d5d',
+    primary50: '#fde8e8',
+    primary100: '#f9c4c4',
+    rgb: '214, 48, 49',
   },
   'cultura-historia': {
-    primary: '#7c5a3e',
-    primaryDark: '#5d4329',
-    primaryLight: '#9a7a58',
-    primary50: '#faf6f2',
-    primary100: '#efe3d8',
-    rgb: '124, 90, 62',
+    primary: '#b8860b', // Dorado antiguo
+    primaryDark: '#8b6508',
+    primaryLight: '#d4a017',
+    primary50: '#fdf8eb',
+    primary100: '#f5e6c8',
+    rgb: '184, 134, 11',
   },
   aventura: {
-    primary: '#2c7a4b',
-    primaryDark: '#1f5a37',
-    primaryLight: '#479a6a',
-    primary50: '#eff7f2',
-    primary100: '#d6ebde',
-    rgb: '44, 122, 75',
+    primary: '#e67e22', // Naranja aventura
+    primaryDark: '#b86419',
+    primaryLight: '#f39c12',
+    primary50: '#fef5e7',
+    primary100: '#fde0b5',
+    rgb: '230, 126, 34',
   },
   'vida-nocturna': {
-    primary: '#5b3a9e',
-    primaryDark: '#422873',
-    primaryLight: '#7d5cc4',
-    primary50: '#f4f1fb',
-    primary100: '#e2d8f5',
-    rgb: '91, 58, 158',
+    primary: '#8e44ad', // Púrpura nocturno
+    primaryDark: '#6c3483',
+    primaryLight: '#a569bd',
+    primary50: '#f5eef8',
+    primary100: '#e8daef',
+    rgb: '142, 68, 173',
   },
   naturaleza: {
-    primary: '#3e8d6f',
-    primaryDark: '#2b6650',
-    primaryLight: '#5fa88c',
-    primary50: '#eef8f4',
-    primary100: '#d4ecdf',
-    rgb: '62, 141, 111',
+    primary: '#27ae60', // Verde naturaleza intenso
+    primaryDark: '#1e8449',
+    primaryLight: '#2ecc71',
+    primary50: '#eafaf1',
+    primary100: '#abebc6',
+    rgb: '39, 174, 96',
   },
   fotografia: {
-    primary: '#2f7e9e',
-    primaryDark: '#225e77',
-    primaryLight: '#55a0bd',
-    primary50: '#f0f8fb',
-    primary100: '#d6ecf3',
-    rgb: '47, 126, 158',
+    primary: '#2980b9', // Azul profundo
+    primaryDark: '#1f618d',
+    primaryLight: '#3498db',
+    primary50: '#ebf5fb',
+    primary100: '#aed6f1',
+    rgb: '41, 128, 185',
   },
 }
 

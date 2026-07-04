@@ -18,7 +18,7 @@ import nightlifeImg from '../assets/categories/nightlife.png'
 import natureImg from '../assets/categories/nature.png'
 import hikingImg from '../assets/categories/hiking.png'
 import waterImg from '../assets/categories/water.png'
-import wellnessImg from '../assets/categories/wellness.png'
+import photogImg from '../assets/categories/wellness.png'
 
 const SLUG_TO_IMAGE: Record<string, string> = {
   gastronomia: foodImg,
@@ -28,13 +28,12 @@ const SLUG_TO_IMAGE: Record<string, string> = {
   aventura: adventureImg,
   'vida-nocturna': nightlifeImg,
   naturaleza: natureImg,
-  fotografia: adventureImg,
+  fotografia: photogImg,
   senderismo: hikingImg,
   agua: waterImg,
-  bienestar: wellnessImg,
 }
 
-const FALLBACK_IMAGE = adventureImg
+const FALLBACK_IMAGE = waterImg
 
 function getCategoryImage(slug: string): string {
   return SLUG_TO_IMAGE[slug] || FALLBACK_IMAGE
@@ -140,7 +139,7 @@ function getCategoryImage(slug: string): string {
 @media (max-width: 768px) {
   .category-card {
     min-width: 240px;
-    height: 160px;
+    height: 120px;
   }
 
   .category-card__label {
