@@ -1,97 +1,113 @@
 <script setup lang="ts">
-import { onMounted, computed, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useToursStore } from '../stores/tours';
-import { useAuthStore } from '../stores/auth';
-import { useApi } from '../composables/useApi';
+import { onMounted, computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useToursStore } from '../stores/tours'
+import { useAuthStore } from '../stores/auth'
+import { useApi } from '../composables/useApi'
 import {
-  ArrowLeft, MapPin, Clock, Users, Star, Share2,
-  Heart, ChevronRight, CheckCircle2, Languages
-} from '@lucide/vue';
-import ImageGallery from '../components/ImageGallery.vue';
-import StarRating from '../components/StarRating.vue';
-import ReviewCard from '../components/ReviewCard.vue';
-import GuideCard from '../components/GuideCard.vue';
+  ArrowLeft,
+  MapPin,
+  Clock,
+  Users,
+  Star,
+  Share2,
+  Heart,
+  ChevronRight,
+  CheckCircle2,
+  Languages,
+} from '@lucide/vue'
+import ImageGallery from '../components/ImageGallery.vue'
+import StarRating from '../components/StarRating.vue'
+import ReviewCard from '../components/ReviewCard.vue'
+import GuideCard from '../components/GuideCard.vue'
 
-const route = useRoute();
-const router = useRouter();
-const toursStore = useToursStore();
-const authStore = useAuthStore();
-const api = useApi();
+const route = useRoute()
+const router = useRouter()
+const toursStore = useToursStore()
+const authStore = useAuthStore()
+const api = useApi()
 
-const reviews = ref<any[]>([]);
-const reviewsLoading = ref(false);
-const schedules = ref<any[]>([]);
+const reviews = ref<any[]>([])
+const reviewsLoading = ref(false)
+const schedules = ref<any[]>([])
 
-const tourId = computed(() => route.params.id as string);
+const tourId = computed(() => route.params.id as string)
 
-const tour = computed(() => toursStore.currentTour);
+const tour = computed(() => toursStore.currentTour)
 
 const images = computed<string[]>(() => {
-  if (!tour.value) return [];
-  const imgs = typeof tour.value.images === 'string'
-    ? JSON.parse(tour.value.images || '[]')
-    : (tour.value.images || []);
-  return imgs.length ? imgs : ['https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop'];
-});
+  if (!tour.value) return []
+  const imgs =
+    typeof tour.value.images === 'string'
+      ? JSON.parse(tour.value.images || '[]')
+      : tour.value.images || []
+  return imgs.length
+    ? imgs
+    : ['https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop']
+})
 
 const whatIncluded = computed<string[]>(() => {
-  if (!tour.value) return [];
-  const wi = typeof tour.value.what_included === 'string'
-    ? JSON.parse(tour.value.what_included || '[]')
-    : (tour.value.what_included || []);
-  return wi;
-});
+  if (!tour.value) return []
+  const wi =
+    typeof tour.value.what_included === 'string'
+      ? JSON.parse(tour.value.what_included || '[]')
+      : tour.value.what_included || []
+  return wi
+})
 
 const formattedDuration = computed(() => {
-  if (!tour.value) return '';
-  const h = Math.floor(tour.value.duration_minutes / 60);
-  const m = tour.value.duration_minutes % 60;
-  if (h === 0) return `${m} min`;
-  return m ? `${h}h ${m}m` : `${h} hora${h > 1 ? 's' : ''}`;
-});
+  if (!tour.value) return ''
+  const h = Math.floor(tour.value.duration_minutes / 60)
+  const m = tour.value.duration_minutes % 60
+  if (h === 0) return `${m} min`
+  return m ? `${h}h ${m}m` : `${h} hora${h > 1 ? 's' : ''}`
+})
 
 const difficultyLabels: Record<string, { label: string; class: string }> = {
   easy: { label: 'Fácil', class: 'badge-success' },
   moderate: { label: 'Moderado', class: 'badge-warning' },
   challenging: { label: 'Desafiante', class: 'badge-primary' },
   extreme: { label: 'Extremo', class: 'badge-error' },
-};
+}
 
 onMounted(async () => {
-  await toursStore.fetchTourById(tourId.value);
-  fetchReviews();
-  fetchSchedules();
-});
+  await toursStore.fetchTourById(tourId.value)
+  fetchReviews()
+  fetchSchedules()
+})
 
 async function fetchReviews() {
-  reviewsLoading.value = true;
+  reviewsLoading.value = true
   try {
-    const res = await api.get(`/tours/${tourId.value}/reviews`);
-    reviews.value = res.data || [];
-  } catch { /* empty */ } finally {
-    reviewsLoading.value = false;
+    const res = await api.get(`/tours/${tourId.value}/reviews`)
+    reviews.value = res.data || []
+  } catch {
+    /* empty */
+  } finally {
+    reviewsLoading.value = false
   }
 }
 
 async function fetchSchedules() {
   try {
-    const res = await api.get(`/tours/${tourId.value}/schedules`);
-    schedules.value = (res.data || []).filter((s: any) => new Date(s.start_time) > new Date());
-  } catch { /* empty */ }
+    const res = await api.get(`/tours/${tourId.value}/schedules`)
+    schedules.value = (res.data || []).filter((s: any) => new Date(s.start_time) > new Date())
+  } catch {
+    /* empty */
+  }
 }
 
 function goBook() {
   if (!authStore.isAuthenticated) {
-    router.push({ name: 'login', query: { redirect: `/tours/${tourId.value}/book` } });
-    return;
+    router.push({ name: 'login', query: { redirect: `/tours/${tourId.value}/book` } })
+    return
   }
-  router.push(`/tours/${tourId.value}/book`);
+  router.push(`/tours/${tourId.value}/book`)
 }
 
 function messageGuide() {
-  if (!authStore.isAuthenticated || !tour.value) return;
-  router.push(`/messages/${tour.value.guide_id}`);
+  if (!authStore.isAuthenticated || !tour.value) return
+  router.push(`/messages/${tour.value.guide_id}`)
 }
 </script>
 
@@ -108,7 +124,9 @@ function messageGuide() {
     <div class="container tour-detail__content">
       <!-- Header -->
       <div class="tour-detail__header">
-        <span v-if="tour.category_name" class="badge badge-secondary">{{ tour.category_name }}</span>
+        <span v-if="tour.category_name" class="badge badge-secondary">{{
+          tour.category_name
+        }}</span>
         <h1 class="tour-detail__title">{{ tour.title }}</h1>
 
         <div class="tour-detail__meta">
@@ -202,14 +220,28 @@ function messageGuide() {
         <div class="schedule-preview">
           <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-chip">
             <span class="schedule-chip__date">
-              {{ new Date(s.start_time).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) }}
+              {{
+                new Date(s.start_time).toLocaleDateString('es-MX', {
+                  day: 'numeric',
+                  month: 'short',
+                })
+              }}
             </span>
             <span class="schedule-chip__time">
-              {{ new Date(s.start_time).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }}
+              {{
+                new Date(s.start_time).toLocaleTimeString('es-MX', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              }}
             </span>
             <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
           </div>
-          <p v-if="schedules.length > 3" class="text-muted" style="font-size: var(--font-size-xs); margin-top: var(--spacing-2);">
+          <p
+            v-if="schedules.length > 3"
+            class="text-muted"
+            style="font-size: var(--font-size-xs); margin-top: var(--spacing-2)"
+          >
             +{{ schedules.length - 3 }} fechas más
           </p>
         </div>
@@ -217,16 +249,18 @@ function messageGuide() {
 
       <!-- Reviews -->
       <div class="tour-detail__section">
-        <div class="section-header" style="margin-bottom: var(--spacing-3);">
-          <h2 class="tour-detail__section-title" style="margin-bottom: 0;">
+        <div class="section-header" style="margin-bottom: var(--spacing-3)">
+          <h2 class="tour-detail__section-title" style="margin-bottom: 0">
             Reseñas
-            <span v-if="reviews.length" class="tour-detail__review-count">({{ reviews.length }})</span>
+            <span v-if="reviews.length" class="tour-detail__review-count"
+              >({{ reviews.length }})</span
+            >
           </h2>
         </div>
         <div v-if="reviews.length" class="reviews-list">
           <ReviewCard v-for="review in reviews.slice(0, 5)" :key="review.id" :review="review" />
         </div>
-        <p v-else class="text-muted" style="font-size: var(--font-size-sm);">
+        <p v-else class="text-muted" style="font-size: var(--font-size-sm)">
           Aún no hay reseñas para este tour.
         </p>
       </div>
@@ -246,11 +280,11 @@ function messageGuide() {
   </div>
 
   <!-- Loading State -->
-  <div v-else class="page container" style="padding-top: var(--spacing-8);">
-    <div class="skeleton" style="aspect-ratio: 16/10; margin-bottom: var(--spacing-4);"></div>
-    <div class="skeleton" style="height: 24px; width: 30%; margin-bottom: var(--spacing-3);"></div>
-    <div class="skeleton" style="height: 32px; width: 80%; margin-bottom: var(--spacing-3);"></div>
-    <div class="skeleton" style="height: 16px; width: 50%;"></div>
+  <div v-else class="page container" style="padding-top: var(--spacing-8)">
+    <div class="skeleton" style="aspect-ratio: 16/10; margin-bottom: var(--spacing-4)"></div>
+    <div class="skeleton" style="height: 24px; width: 30%; margin-bottom: var(--spacing-3)"></div>
+    <div class="skeleton" style="height: 32px; width: 80%; margin-bottom: var(--spacing-3)"></div>
+    <div class="skeleton" style="height: 16px; width: 50%"></div>
   </div>
 </template>
 
@@ -282,6 +316,8 @@ function messageGuide() {
 }
 
 .tour-detail__content {
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
   padding-top: var(--spacing-5);
   padding-bottom: calc(80px + var(--bottom-nav-height) + var(--spacing-4));
 }

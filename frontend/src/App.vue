@@ -54,5 +54,20 @@ onMounted(async () => {
   flex: 1;
   display: flex;
   flex-direction: column;
+  /* Leave space for the bottom nav bar on mobile/tablet. */
+  padding-bottom: var(--bottom-nav-height);
+}
+
+/* Desktop: sidebar nav sits beside content inside the centered shell. */
+@media (min-width: 1024px) {
+  .app-shell {
+    flex-direction: row;
+  }
+
+  .app-main {
+    padding-bottom: 0;
+    flex: 1;
+    min-width: 0;
+  }
 }
 </style>

@@ -128,4 +128,60 @@ function navigate(tab: NavItem) {
 .bottom-nav__item--active .bottom-nav__label {
   font-weight: var(--font-weight-bold);
 }
+
+/* ─── Desktop: convert the fixed bottom bar into a left sidebar ─── */
+@media (min-width: 1024px) {
+  .bottom-nav {
+    position: sticky;
+    top: 0;
+    align-self: flex-start;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: var(--nav-width);
+    height: 100vh;
+    height: 100dvh;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: var(--spacing-1);
+    padding: var(--spacing-6) var(--spacing-3);
+    border-top: none;
+    border-right: 1px solid var(--color-border-light);
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    z-index: var(--z-sticky);
+  }
+
+  .bottom-nav__item {
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: var(--spacing-3);
+    padding: var(--spacing-3);
+    width: 100%;
+  }
+
+  /* Active indicator switches from a top underline to a left edge bar. */
+  .bottom-nav__item::before {
+    top: 50%;
+    left: 0;
+    width: 3px;
+    height: 60%;
+    transform: translateY(-50%) scaleX(0);
+    border-radius: var(--radius-full);
+  }
+
+  .bottom-nav__item--active::before {
+    transform: translateY(-50%) scaleX(1);
+  }
+
+  .bottom-nav__item--active {
+    background: var(--color-primary-50);
+  }
+
+  .bottom-nav__label {
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+  }
+}
 </style>
