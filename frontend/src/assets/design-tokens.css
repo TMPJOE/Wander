@@ -1,57 +1,58 @@
 :root {
   /* ─── Primary Palette ─── */
-  --color-primary: #D05342;
-  --color-primary-dark: #B04130;
-  --color-primary-light: #E8755F;
-  --color-primary-50: #FDF2F0;
-  --color-primary-100: #FADED8;
+  --color-primary: #d05342;
+  --color-primary-dark: #b04130;
+  --color-primary-light: #e8755f;
+  --color-primary-50: #fdf2f0;
+  --color-primary-100: #faded8;
 
   /* ─── Secondary Palette ─── */
-  --color-secondary: #2C5E4C;
-  --color-secondary-dark: #1F4538;
-  --color-secondary-light: #3A7D65;
-  --color-secondary-50: #EFF6F3;
-  --color-secondary-100: #D4E8E0;
+  --color-secondary: #2c5e4c;
+  --color-secondary-dark: #1f4538;
+  --color-secondary-light: #3a7d65;
+  --color-secondary-50: #eff6f3;
+  --color-secondary-100: #d4e8e0;
 
   /* ─── Neutrals ─── */
-  --color-background: #F9F7F5;
-  --color-surface: #FFFFFF;
-  --color-surface-hover: #F5F3F1;
-  --color-text: #1A1A1A;
+  --color-background: #f9f7f5;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f5f3f1;
+  --color-text: #1a1a1a;
   --color-text-secondary: #555555;
   --color-text-light: #888888;
-  --color-text-inverse: #FFFFFF;
-  --color-border: #E5E0DB;
-  --color-border-light: #F0ECE8;
-  --color-divider: #EEEBE7;
+  --color-text-inverse: #ffffff;
+  --color-border: #e5e0db;
+  --color-border-light: #f0ece8;
+  --color-divider: #eeebe7;
   --color-overlay: rgba(0, 0, 0, 0.45);
 
   /* ─── Semantic ─── */
-  --color-error: #DC2626;
-  --color-error-bg: #FEF2F2;
-  --color-success: #16A34A;
-  --color-success-bg: #F0FDF4;
-  --color-warning: #F59E0B;
-  --color-warning-bg: #FFFBEB;
-  --color-info: #3B82F6;
-  --color-info-bg: #EFF6FF;
+  --color-error: #dc2626;
+  --color-error-bg: #fef2f2;
+  --color-success: #16a34a;
+  --color-success-bg: #f0fdf4;
+  --color-warning: #f59e0b;
+  --color-warning-bg: #fffbeb;
+  --color-info: #3b82f6;
+  --color-info-bg: #eff6ff;
 
   /* ─── Star Rating ─── */
-  --color-star: #F59E0B;
-  --color-star-empty: #D1D5DB;
+  --color-star: #f59e0b;
+  --color-star-empty: #d1d5db;
 
   /* ─── Typography ─── */
   /* Fluid type scale that scales from mobile defaults up to desktop sizes
      using viewport-relative clamped values (min..preferred..max). */
-  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  --font-size-xs: clamp(0.6875rem, 0.68rem + 0.05vw, 0.75rem);     /* 11 -> 12px */
-  --font-size-sm: clamp(0.8125rem, 0.80rem + 0.08vw, 0.875rem);     /* 13 -> 14px */
-  --font-size-base: clamp(0.9375rem, 0.92rem + 0.12vw, 1rem);       /* 15 -> 16px */
-  --font-size-lg: clamp(1.0625rem, 1.03rem + 0.18vw, 1.1875rem);    /* 17 -> 19px */
-  --font-size-xl: clamp(1.25rem, 1.18rem + 0.4vw, 1.5rem);          /* 20 -> 24px */
-  --font-size-2xl: clamp(1.5rem, 1.4rem + 0.6vw, 1.875rem);         /* 24 -> 30px */
-  --font-size-3xl: clamp(1.875rem, 1.7rem + 1vw, 2.5rem);          /* 30 -> 40px */
-  --font-size-4xl: clamp(2.25rem, 2rem + 1.4vw, 3.125rem);          /* 36 -> 50px */
+  --font-family:
+    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-size-xs: clamp(0.6875rem, 0.68rem + 0.05vw, 0.75rem); /* 11 -> 12px */
+  --font-size-sm: clamp(0.8125rem, 0.8rem + 0.08vw, 0.875rem); /* 13 -> 14px */
+  --font-size-base: clamp(0.9375rem, 0.92rem + 0.12vw, 1rem); /* 15 -> 16px */
+  --font-size-lg: clamp(1.0625rem, 1.03rem + 0.18vw, 1.1875rem); /* 17 -> 19px */
+  --font-size-xl: clamp(1.25rem, 1.18rem + 0.4vw, 1.5rem); /* 20 -> 24px */
+  --font-size-2xl: clamp(1.5rem, 1.4rem + 0.6vw, 1.875rem); /* 24 -> 30px */
+  --font-size-3xl: clamp(1.875rem, 1.7rem + 1vw, 2.5rem); /* 30 -> 40px */
+  --font-size-4xl: clamp(2.25rem, 2rem + 1.4vw, 3.125rem); /* 36 -> 50px */
 
   --font-weight-light: 300;
   --font-weight-normal: 400;
@@ -113,7 +114,6 @@
      widens and bottom navigation can shift into a sidebar. */
   --bottom-nav-height: 4rem;
   --header-height: 3.5rem;
-  --max-width: 480px;
   --content-padding: var(--spacing-4);
 
   /* Layout mode flag consumed by components/css to switch between the

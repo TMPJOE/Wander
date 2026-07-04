@@ -58,6 +58,11 @@ func (h *TourScheduleHandler) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// New schedules should be active by default unless explicitly disabled.
+	if !req.IsActive {
+		req.IsActive = true
+	}
+
 	schedule, err := h.service.Create(r.Context(), guideID, req)
 	if err != nil {
 		utils.SendError(w, http.StatusInternalServerError, "Error al crear horario", err.Error())

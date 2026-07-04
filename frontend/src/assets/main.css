@@ -301,7 +301,7 @@ button {
   align-items: center;
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-full);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-md);
   font-weight: var(--font-weight-medium);
   line-height: 1;
 }

@@ -1,75 +1,78 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ArrowLeft, Calendar, Users, Info } from '@lucide/vue';
-import { useToursStore } from '../stores/tours';
-import { useBookingsStore } from '../stores/bookings';
-import { useApi } from '../composables/useApi';
+import { ref, computed, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ArrowLeft, Calendar, Users, Info } from '@lucide/vue'
+import { useToursStore } from '../stores/tours'
+import { useBookingsStore } from '../stores/bookings'
+import { useApi } from '../composables/useApi'
 
-const route = useRoute();
-const router = useRouter();
-const toursStore = useToursStore();
-const bookingsStore = useBookingsStore();
-const api = useApi();
+const route = useRoute()
+const router = useRouter()
+const toursStore = useToursStore()
+const bookingsStore = useBookingsStore()
+const api = useApi()
 
-const tourId = computed(() => route.params.id as string);
-const schedules = ref<any[]>([]);
-const selectedScheduleId = ref<number | null>(null);
-const guestCount = ref(1);
-const notes = ref('');
+const tourId = computed(() => route.params.id as string)
+const schedules = ref<any[]>([])
+const selectedScheduleId = ref<number | null>(null)
+const guestCount = ref(1)
+const notes = ref('')
 
-const tour = computed(() => toursStore.currentTour);
+const tour = computed(() => toursStore.currentTour)
 
-const selectedSchedule = computed(() => 
-  schedules.value.find(s => s.id === selectedScheduleId.value)
-);
+const selectedSchedule = computed(() =>
+  schedules.value.find((s) => s.id === selectedScheduleId.value),
+)
 
 const totalPrice = computed(() => {
-  if (!tour.value) return 0;
-  return tour.value.price_per_person * guestCount.value;
-});
+  if (!tour.value) return 0
+  return tour.value.price_per_person * guestCount.value
+})
 
 onMounted(async () => {
   if (!tour.value || tour.value.id !== parseInt(tourId.value)) {
-    await toursStore.fetchTourById(tourId.value);
+    await toursStore.fetchTourById(tourId.value)
   }
-  await fetchSchedules();
-});
+  await fetchSchedules()
+})
 
 async function fetchSchedules() {
   try {
-    const res = await api.get(`/tours/${tourId.value}/schedules`);
-    schedules.value = (res.data || []).filter((s: any) => new Date(s.start_time) > new Date());
+    const res = await api.get(`/tours/${tourId.value}/schedules`, { params: { active: 'true' } })
+    schedules.value = (res.data || []).filter((s: any) => new Date(s.start_time) > new Date())
   } catch (e) {
-    console.error(e);
+    console.error(e)
   }
 }
 
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('es-MX', {
-    weekday: 'short', day: 'numeric', month: 'short'
-  });
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  })
 }
 
 function formatTime(dateStr: string) {
   return new Date(dateStr).toLocaleTimeString('es-MX', {
-    hour: '2-digit', minute: '2-digit'
-  });
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
 async function handleBook() {
-  if (!selectedScheduleId.value) return;
-  
+  if (!selectedScheduleId.value) return
+
   try {
     const response = await bookingsStore.createBooking({
       schedule_id: selectedScheduleId.value,
       guest_count: guestCount.value,
-      notes: notes.value
-    });
-    router.push(`/booking-success/${response.id}`);
+      notes: notes.value,
+    })
+    router.push(`/booking-success/${response.id}`)
   } catch (e) {
-    console.error('Failed to book', e);
-    alert('Ocurrió un error al procesar tu reserva.');
+    console.error('Failed to book', e)
+    alert('Ocurrió un error al procesar tu reserva.')
   }
 }
 </script>
@@ -87,21 +90,21 @@ async function handleBook() {
     <div class="container pb-20" v-if="tour">
       <div class="tour-summary">
         <h2 class="text-lg font-bold mb-1">{{ tour.title }}</h2>
-        <p class="text-sm text-secondary">${{ tour.price_per_person.toLocaleString('es-MX') }} por persona</p>
+        <p class="text-sm text-secondary">
+          ${{ tour.price_per_person.toLocaleString('es-MX') }} por persona
+        </p>
       </div>
 
       <div class="section">
-        <h3 class="section-title">
-          <Calendar :size="18" /> Selecciona una fecha
-        </h3>
-        
+        <h3 class="section-title"><Calendar :size="18" /> Selecciona una fecha</h3>
+
         <div v-if="schedules.length === 0" class="empty-state">
           No hay fechas disponibles para este tour en este momento.
         </div>
 
         <div v-else class="schedule-grid">
-          <button 
-            v-for="s in schedules" 
+          <button
+            v-for="s in schedules"
             :key="s.id"
             class="schedule-card"
             :class="{ 'schedule-card--active': selectedScheduleId === s.id }"
@@ -117,32 +120,32 @@ async function handleBook() {
       </div>
 
       <div class="section" v-if="selectedScheduleId">
-        <h3 class="section-title">
-          <Users :size="18" /> ¿Cuántas personas?
-        </h3>
-        
+        <h3 class="section-title"><Users :size="18" /> ¿Cuántas personas?</h3>
+
         <div class="counter">
-          <button 
-            class="counter-btn" 
+          <button
+            class="counter-btn"
             @click="guestCount > 1 && guestCount--"
             :disabled="guestCount <= 1"
-          >-</button>
+          >
+            -
+          </button>
           <span class="counter-val">{{ guestCount }}</span>
-          <button 
-            class="counter-btn" 
+          <button
+            class="counter-btn"
             @click="guestCount < (selectedSchedule?.available_spots || 1) && guestCount++"
             :disabled="guestCount >= (selectedSchedule?.available_spots || 1)"
-          >+</button>
+          >
+            +
+          </button>
         </div>
       </div>
 
       <div class="section" v-if="selectedScheduleId">
-        <h3 class="section-title">
-          <Info :size="18" /> Notas para el guía (Opcional)
-        </h3>
-        <textarea 
-          v-model="notes" 
-          class="form-input form-textarea" 
+        <h3 class="section-title"><Info :size="18" /> Notas para el guía (Opcional)</h3>
+        <textarea
+          v-model="notes"
+          class="form-input form-textarea"
           placeholder="Alergias, peticiones especiales..."
         ></textarea>
       </div>
@@ -154,11 +157,7 @@ async function handleBook() {
         <span class="price-label">Total</span>
         <span class="price-value">${{ totalPrice.toLocaleString('es-MX') }}</span>
       </div>
-      <button 
-        class="btn btn-primary" 
-        @click="handleBook"
-        :disabled="bookingsStore.loading"
-      >
+      <button class="btn btn-primary" @click="handleBook" :disabled="bookingsStore.loading">
         {{ bookingsStore.loading ? 'Procesando...' : 'Confirmar Reserva' }}
       </button>
     </div>
@@ -168,6 +167,10 @@ async function handleBook() {
 <style scoped>
 .bg-surface {
   background: var(--color-surface);
+}
+
+.container {
+  padding: 0 var(--content-padding);
 }
 
 .min-h-screen {
@@ -210,12 +213,24 @@ async function handleBook() {
   border-bottom: 1px solid var(--color-border-light);
 }
 
-.text-lg { font-size: var(--font-size-lg); }
-.font-bold { font-weight: var(--font-weight-bold); }
-.mb-1 { margin-bottom: var(--spacing-1); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-secondary { color: var(--color-text-secondary); }
-.text-error { color: var(--color-error); }
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+.mb-1 {
+  margin-bottom: var(--spacing-1);
+}
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.text-error {
+  color: var(--color-error);
+}
 
 .section {
   padding: var(--spacing-5) 0;
@@ -315,17 +330,19 @@ async function handleBook() {
 
 .bottom-bar {
   position: fixed;
-  bottom: 0;
+  bottom: var(--bottom-nav-height);
   left: 0;
   right: 0;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4) var(--spacing-5);
   background: var(--color-surface);
   border-top: 1px solid var(--color-border-light);
-  padding: var(--spacing-4);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  z-index: 10;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+  z-index: var(--z-sticky);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .price-summary {

@@ -289,6 +289,14 @@ function messageGuide() {
 </template>
 
 <style scoped>
+.tour-detail {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+}
+
 .tour-detail__gallery {
   position: relative;
 }
@@ -320,6 +328,9 @@ function messageGuide() {
   padding-right: var(--content-padding);
   padding-top: var(--spacing-5);
   padding-bottom: calc(80px + var(--bottom-nav-height) + var(--spacing-4));
+  background: var(--color-surface);
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
 }
 
 .tour-detail__header {
@@ -356,7 +367,7 @@ function messageGuide() {
   padding: var(--spacing-4);
   background: var(--color-surface);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xs);
+  box-shadow: var(--shadow-lg);
   margin-bottom: var(--spacing-6);
 }
 
