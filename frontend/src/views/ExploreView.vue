@@ -1,56 +1,53 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
-import { Search, SlidersHorizontal, MapPin } from '@lucide/vue';
-import { useToursStore } from '../stores/tours';
-import { useCategoriesStore } from '../stores/categories';
-import TourCard from '../components/TourCard.vue';
-import CategoryPill from '../components/CategoryPill.vue';
-import FilterDrawer from '../components/FilterDrawer.vue';
-import type { FilterValues } from '../components/FilterDrawer.vue';
+import { onMounted, ref } from 'vue'
+import { Search, SlidersHorizontal, MapPin } from '@lucide/vue'
+import { useToursStore } from '../stores/tours'
+import { useCategoriesStore } from '../stores/categories'
+import TourCard from '../components/TourCard.vue'
+import CategoryPill from '../components/CategoryPill.vue'
+import FilterDrawer from '../components/FilterDrawer.vue'
+import type { FilterValues } from '../components/FilterDrawer.vue'
 
-const toursStore = useToursStore();
-const categoriesStore = useCategoriesStore();
+const toursStore = useToursStore()
+const categoriesStore = useCategoriesStore()
 
-const searchQuery = ref('');
-const activeCategory = ref('');
-const showFilters = ref(false);
+const searchQuery = ref('')
+const activeCategory = ref('')
+const showFilters = ref(false)
 const currentFilters = ref<FilterValues>({
   difficulty: '',
   min_price: '',
   max_price: '',
   location: '',
-});
+})
 
 onMounted(async () => {
-  await Promise.all([
-    categoriesStore.fetchCategories(),
-    toursStore.fetchTours(),
-  ]);
-});
+  await Promise.all([categoriesStore.fetchCategories(), toursStore.fetchTours()])
+})
 
 function selectCategory(slug: string) {
-  activeCategory.value = activeCategory.value === slug ? '' : slug;
-  fetchWithFilters();
+  activeCategory.value = activeCategory.value === slug ? '' : slug
+  fetchWithFilters()
 }
 
 function handleSearch() {
-  fetchWithFilters();
+  fetchWithFilters()
 }
 
 function applyFilters(filters: FilterValues) {
-  currentFilters.value = filters;
-  fetchWithFilters();
+  currentFilters.value = filters
+  fetchWithFilters()
 }
 
 function fetchWithFilters() {
-  const params: Record<string, string> = {};
-  if (searchQuery.value) params.q = searchQuery.value;
-  if (activeCategory.value) params.category_slug = activeCategory.value;
-  if (currentFilters.value.difficulty) params.difficulty = currentFilters.value.difficulty;
-  if (currentFilters.value.min_price) params.min_price = currentFilters.value.min_price;
-  if (currentFilters.value.max_price) params.max_price = currentFilters.value.max_price;
-  if (currentFilters.value.location) params.location = currentFilters.value.location;
-  toursStore.fetchTours(params);
+  const params: Record<string, string> = {}
+  if (searchQuery.value) params.q = searchQuery.value
+  if (activeCategory.value) params.category_slug = activeCategory.value
+  if (currentFilters.value.difficulty) params.difficulty = currentFilters.value.difficulty
+  if (currentFilters.value.min_price) params.min_price = currentFilters.value.min_price
+  if (currentFilters.value.max_price) params.max_price = currentFilters.value.max_price
+  if (currentFilters.value.location) params.location = currentFilters.value.location
+  toursStore.fetchTours(params)
 }
 </script>
 
@@ -117,7 +114,11 @@ function fetchWithFilters() {
         <h2 class="section-title">
           {{ activeCategory ? 'Resultados' : 'Tours populares' }}
         </h2>
-        <span v-if="toursStore.tours.length" class="text-muted" style="font-size: var(--font-size-sm)">
+        <span
+          v-if="toursStore.tours.length"
+          class="text-muted"
+          style="font-size: var(--font-size-sm)"
+        >
           {{ toursStore.tours.length }} tour{{ toursStore.tours.length !== 1 ? 's' : '' }}
         </span>
       </div>
@@ -125,22 +126,18 @@ function fetchWithFilters() {
       <!-- Loading State -->
       <div v-if="toursStore.loading" class="tour-grid">
         <div v-for="i in 4" :key="i" class="tour-skeleton">
-          <div class="skeleton" style="aspect-ratio: 4/3;"></div>
-          <div style="padding: var(--spacing-3);">
-            <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px;"></div>
-            <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px;"></div>
-            <div class="skeleton" style="height: 12px; width: 40%;"></div>
+          <div class="skeleton" style="aspect-ratio: 4/3"></div>
+          <div style="padding: var(--spacing-3)">
+            <div class="skeleton" style="height: 12px; width: 60%; margin-bottom: 8px"></div>
+            <div class="skeleton" style="height: 16px; width: 90%; margin-bottom: 8px"></div>
+            <div class="skeleton" style="height: 12px; width: 40%"></div>
           </div>
         </div>
       </div>
 
       <!-- Tour Cards -->
       <div v-else-if="toursStore.tours.length" class="tour-grid">
-        <TourCard
-          v-for="tour in toursStore.tours"
-          :key="tour.id"
-          :tour="tour"
-        />
+        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" />
       </div>
 
       <!-- Empty State -->
@@ -151,11 +148,7 @@ function fetchWithFilters() {
     </section>
 
     <!-- Filter Drawer -->
-    <FilterDrawer
-      :open="showFilters"
-      @close="showFilters = false"
-      @apply="applyFilters"
-    />
+    <FilterDrawer :open="showFilters" @close="showFilters = false" @apply="applyFilters" />
   </div>
 </template>
 
@@ -204,7 +197,9 @@ function fetchWithFilters() {
   border: 1.5px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 0 var(--spacing-4);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 
 .search-bar:focus-within {
