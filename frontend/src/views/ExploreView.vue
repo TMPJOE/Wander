@@ -153,6 +153,10 @@ function fetchWithFilters() {
 </template>
 
 <style scoped>
+.container {
+  padding: 0 var(--content-padding);
+}
+
 .explore__hero {
   padding: var(--spacing-8) 0 var(--spacing-4);
   background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-background) 100%);

@@ -89,7 +89,16 @@ button {
   width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0 var(--content-padding);
+}
+
+.page {
+  flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  /* No horizontal padding: views supply their own. Only clear the bottom nav
+     on mobile/tablet; collapses to 0 on desktop (side nav). */
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
 }
 
 .page {

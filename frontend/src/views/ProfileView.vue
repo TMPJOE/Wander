@@ -1,66 +1,71 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
-import { useFavoritesStore } from '../stores/favorites';
-import { useApi } from '../composables/useApi';
-import TourCard from '../components/TourCard.vue';
-import { LogOut, Settings, Heart, Save } from '@lucide/vue';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { useFavoritesStore } from '../stores/favorites'
+import { useApi } from '../composables/useApi'
+import TourCard from '../components/TourCard.vue'
+import { LogOut, Settings, Heart, Save } from '@lucide/vue'
 
-const authStore = useAuthStore();
-const favoritesStore = useFavoritesStore();
-const api = useApi();
-const router = useRouter();
+const authStore = useAuthStore()
+const favoritesStore = useFavoritesStore()
+const api = useApi()
+const router = useRouter()
 
-const activeTab = ref('favorites');
-const isEditing = ref(false);
-const saving = ref(false);
+const activeTab = ref('favorites')
+const isEditing = ref(false)
+const saving = ref(false)
 
 const profileForm = ref({
   first_name: '',
   last_name: '',
   bio: '',
   phone: '',
-});
+})
 
 onMounted(async () => {
   if (authStore.user) {
-    initForm();
+    initForm()
   }
   try {
-    await favoritesStore.fetchFavorites();
+    await favoritesStore.fetchFavorites()
   } catch {
     // Ignore — favorites tab will show empty state
   }
-});
+})
 
 function initForm() {
-  if (!authStore.user) return;
+  if (!authStore.user) return
   profileForm.value = {
     first_name: authStore.user.first_name || '',
     last_name: authStore.user.last_name || '',
     bio: authStore.user.bio || '',
     phone: authStore.user.phone || '',
-  };
+  }
 }
 
 async function saveProfile() {
-  saving.value = true;
+  saving.value = true
   try {
-    const res = await api.put('/users/me', profileForm.value);
-    authStore.user = res.data;
-    isEditing.value = false;
+    const res = await api.put('/users/me', profileForm.value)
+    authStore.user = res.data
+    isEditing.value = false
   } catch (e) {
-    console.error(e);
-    alert('Error al guardar el perfil');
+    console.error(e)
+    alert('Error al guardar el perfil')
   } finally {
-    saving.value = false;
+    saving.value = false
   }
 }
 
 function handleLogout() {
-  authStore.logout();
-  router.push('/login');
+  authStore.logout()
+  router.push('/login')
+}
+
+const handleSettingsClick = () => {
+  activeTab.value = 'settings'
+  initForm()
 }
 </script>
 
@@ -76,10 +81,10 @@ function handleLogout() {
     <!-- Profile Info -->
     <div class="profile-header container" v-if="authStore.user">
       <div class="profile-avatar-wrap">
-        <img 
-          v-if="authStore.user.avatar_url" 
-          :src="authStore.user.avatar_url" 
-          class="profile-avatar" 
+        <img
+          v-if="authStore.user.avatar_url"
+          :src="authStore.user.avatar_url"
+          class="profile-avatar"
         />
         <div v-else class="profile-avatar profile-avatar--placeholder">
           {{ (authStore.user.first_name || 'U').charAt(0) }}
@@ -95,18 +100,18 @@ function handleLogout() {
 
     <!-- Tabs -->
     <div class="tabs container">
-      <button 
-        class="tab-btn" 
+      <button
+        class="tab-btn"
         :class="{ 'tab-btn--active': activeTab === 'favorites' }"
         @click="activeTab = 'favorites'"
       >
         <Heart :size="18" />
         Favoritos
       </button>
-      <button 
-        class="tab-btn" 
+      <button
+        class="tab-btn"
         :class="{ 'tab-btn--active': activeTab === 'settings' }"
-        @click="activeTab = 'settings'; initForm()"
+        @click="handleSettingsClick"
       >
         <Settings :size="18" />
         Ajustes
@@ -119,10 +124,10 @@ function handleLogout() {
         <div v-for="i in 2" :key="i" class="skeleton aspect-video rounded-xl"></div>
       </div>
       <div v-else-if="favoritesStore.favorites.length" class="grid-2 gap-4">
-        <TourCard 
-          v-for="fav in favoritesStore.favorites" 
-          :key="fav.id" 
-          :tour="{...fav, is_favorited: true}" 
+        <TourCard
+          v-for="fav in favoritesStore.favorites"
+          :key="fav.id"
+          :tour="{ ...fav, is_favorited: true }"
         />
       </div>
       <div v-else class="empty-favorites">
@@ -190,6 +195,9 @@ function handleLogout() {
 </template>
 
 <style scoped>
+.container {
+  padding: 0 var(--content-padding);
+}
 .header {
   display: flex;
   justify-content: space-between;
@@ -277,14 +285,34 @@ function handleLogout() {
   border-bottom-color: var(--color-primary);
 }
 
-.py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); }
-@media (max-width: 380px) { .grid-2 { grid-template-columns: 1fr; } }
-.gap-3 { gap: var(--spacing-3); }
-.gap-4 { gap: var(--spacing-4); }
-.mt-3 { margin-top: var(--spacing-3); }
-.aspect-video { aspect-ratio: 16/9; }
-.rounded-xl { border-radius: var(--radius-xl); }
+.py-4 {
+  padding-top: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+}
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+}
+@media (max-width: 380px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+.gap-3 {
+  gap: var(--spacing-3);
+}
+.gap-4 {
+  gap: var(--spacing-4);
+}
+.mt-3 {
+  margin-top: var(--spacing-3);
+}
+.aspect-video {
+  aspect-ratio: 16/9;
+}
+.rounded-xl {
+  border-radius: var(--radius-xl);
+}
 
 .empty-favorites {
   display: flex;
@@ -307,10 +335,18 @@ function handleLogout() {
   padding: var(--spacing-5);
 }
 
-.text-lg { font-size: var(--font-size-lg); }
-.font-semibold { font-weight: var(--font-weight-semibold); }
-.mb-4 { margin-bottom: var(--spacing-4); }
-.mt-2 { margin-top: var(--spacing-2); }
+.text-lg {
+  font-size: var(--font-size-lg);
+}
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+.mb-4 {
+  margin-bottom: var(--spacing-4);
+}
+.mt-2 {
+  margin-top: var(--spacing-2);
+}
 
 .info-grid {
   display: grid;
