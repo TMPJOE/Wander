@@ -774,9 +774,8 @@ const handleSettingsClick = () => {
 .adv-card__review-display {
   margin: 0 var(--spacing-3);
   padding: var(--spacing-4);
-  background: var(--color-surface);
+  background: var(--color-warning-bg);
   border-radius: var(--radius-md);
-  border-left: 4px solid var(--color-warning);
 }
 
 .review-header {
