@@ -38,7 +38,7 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	travelerMux.HandleFunc("PATCH /bookings/{id}/cancel", h.BookingHandler.Cancel)
 
 	travelerMux.HandleFunc("POST /tours/{tourId}/reviews", h.ReviewHandler.Create)
-	travelerMux.HandleFunc("PATCH /reviews/{id}", h.ReviewHandler.Update)
+	travelerMux.HandleFunc("PUT /reviews/{id}", h.ReviewHandler.Update)
 	travelerMux.HandleFunc("GET /reviews/me", h.ReviewHandler.ListByUser)
 
 	travelerMux.HandleFunc("GET /favorites", h.FavoriteHandler.List)

@@ -22,7 +22,7 @@ func NewReviewHandler(service *service.ReviewService) *ReviewHandler {
 func (h *ReviewHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tours/{tourId}/reviews", h.ListByTour)
 	mux.HandleFunc("POST /tours/{tourId}/reviews", h.Create)
-	mux.HandleFunc("PATCH /reviews/{id}", h.Update)
+	mux.HandleFunc("PUT /reviews/{id}", h.Update)
 }
 
 func (h *ReviewHandler) ListByTour(w http.ResponseWriter, r *http.Request) {

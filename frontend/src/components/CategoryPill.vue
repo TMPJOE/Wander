@@ -18,7 +18,7 @@ import nightlifeImg from '../assets/categories/nightlife.png'
 import natureImg from '../assets/categories/nature.png'
 import hikingImg from '../assets/categories/hiking.png'
 import waterImg from '../assets/categories/water.png'
-import photogImg from '../assets/categories/wellness.png'
+import photogImg from '../assets/categories/photography.png'
 
 const SLUG_TO_IMAGE: Record<string, string> = {
   gastronomia: foodImg,
@@ -100,7 +100,6 @@ function getCategoryImage(slug: string): string {
   justify-content: center;
   width: 100%;
   height: 100%;
-  padding: var(--spacing-6);
 }
 
 .category-card__label {

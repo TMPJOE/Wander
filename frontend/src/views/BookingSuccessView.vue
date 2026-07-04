@@ -54,7 +54,7 @@ onMounted(async () => {
       </div>
 
       <div class="actions">
-        <button class="btn btn-primary btn-block mb-3" @click="router.push('/bookings')">
+        <button class="btn btn-secondary btn-block mb-3" @click="router.push('/bookings')">
           Ver mis reservas
           <ArrowRight :size="18" />
         </button>
@@ -82,7 +82,7 @@ onMounted(async () => {
   color: var(--color-text-light);
 }
 .text-primary {
-  color: var(--color-primary);
+  color: var(--color-secondary);
 }
 .font-medium {
   font-weight: var(--font-weight-medium);

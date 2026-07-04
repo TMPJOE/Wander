@@ -157,7 +157,11 @@ async function handleBook() {
         <span class="price-label">Total</span>
         <span class="price-value">${{ totalPrice.toLocaleString('es-MX') }}</span>
       </div>
-      <button class="btn btn-primary" @click="handleBook" :disabled="bookingsStore.loading">
+      <button
+        class="btn btn-secondary-light btn-lg"
+        @click="handleBook"
+        :disabled="bookingsStore.loading"
+      >
         {{ bookingsStore.loading ? 'Procesando...' : 'Confirmar Reserva' }}
       </button>
     </div>
@@ -358,6 +362,6 @@ async function handleBook() {
 .price-value {
   font-size: var(--font-size-xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  color: var(--color-secondary);
 }
 </style>

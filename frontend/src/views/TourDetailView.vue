@@ -280,7 +280,7 @@ function messageGuide() {
         <span class="book-bar__amount">${{ tour.price_per_person.toLocaleString('es-MX') }}</span>
         <span class="book-bar__unit">/ persona</span>
       </div>
-      <button class="btn btn-primary btn-lg" @click="goBook">
+      <button class="btn btn-secondary-light btn-lg" @click="goBook">
         Reservar ahora
         <ChevronRight :size="18" />
       </button>
@@ -305,8 +305,6 @@ function messageGuide() {
   margin: 0 auto;
 }
 
-.layered-card {
-}
 .tour-detail__gallery {
   position: relative;
 }
@@ -535,7 +533,7 @@ function messageGuide() {
 .book-bar__amount {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
-  color: var(--color-primary);
+  color: var(--color-secondary);
 }
 
 .book-bar__unit {
