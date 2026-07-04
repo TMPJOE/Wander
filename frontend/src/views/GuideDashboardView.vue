@@ -25,22 +25,15 @@ onMounted(async () => {
   }
 
   try {
-    // We would ideally have a dedicated stats endpoint
-    // For now we can fetch guide bookings and tours to calculate
-    const toursRes = await api.get('/guide/tours')
-    stats.value.active_tours = toursRes.data?.length || 0
+    const statsRes = await api.get('/guide/stats')
+    const data = statsRes.data || {}
+    stats.value.total_bookings = data.total_bookings || 0
+    stats.value.total_revenue = data.total_revenue || 0
+    stats.value.active_tours = data.published_tours || 0
+    stats.value.average_rating = data.avg_rating || 0
 
     const bookingsRes = await api.get('/bookings')
-    const bookings = bookingsRes.data || []
-    recentBookings.value = bookings.slice(0, 5)
-
-    stats.value.total_bookings = bookings.length
-    stats.value.total_revenue = bookings
-      .filter((b: any) => b.status === 'completed' || b.status === 'confirmed')
-      .reduce((sum: number, b: any) => sum + b.total_price, 0)
-
-    // Mock rating for demo
-    stats.value.average_rating = 4.8
+    recentBookings.value = (bookingsRes.data || []).slice(0, 5)
   } catch (e) {
     console.error(e)
   }
