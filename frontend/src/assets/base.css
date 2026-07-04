@@ -12,6 +12,10 @@ html {
   -moz-text-size-adjust: 100%;
   text-size-adjust: 100%;
   scroll-behavior: smooth;
+  /* Base font size scales gently across viewports so rem-based values
+     stay legible on large desktop screens without blowing up on mobile. */
+  font-size: clamp(100%, 0.95rem + 0.3vw, 106%);
+  overflow-x: hidden;
 }
 
 body {

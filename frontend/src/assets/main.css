@@ -18,29 +18,71 @@ button {
 }
 
 /* ─── Utility Classes ─── */
-.text-primary { color: var(--color-primary); }
-.text-secondary { color: var(--color-secondary); }
-.text-muted { color: var(--color-text-light); }
-.text-center { text-align: center; }
+.text-primary {
+  color: var(--color-primary);
+}
+.text-secondary {
+  color: var(--color-secondary);
+}
+.text-muted {
+  color: var(--color-text-light);
+}
+.text-center {
+  text-align: center;
+}
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.flex-wrap { flex-wrap: wrap; }
-.items-center { align-items: center; }
-.items-start { align-items: flex-start; }
-.items-end { align-items: flex-end; }
-.justify-between { justify-content: space-between; }
-.justify-center { justify-content: center; }
-.justify-end { justify-content: flex-end; }
-.flex-1 { flex: 1; }
-.gap-1 { gap: var(--spacing-1); }
-.gap-2 { gap: var(--spacing-2); }
-.gap-3 { gap: var(--spacing-3); }
-.gap-4 { gap: var(--spacing-4); }
-.gap-6 { gap: var(--spacing-6); }
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.items-center {
+  align-items: center;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-end {
+  align-items: flex-end;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-center {
+  justify-content: center;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+.flex-1 {
+  flex: 1;
+}
+.gap-1 {
+  gap: var(--spacing-1);
+}
+.gap-2 {
+  gap: var(--spacing-2);
+}
+.gap-3 {
+  gap: var(--spacing-3);
+}
+.gap-4 {
+  gap: var(--spacing-4);
+}
+.gap-6 {
+  gap: var(--spacing-6);
+}
 
-.w-full { width: 100%; }
-.relative { position: relative; }
+.w-full {
+  width: 100%;
+}
+.relative {
+  position: relative;
+}
 
 /* ─── Container ─── */
 .container {
@@ -52,7 +94,51 @@ button {
 
 .page {
   flex: 1;
+  width: 100%;
+  max-width: var(--max-width);
+  margin: 0 auto;
+  /* Leave room for the bottom nav on mobile/tablet; collapses to 0 on desktop
+     where the nav becomes a sidebar handled via --nav-width offset. */
   padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
+}
+
+@media (min-width: 1024px) {
+  .page {
+    /* On desktop the side nav lives outside the content column, so reset
+       the left offset and let the centered container handle alignment. */
+    padding-left: var(--content-padding);
+  }
+}
+
+/* ─── Card grid utility (auto-responds to viewport) ─── */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--grid-gap);
+}
+
+@media (min-width: 480px) {
+  .card-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .card-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .card-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .card-grid--4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 
 /* ─── Card ─── */
@@ -147,6 +233,14 @@ button {
   width: 100%;
 }
 
+/* On desktop, full-width buttons read as too wide; constrain centered CTAs. */
+@media (min-width: 768px) {
+  .btn-block {
+    max-width: 480px;
+    margin: 0 auto;
+  }
+}
+
 /* ─── Form Inputs ─── */
 .form-group {
   display: flex;
@@ -167,7 +261,9 @@ button {
   border-radius: var(--radius-md);
   font-size: var(--font-size-base);
   background: var(--color-surface);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
   outline: none;
 }
 
@@ -228,15 +324,24 @@ button {
 
 /* ─── Skeleton Loading ─── */
 .skeleton {
-  background: linear-gradient(90deg, var(--color-border-light) 25%, var(--color-divider) 50%, var(--color-border-light) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-border-light) 25%,
+    var(--color-divider) 50%,
+    var(--color-border-light) 75%
+  );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s infinite ease-in-out;
   border-radius: var(--radius-md);
 }
 
 @keyframes skeleton-shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ─── Vue Transitions ─── */
@@ -267,7 +372,9 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--spacing-4);
   margin-bottom: var(--spacing-4);
+  flex-wrap: wrap;
 }
 
 .section-title {

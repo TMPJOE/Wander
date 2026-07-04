@@ -1,26 +1,26 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { RouterView, useRoute } from 'vue-router';
-import { useAuthStore } from './stores/auth';
-import { useApi } from './composables/useApi';
-import BottomNav from './components/BottomNav.vue';
+import { onMounted } from 'vue'
+import { RouterView, useRoute } from 'vue-router'
+import { useAuthStore } from './stores/auth'
+import { useApi } from './composables/useApi'
+import BottomNav from './components/BottomNav.vue'
 
-const authStore = useAuthStore();
-const api = useApi();
-const route = useRoute();
+const authStore = useAuthStore()
+const api = useApi()
+const route = useRoute()
 
-const hideBottomNav = ['login', 'register'];
+const hideBottomNav = ['login', 'register']
 
 onMounted(async () => {
   if (authStore.token && !authStore.user) {
     try {
-      const response = await api.get('/users/me');
-      authStore.user = response.data;
+      const response = await api.get('/users/me')
+      authStore.user = response.data
     } catch {
-      authStore.logout();
+      authStore.logout()
     }
   }
-});
+})
 </script>
 
 <template>
@@ -43,6 +43,7 @@ onMounted(async () => {
   flex-direction: column;
   min-height: 100vh;
   min-height: 100dvh;
+  width: 100%;
   max-width: var(--max-width);
   margin: 0 auto;
   position: relative;
