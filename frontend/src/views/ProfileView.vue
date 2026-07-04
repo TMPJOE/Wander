@@ -9,7 +9,7 @@ import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import StarRating from '../components/StarRating.vue'
-import { LogOut, Settings, Heart, Save } from '@lucide/vue'
+import { LogOut, Settings, Heart, Compass, Save, Calendar, Users, CreditCard, MapPin } from '@lucide/vue'
 
 const authStore = useAuthStore()
 const favoritesStore = useFavoritesStore()
@@ -119,6 +119,39 @@ function formFor(id: number) {
   return bookingReviewForm.value[id]
 }
 
+function onRateFor(booking: any, value: number) {
+  formFor(booking.id).rating = value
+}
+
+const PLACEHOLDER_IMG =
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+
+function bookingImage(booking: any): string {
+  if (!booking.tour_image) return PLACEHOLDER_IMG
+  try {
+    const imgs = JSON.parse(booking.tour_image)
+    return imgs[0] || PLACEHOLDER_IMG
+  } catch {
+    return booking.tour_image
+  }
+}
+
+function bookingDate(booking: any): string {
+  return new Date(booking.schedule_start).toLocaleDateString('es-MX', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  })
+}
+
+function bookingTime(booking: any): string {
+  return new Date(booking.schedule_start).toLocaleTimeString('es-MX', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
 async function saveProfile() {
   saving.value = true
   try {
@@ -188,7 +221,7 @@ const handleSettingsClick = () => {
         :class="{ 'tab-btn--active': activeTab === 'adventures' }"
         @click="activeTab = 'adventures'"
       >
-        <Heart :size="18" />
+        <Compass :size="18" />
         Mis Aventuras
       </button>
       <button
@@ -227,37 +260,59 @@ const handleSettingsClick = () => {
         <div v-for="i in 3" :key="i" class="skeleton h-28 rounded-lg"></div>
       </div>
 
-      <!-- Completed bookings: allow creating reviews here -->
-      <div v-if="!adventuresLoading && completedBookings.length" class="grid gap-3 mb-4">
-        <div v-for="booking in completedBookings" :key="booking.id" class="card p-4">
-          <div class="flex justify-between items-center">
-            <div>
-              <div class="text-sm font-semibold">{{ booking.tour_title }}</div>
-              <div class="text-xs text-secondary">
-                {{ new Date(booking.schedule_start).toLocaleDateString('es-MX') }}
+      <!-- Completed bookings list -->
+      <div v-if="!adventuresLoading && completedBookings.length" class="adventures-list mb-4">
+        <div v-for="booking in completedBookings" :key="booking.id" class="adv-card card">
+          <div class="adv-card__header">
+            <span class="badge badge-primary">Completada</span>
+            <span class="adv-card__id">Reserva #{{ booking.id }}</span>
+          </div>
+
+          <div class="adv-card__body">
+            <img :src="bookingImage(booking)" :alt="booking.tour_title" class="adv-card__image" />
+            <div class="adv-card__info">
+              <h3 class="adv-card__title">{{ booking.tour_title }}</h3>
+              <p class="adv-card__location">
+                <MapPin :size="14" />
+                {{ booking.tour_location || booking.guide_name }}
+              </p>
+              <div class="adv-card__details">
+                <div class="detail-item">
+                  <Calendar :size="14" class="detail-icon" />
+                  <span>{{ bookingDate(booking) }} • {{ bookingTime(booking) }}</span>
+                </div>
+                <div class="detail-item">
+                  <Users :size="14" class="detail-icon" />
+                  <span>{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="detail-item">
+                  <CreditCard :size="14" class="detail-icon" />
+                  <span class="font-semibold">${{ booking.total_price.toLocaleString('es-MX') }}</span>
+                </div>
               </div>
-            </div>
-            <div>
-              <button
-                v-if="activeBookingForm !== booking.id"
-                class="btn btn-outline btn-sm"
-                @click="activeBookingForm = booking.id"
-              >
-                Escribir reseña
-              </button>
-              <button v-else class="btn btn-ghost btn-sm" @click="activeBookingForm = null">
-                Cerrar
-              </button>
             </div>
           </div>
 
-          <div v-if="activeBookingForm === booking.id" class="mt-3">
+          <div class="adv-card__footer">
+            <button
+              v-if="activeBookingForm !== booking.id"
+              class="btn btn-outline btn-md"
+              @click="activeBookingForm = booking.id"
+            >
+              Escribir reseña
+            </button>
+            <button v-else class="btn btn-ghost btn-md" @click="activeBookingForm = null">
+              Cerrar
+            </button>
+          </div>
+
+          <div v-if="activeBookingForm === booking.id" class="adv-card__review-form">
             <div class="form-group mb-2">
               <label class="form-label">Calificación</label>
               <StarRating
                 :rating="formFor(booking.id).rating"
                 interactive
-                @rate="(v) => (formFor(booking.id).rating = v)"
+                @rate="(v: number) => onRateFor(booking, v)"
               />
             </div>
             <div class="form-group mb-2">
@@ -286,8 +341,8 @@ const handleSettingsClick = () => {
       </div>
 
       <EmptyState
-        v-else
-        :icon="Heart"
+        v-else-if="!adventuresLoading && !adventures.length && !completedBookings.length"
+        :icon="Compass"
         title="Sin aventuras aún"
         message="Aún no has escrito reseñas. Comparte tu experiencia después de un tour completado."
       >
@@ -533,5 +588,113 @@ const handleSettingsClick = () => {
   font-size: var(--font-size-sm);
   color: var(--color-text);
   font-weight: var(--font-weight-medium);
+}
+
+/* Mis Aventuras card (mirrors BookingCard design) */
+.adventures-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.adv-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-3);
+}
+
+.adv-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--color-border-light);
+  padding: var(--spacing-3);
+  margin-bottom: var(--spacing-1);
+}
+
+.adv-card__id {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+  font-weight: var(--font-weight-medium);
+  margin-right: var(--spacing-2);
+}
+
+.adv-card__body {
+  padding-top: var(--spacing-3);
+  padding-bottom: var(--spacing-3);
+  padding-left: var(--spacing-8);
+  padding-right: var(--spacing-8);
+  display: flex;
+  gap: var(--spacing-4);
+}
+
+.adv-card__image {
+  width: 90px;
+  height: 90px;
+  border-radius: var(--radius-md);
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.adv-card__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-1);
+}
+
+.adv-card__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+}
+
+.adv-card__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+  margin-bottom: var(--spacing-2);
+}
+
+.adv-card__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.detail-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.detail-icon {
+  color: var(--color-text-light);
+}
+
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.adv-card__footer {
+  margin-top: var(--spacing-2);
+  padding-right: var(--spacing-3);
+  padding-bottom: var(--spacing-3);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.adv-card__review-form {
+  margin: 0 var(--spacing-3) var(--spacing-3);
+  padding: var(--spacing-4);
+  background: var(--color-secondary-50);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
 }
 </style>
