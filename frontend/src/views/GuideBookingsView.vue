@@ -152,7 +152,9 @@ function formatTime(dateStr: string) {
               >
                 V
               </div>
-              <span class="text-sm font-medium">Viajero (ID: {{ booking.user_id }})</span>
+              <span class="text-sm font-medium">
+                Viajero: {{ booking.user_name || `#${booking.user_id}` }}
+              </span>
             </div>
 
             <div class="flex gap-2" v-if="booking.status === 'pending'">

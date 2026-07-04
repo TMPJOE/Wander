@@ -30,7 +30,7 @@ onMounted(async () => {
     const toursRes = await api.get('/guide/tours')
     stats.value.active_tours = toursRes.data?.length || 0
 
-    const bookingsRes = await api.get('/guide/bookings')
+    const bookingsRes = await api.get('/bookings')
     const bookings = bookingsRes.data || []
     recentBookings.value = bookings.slice(0, 5)
 

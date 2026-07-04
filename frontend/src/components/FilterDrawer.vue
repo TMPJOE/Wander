@@ -1,27 +1,27 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue';
-import { X, SlidersHorizontal } from '@lucide/vue';
+import { ref, watch } from 'vue'
+import { X, SlidersHorizontal } from '@lucide/vue'
 
 const props = defineProps<{
-  open: boolean;
-}>();
+  open: boolean
+}>()
 
 const emit = defineEmits<{
-  close: [];
-  apply: [filters: FilterValues];
-}>();
+  close: []
+  apply: [filters: FilterValues]
+}>()
 
 export interface FilterValues {
-  difficulty: string;
-  min_price: string;
-  max_price: string;
-  location: string;
+  difficulty: string
+  min_price: string
+  max_price: string
+  location: string
 }
 
-const difficulty = ref('');
-const minPrice = ref('');
-const maxPrice = ref('');
-const location = ref('');
+const difficulty = ref('')
+const minPrice = ref('')
+const maxPrice = ref('')
+const location = ref('')
 
 const difficulties = [
   { value: '', label: 'Todos' },
@@ -29,7 +29,7 @@ const difficulties = [
   { value: 'moderate', label: 'Moderado' },
   { value: 'challenging', label: 'Desafiante' },
   { value: 'extreme', label: 'Extremo' },
-];
+]
 
 function apply() {
   emit('apply', {
@@ -37,24 +37,27 @@ function apply() {
     min_price: minPrice.value,
     max_price: maxPrice.value,
     location: location.value,
-  });
-  emit('close');
+  })
+  emit('close')
 }
 
 function reset() {
-  difficulty.value = '';
-  minPrice.value = '';
-  maxPrice.value = '';
-  location.value = '';
+  difficulty.value = ''
+  minPrice.value = ''
+  maxPrice.value = ''
+  location.value = ''
 }
 
-watch(() => props.open, (val) => {
-  if (val) {
-    document.body.style.overflow = 'hidden';
-  } else {
-    document.body.style.overflow = '';
-  }
-});
+watch(
+  () => props.open,
+  (val) => {
+    if (val) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+  },
+)
 </script>
 
 <template>
@@ -141,6 +144,7 @@ watch(() => props.open, (val) => {
 
 .drawer {
   position: fixed;
+  padding-bottom: var(--spacing-6);
   bottom: 0;
   left: 0;
   right: 0;
