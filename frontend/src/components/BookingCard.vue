@@ -1,63 +1,66 @@
 <script setup lang="ts">
-import { computed } from 'vue';
-import { Calendar, Users, MapPin, CreditCard } from '@lucide/vue';
+import { computed } from 'vue'
+import { Calendar, Users, MapPin, CreditCard } from '@lucide/vue'
 
 const props = defineProps<{
   booking: {
-    id: number;
-    tour_title: string;
-    tour_location: string;
-    tour_image?: string;
-    schedule_start: string;
-    guest_count: number;
-    total_price: number;
-    status: string;
-  };
-}>();
+    id: number
+    tour_title: string
+    tour_location: string
+    tour_image?: string
+    schedule_start: string
+    guest_count: number
+    total_price: number
+    status: string
+  }
+}>()
 
 defineEmits<{
-  cancel: [id: number];
-}>();
+  cancel: [id: number]
+}>()
 
 const imageUrl = computed(() => {
-  if (!props.booking.tour_image) return 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop';
+  if (!props.booking.tour_image)
+    return 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
   try {
-    const imgs = JSON.parse(props.booking.tour_image);
-    return imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop';
+    const imgs = JSON.parse(props.booking.tour_image)
+    return (
+      imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+    )
   } catch {
-    return props.booking.tour_image;
+    return props.booking.tour_image
   }
-});
+})
 
 const formattedDate = computed(() => {
   return new Date(props.booking.schedule_start).toLocaleDateString('es-MX', {
     weekday: 'short',
     day: 'numeric',
     month: 'short',
-    year: 'numeric'
-  });
-});
+    year: 'numeric',
+  })
+})
 
 const formattedTime = computed(() => {
   return new Date(props.booking.schedule_start).toLocaleTimeString('es-MX', {
     hour: '2-digit',
-    minute: '2-digit'
-  });
-});
+    minute: '2-digit',
+  })
+})
 
 const statusLabel: Record<string, string> = {
   pending: 'Pendiente',
   confirmed: 'Confirmada',
   cancelled: 'Cancelada',
-  completed: 'Completada'
-};
+  completed: 'Completada',
+}
 
 const statusClass: Record<string, string> = {
   pending: 'badge-warning',
   confirmed: 'badge-success',
   cancelled: 'badge-error',
-  completed: 'badge-primary'
-};
+  completed: 'badge-primary',
+}
 </script>
 
 <template>
@@ -95,8 +98,11 @@ const statusClass: Record<string, string> = {
       </div>
     </div>
 
-    <div class="booking-card__footer" v-if="booking.status === 'pending' || booking.status === 'confirmed'">
-      <button class="btn btn-outline btn-sm" @click="$emit('cancel', booking.id)">
+    <div
+      class="booking-card__footer"
+      v-if="booking.status === 'pending' || booking.status === 'confirmed'"
+    >
+      <button class="btn btn-outline btn-md" @click="$emit('cancel', booking.id)">
         Cancelar reserva
       </button>
     </div>
@@ -115,7 +121,7 @@ const statusClass: Record<string, string> = {
   justify-content: space-between;
   align-items: center;
   border-bottom: 1px solid var(--color-border-light);
-  padding-bottom: var(--spacing-3);
+  padding: var(--spacing-3);
   margin-bottom: var(--spacing-1);
 }
 
@@ -123,9 +129,14 @@ const statusClass: Record<string, string> = {
   font-size: var(--font-size-xs);
   color: var(--color-text-light);
   font-weight: var(--font-weight-medium);
+  margin-right: var(--spacing-2);
 }
 
 .booking-card__body {
+  padding-top: var(--spacing-3);
+  padding-bottom: var(--spacing-3);
+  padding-left: var(--spacing-8);
+  padding-right: var(--spacing-8);
   display: flex;
   gap: var(--spacing-4);
 }
@@ -185,6 +196,8 @@ const statusClass: Record<string, string> = {
 
 .booking-card__footer {
   margin-top: var(--spacing-2);
+  padding-right: var(--spacing-3);
+  padding-bottom: var(--spacing-3);
   display: flex;
   justify-content: flex-end;
 }

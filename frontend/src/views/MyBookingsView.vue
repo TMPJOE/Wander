@@ -1,28 +1,28 @@
 <script setup lang="ts">
-import { onMounted } from 'vue';
-import { useBookingsStore } from '../stores/bookings';
-import { useApi } from '../composables/useApi';
-import BookingCard from '../components/BookingCard.vue';
-import EmptyState from '../components/EmptyState.vue';
-import { CalendarDays } from '@lucide/vue';
-import { useRouter } from 'vue-router';
+import { onMounted } from 'vue'
+import { useBookingsStore } from '../stores/bookings'
+import { useApi } from '../composables/useApi'
+import BookingCard from '../components/BookingCard.vue'
+import EmptyState from '../components/EmptyState.vue'
+import { CalendarDays } from '@lucide/vue'
+import { useRouter } from 'vue-router'
 
-const bookingsStore = useBookingsStore();
-const api = useApi();
-const router = useRouter();
+const bookingsStore = useBookingsStore()
+const api = useApi()
+const router = useRouter()
 
 onMounted(async () => {
-  await bookingsStore.fetchMyBookings();
-});
+  await bookingsStore.fetchMyBookings()
+})
 
 async function cancelBooking(id: number) {
-  if (!confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return;
+  if (!confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return
   try {
-    await api.patch(`/bookings/${id}/cancel`);
-    await bookingsStore.fetchMyBookings();
+    await api.patch(`/bookings/${id}/cancel`)
+    await bookingsStore.fetchMyBookings()
   } catch (e) {
-    console.error(e);
-    alert('Error al cancelar la reserva');
+    console.error(e)
+    alert('Error al cancelar la reserva')
   }
 }
 </script>
@@ -53,9 +53,7 @@ async function cancelBooking(id: number) {
         title="Sin reservas"
         message="Aún no has reservado ningún tour. ¡Explora las opciones y planifica tu próxima aventura!"
       >
-        <button class="btn btn-primary" @click="router.push('/')">
-          Explorar tours
-        </button>
+        <button class="btn btn-primary" @click="router.push('/')">Explorar tours</button>
       </EmptyState>
     </div>
   </div>
@@ -77,14 +75,24 @@ async function cancelBooking(id: number) {
   letter-spacing: var(--letter-spacing-tight);
 }
 
-.py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
-.gap-4 { gap: var(--spacing-4); }
-.h-32 { height: 8rem; }
-.rounded-lg { border-radius: var(--radius-lg); }
+.py-4 {
+  padding-top: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+}
+.gap-4 {
+  gap: var(--spacing-4);
+}
+.h-32 {
+  height: 8rem;
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
 
 .bookings-list {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+  padding: var(--spacing-4);
 }
 </style>
