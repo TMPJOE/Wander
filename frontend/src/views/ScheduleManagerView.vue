@@ -62,6 +62,19 @@ async function deleteSchedule(id: number) {
     loading.value = false;
   }
 }
+
+async function toggleActive(id: number, isActive: boolean) {
+  loading.value = true;
+  try {
+    await api.put(`/schedules/${id}`, { is_active: isActive });
+    await fetchData();
+  } catch (e) {
+    console.error(e);
+    alert('Error al cambiar el estado del horario');
+  } finally {
+    loading.value = false;
+  }
+}
 </script>
 
 <template>
@@ -84,6 +97,7 @@ async function deleteSchedule(id: number) {
         :loading="loading"
         @add="addSchedule"
         @delete="deleteSchedule"
+        @toggle-active="toggleActive"
       />
     </div>
   </div>

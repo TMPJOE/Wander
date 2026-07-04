@@ -9,6 +9,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   add: [start: string, end: string, spots: number];
   delete: [id: number];
+  toggleActive: [id: number, isActive: boolean];
 }>();
 
 const date = ref('');
@@ -75,7 +76,7 @@ function handleAdd() {
     </div>
     
     <div v-else class="schedules-list">
-      <div v-for="s in schedules" :key="s.id" class="schedule-item">
+      <div v-for="s in schedules" :key="s.id" class="schedule-item" :class="{ 'schedule-item--inactive': s.is_active === false }">
         <div class="schedule-info">
           <span class="font-semibold">{{ new Date(s.start_time).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }) }}</span>
           <span class="text-secondary ml-2">{{ new Date(s.start_time).toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' }) }}</span>
@@ -83,7 +84,19 @@ function handleAdd() {
         <div class="schedule-spots">
           <span class="badge badge-success">{{ s.available_spots }} disponibles</span>
         </div>
-        <button class="btn btn-ghost text-error ml-auto" @click="emit('delete', s.id)">
+        <span class="schedule-status" :class="s.is_active ? 'schedule-status--active' : 'schedule-status--inactive'">
+          {{ s.is_active ? 'Activo' : 'Inactivo' }}
+        </span>
+        <button
+          class="btn btn-ghost toggle-btn"
+          :title="s.is_active ? 'Desactivar' : 'Activar'"
+          @click="emit('toggleActive', s.id, !s.is_active)"
+        >
+          <span class="toggle-track" :class="{ 'toggle-track--on': s.is_active }">
+            <span class="toggle-thumb"></span>
+          </span>
+        </button>
+        <button class="btn btn-ghost text-error" @click="emit('delete', s.id)">
           &times;
         </button>
       </div>
@@ -138,5 +151,60 @@ function handleAdd() {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-background);
+  gap: var(--spacing-2);
+}
+
+.schedule-item--inactive {
+  opacity: 0.65;
+}
+
+.schedule-status {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  padding: 2px var(--spacing-2);
+  border-radius: var(--radius-full);
+}
+
+.schedule-status--active {
+  color: var(--color-success);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.schedule-status--inactive {
+  color: var(--color-text-secondary);
+  background: var(--color-border-light);
+}
+
+.toggle-btn {
+  padding: 4px;
+}
+
+.toggle-track {
+  position: relative;
+  display: inline-block;
+  width: 40px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  transition: background var(--transition-fast);
+}
+
+.toggle-track--on {
+  background: var(--color-primary);
+}
+
+.toggle-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--color-surface);
+  transition: transform var(--transition-fast);
+}
+
+.toggle-track--on .toggle-thumb {
+  transform: translateX(18px);
 }
 </style>
