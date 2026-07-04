@@ -86,15 +86,14 @@ function navigate(tab: NavItem) {
   left: 0;
   right: 0;
   height: var(--bottom-nav-height);
-  background: var(--color-surface);
-  border-top: 1px solid var(--color-border-light);
+  background: rgba(var(--color-primary-rgb), 0.08);
+  border-top: 1px solid var(--color-primary-100);
   display: flex;
   align-items: center;
   justify-content: space-around;
   padding: 0 var(--spacing-2);
   z-index: var(--z-sticky);
   backdrop-filter: blur(12px);
-  background: rgba(255, 255, 255, 0.92);
 }
 
 .bottom-nav__item {

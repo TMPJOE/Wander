@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
 import { useFavoritesStore } from '../stores/favorites'
 import { Search, SlidersHorizontal, MapPin } from '@lucide/vue'
 import { useToursStore } from '../stores/tours'
 import { useCategoriesStore } from '../stores/categories'
+import { applyCategoryTheme, clearCategoryTheme } from '../utils/categoryColors'
 import TourCard from '../components/TourCard.vue'
 import CategoryPill from '../components/CategoryPill.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
@@ -35,8 +36,21 @@ onMounted(async () => {
 
 function selectCategory(slug: string) {
   activeCategory.value = activeCategory.value === slug ? '' : slug
+  applyTheme()
   fetchWithFilters()
 }
+
+function applyTheme() {
+  if (activeCategory.value) {
+    applyCategoryTheme(activeCategory.value, document.documentElement)
+  } else {
+    clearCategoryTheme(document.documentElement)
+  }
+}
+
+onBeforeUnmount(() => {
+  clearCategoryTheme(document.documentElement)
+})
 
 function handleSearch() {
   fetchWithFilters()
@@ -50,7 +64,7 @@ function applyFilters(filters: FilterValues) {
 function fetchWithFilters() {
   const params: Record<string, string> = {}
   if (searchQuery.value) params.q = searchQuery.value
-  if (activeCategory.value) params.category_slug = activeCategory.value
+  if (activeCategory.value) params.category = activeCategory.value
   if (currentFilters.value.difficulty) params.difficulty = currentFilters.value.difficulty
   if (currentFilters.value.min_price) params.min_price = currentFilters.value.min_price
   if (currentFilters.value.max_price) params.max_price = currentFilters.value.max_price
@@ -60,7 +74,7 @@ function fetchWithFilters() {
 </script>
 
 <template>
-  <div class="page explore">
+  <div class="page explore" ref="pageEl">
     <!-- Hero Section -->
     <header class="explore__hero">
       <div class="container">
@@ -169,13 +183,14 @@ function fetchWithFilters() {
   padding: var(--spacing-8) 0 var(--spacing-4);
   background: linear-gradient(
     308deg,
-    #f9f7f5 0%,
-    #f9f7f5 15%,
-    #e8b2a9 22%,
-    #e8b1a9 28%,
-    #f7f0ee 70%,
-    #f9f7f5 100%
+    var(--color-primary-50) 0%,
+    var(--color-background) 18%,
+    var(--color-primary-100) 26%,
+    var(--color-primary-100) 32%,
+    var(--color-background) 70%,
+    var(--color-background) 100%
   );
+  border-bottom: 1px solid var(--color-primary-100);
 }
 
 .explore__greeting {
@@ -213,8 +228,8 @@ function fetchWithFilters() {
   display: flex;
   align-items: center;
   gap: var(--spacing-2);
-  background: var(--color-surface);
-  border: 1.5px solid var(--color-border);
+  background: var(--color-primary-50);
+  border: 1.5px solid var(--color-primary-100);
   border-radius: var(--radius-lg);
   padding: 0 var(--spacing-4);
   transition:
@@ -228,7 +243,7 @@ function fetchWithFilters() {
 }
 
 .search-bar__icon {
-  color: var(--color-text-light);
+  color: var(--color-primary-dark);
   flex-shrink: 0;
 }
 
@@ -250,11 +265,11 @@ function fetchWithFilters() {
   height: 48px;
   border-radius: var(--radius-lg);
   background: var(--color-surface);
-  border: 1.5px solid var(--color-border);
+  border: 1.5px solid var(--color-primary-100);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--color-text-secondary);
+  color: var(--color-primary-dark);
   transition: all var(--transition-fast);
   flex-shrink: 0;
 }
@@ -262,6 +277,7 @@ function fetchWithFilters() {
 .filter-btn:hover {
   border-color: var(--color-primary);
   color: var(--color-primary);
+  background: var(--color-primary-50);
 }
 
 .explore__categories {

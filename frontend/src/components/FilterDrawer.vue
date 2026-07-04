@@ -162,7 +162,8 @@ watch(
   align-items: center;
   justify-content: space-between;
   padding: var(--spacing-5) var(--spacing-6);
-  border-bottom: 1px solid var(--color-divider);
+  border-bottom: 1px solid var(--color-primary-100);
+  background: var(--color-primary-50);
 }
 
 .drawer__title {
@@ -171,10 +172,11 @@ watch(
   gap: var(--spacing-2);
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-primary-dark);
 }
 
 .drawer__close {
-  color: var(--color-text-light);
+  color: var(--color-primary-dark);
   padding: var(--spacing-1);
 }
 
@@ -239,7 +241,8 @@ watch(
   display: flex;
   gap: var(--spacing-3);
   padding: var(--spacing-4) var(--spacing-6);
-  border-top: 1px solid var(--color-divider);
+  border-top: 1px solid var(--color-primary-100);
+  background: var(--color-primary-50);
 }
 
 /* Transitions */
