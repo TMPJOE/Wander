@@ -332,7 +332,7 @@ function messageGuide() {
 .tour-detail__content {
   z-index: 2;
   position: relative;
-  margin-top: calc(-30px - var(--bottom-nav-height));
+  margin-top: calc(-2% - var(--bottom-nav-height));
   padding-left: var(--content-padding);
   padding-right: var(--content-padding);
   padding-top: var(--spacing-5);
