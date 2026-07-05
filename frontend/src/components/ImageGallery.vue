@@ -8,34 +8,86 @@ const props = defineProps<{
 
 const current = ref(0)
 const isExpanded = ref(false)
+const showOverlayUi = ref(true)
+const isImageAnimating = ref(false)
+const touchStartX = ref<number | null>(null)
+let uiHideTimer: ReturnType<typeof setTimeout> | null = null
 
 const hasMultiple = computed(() => props.images.length > 1)
 const activeImage = computed(() => {
-  return props.images[current.value] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop'
+  return (
+    props.images[current.value] ||
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop'
+  )
 })
+
+function resetOverlayUiTimer() {
+  if (uiHideTimer) clearTimeout(uiHideTimer)
+  showOverlayUi.value = true
+  if (!isExpanded.value) return
+  uiHideTimer = setTimeout(() => {
+    showOverlayUi.value = false
+  }, 2200)
+}
+
+function animateImageChange() {
+  isImageAnimating.value = true
+  window.setTimeout(() => {
+    isImageAnimating.value = false
+  }, 220)
+}
 
 function next() {
   if (current.value < props.images.length - 1) current.value++
   else current.value = 0
+  animateImageChange()
+  resetOverlayUiTimer()
 }
 
 function prev() {
   if (current.value > 0) current.value--
   else current.value = props.images.length - 1
+  animateImageChange()
+  resetOverlayUiTimer()
 }
 
 function openPreview() {
-  if (props.images.length) isExpanded.value = true
+  if (props.images.length) {
+    isExpanded.value = true
+    resetOverlayUiTimer()
+  }
 }
 
 function closePreview() {
   isExpanded.value = false
+  showOverlayUi.value = true
+  if (uiHideTimer) clearTimeout(uiHideTimer)
+}
+
+function handleTouchStart(event: TouchEvent) {
+  touchStartX.value = event.touches[0]?.clientX ?? null
+}
+
+function handleTouchEnd(event: TouchEvent) {
+  if (touchStartX.value === null) return
+  const endX = event.changedTouches[0]?.clientX ?? 0
+  const delta = endX - touchStartX.value
+  if (Math.abs(delta) > 60) {
+    if (delta < 0) next()
+    else prev()
+  }
+  touchStartX.value = null
 }
 
 watch(isExpanded, (open) => {
   if (typeof document === 'undefined') return
   document.body.style.overflow = open ? 'hidden' : ''
   document.body.style.touchAction = open ? 'none' : ''
+  if (open) resetOverlayUiTimer()
+})
+
+watch(current, () => {
+  resetOverlayUiTimer()
 })
 
 onBeforeUnmount(() => {
@@ -48,11 +100,7 @@ onBeforeUnmount(() => {
 <template>
   <div class="gallery">
     <div class="gallery__viewport" @click="openPreview">
-      <img
-        :src="activeImage"
-        :alt="`Imagen ${current + 1}`"
-        class="gallery__image"
-      />
+      <img :src="activeImage" :alt="`Imagen ${current + 1}`" class="gallery__image" />
       <button class="gallery__expand" @click.stop="openPreview" aria-label="Ampliar galería">
         <Maximize2 :size="16" />
       </button>
@@ -73,27 +121,51 @@ onBeforeUnmount(() => {
           ></span>
         </div>
       </template>
-      <div class="gallery__counter" v-if="hasMultiple">
-        {{ current + 1 }} / {{ images.length }}
-      </div>
+      <div class="gallery__counter" v-if="hasMultiple">{{ current + 1 }} / {{ images.length }}</div>
     </div>
 
     <div v-if="isExpanded" class="gallery__overlay" @click.self="closePreview">
-      <div class="gallery__overlay-shell">
-        <button class="gallery__overlay-close" @click="closePreview" aria-label="Cerrar galería">
+      <div
+        class="gallery__overlay-shell"
+        @mousemove="resetOverlayUiTimer"
+        @touchstart="handleTouchStart"
+        @touchend="handleTouchEnd"
+      >
+        <button
+          v-show="showOverlayUi"
+          class="gallery__overlay-close"
+          @click="closePreview"
+          aria-label="Cerrar galería"
+        >
           <X :size="24" />
         </button>
 
-        <button v-if="hasMultiple" class="gallery__nav gallery__nav--overlay gallery__nav--prev" @click.stop="prev">
+        <button
+          v-if="hasMultiple"
+          v-show="showOverlayUi"
+          class="gallery__nav gallery__nav--overlay gallery__nav--prev"
+          @click.stop="prev"
+        >
           <ChevronLeft :size="24" />
         </button>
-        <button v-if="hasMultiple" class="gallery__nav gallery__nav--overlay gallery__nav--next" @click.stop="next">
+        <button
+          v-if="hasMultiple"
+          v-show="showOverlayUi"
+          class="gallery__nav gallery__nav--overlay gallery__nav--next"
+          @click.stop="next"
+        >
           <ChevronRight :size="24" />
         </button>
 
-        <img :src="activeImage" :alt="`Imagen ${current + 1}`" class="gallery__overlay-image" />
+        <img
+          :key="activeImage"
+          :src="activeImage"
+          :alt="`Imagen ${current + 1}`"
+          class="gallery__overlay-image"
+          :class="{ 'gallery__overlay-image--animating': isImageAnimating }"
+        />
 
-        <div class="gallery__overlay-footer">
+        <div v-show="showOverlayUi" class="gallery__overlay-footer">
           <div class="gallery__dots gallery__dots--overlay">
             <span
               v-for="(_, i) in images"
@@ -135,8 +207,8 @@ onBeforeUnmount(() => {
 
 .gallery__expand {
   position: absolute;
-  top: var(--spacing-3);
-  left: var(--spacing-3);
+  top: var(--spacing-4);
+  left: var(--spacing-20);
   width: 36px;
   height: 36px;
   border-radius: var(--radius-full);
@@ -273,12 +345,20 @@ onBeforeUnmount(() => {
   object-fit: contain;
   border-radius: var(--radius-lg);
   background: rgba(255, 255, 255, 0.04);
+  transform: scale(1);
+  transition:
+    transform 220ms ease,
+    opacity 220ms ease;
+}
+
+.gallery__overlay-image--animating {
+  animation: gallery-fade 220ms ease;
 }
 
 .gallery__overlay-close {
   position: absolute;
   top: var(--spacing-3);
-  right: var(--spacing-3);
+  left: var(--spacing-3);
   width: 40px;
   height: 40px;
   border-radius: var(--radius-full);
@@ -305,6 +385,17 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-full);
   background: rgba(0, 0, 0, 0.35);
   backdrop-filter: blur(8px);
+}
+
+@keyframes gallery-fade {
+  from {
+    opacity: 0.5;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @media (max-width: 768px) {

@@ -21,6 +21,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/checkout/:bookingId',
+      name: 'checkout',
+      component: () => import('../views/CheckoutView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/booking-success/:id',
       name: 'booking-success',
       component: () => import('../views/BookingSuccessView.vue'),

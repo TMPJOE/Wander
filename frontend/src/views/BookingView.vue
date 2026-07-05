@@ -69,7 +69,7 @@ async function handleBook() {
       guest_count: guestCount.value,
       notes: notes.value,
     })
-    router.push(`/booking-success/${response.id}`)
+    router.push(`/checkout/${response.id}`)
   } catch (e) {
     console.error('Failed to book', e)
     alert('Ocurrió un error al procesar tu reserva.')
@@ -162,7 +162,7 @@ async function handleBook() {
         @click="handleBook"
         :disabled="bookingsStore.loading"
       >
-        {{ bookingsStore.loading ? 'Procesando...' : 'Confirmar Reserva' }}
+        {{ bookingsStore.loading ? 'Procesando...' : 'Continuar al pago' }}
       </button>
     </div>
   </div>

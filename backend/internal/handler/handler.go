@@ -17,6 +17,7 @@ type Handler struct {
 	ReviewHandler   *ReviewHandler
 	FavoriteHandler *FavoriteHandler
 	MessageHandler  *MessageHandler
+	PaymentHandler  *PaymentHandler
 	UploadHandler   *UploadHandler
 }
 
@@ -31,6 +32,7 @@ func NewHandler(
 	reviewService *service.ReviewService,
 	favoriteService *service.FavoriteService,
 	messageService *service.MessageService,
+	paymentService *service.PaymentService,
 ) *Handler {
 	return &Handler{
 		AuthHandler:     NewAuthHandler(authService),
@@ -42,6 +44,7 @@ func NewHandler(
 		ReviewHandler:   NewReviewHandler(reviewService),
 		FavoriteHandler: NewFavoriteHandler(favoriteService),
 		MessageHandler:  NewMessageHandler(messageService),
+		PaymentHandler:  NewPaymentHandler(paymentService),
 	}
 }
 

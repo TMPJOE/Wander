@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"wander/backend/internal/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type BookingRepository interface {
@@ -15,6 +16,7 @@ type BookingRepository interface {
 	ListByUserID(ctx context.Context, userID int) ([]models.Booking, error)
 	ListByGuideID(ctx context.Context, guideID int) ([]models.Booking, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
+	UpdatePayment(ctx context.Context, id int, intentID string, status string) error
 }
 
 type PgBookingRepository struct {
@@ -44,6 +46,7 @@ func (r *PgBookingRepository) Create(ctx context.Context, b models.Booking) (*mo
 func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Booking, error) {
 	query := `
 		SELECT b.id, b.user_id, b.schedule_id, b.tour_id, b.guest_count, b.total_price, b.status, b.notes, b.created_at, b.updated_at,
+		       b.payment_status, b.stripe_payment_intent_id,
 		       t.title as tour_title, t.location as tour_location, t.images as tour_images,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       tu.first_name || ' ' || tu.last_name as user_name,
@@ -59,6 +62,7 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 	var tourImages []byte
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
+		&b.PaymentStatus, &b.StripePaymentIntentID,
 		&b.TourTitle, &b.TourLocation, &tourImages, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
 	)
 	if err != nil {
@@ -145,6 +149,14 @@ func (r *PgBookingRepository) UpdateStatus(ctx context.Context, id int, status s
 	_, err := r.pool.Exec(ctx, "UPDATE bookings SET status = $1 WHERE id = $2", status, id)
 	if err != nil {
 		return fmt.Errorf("update booking status: %w", err)
+	}
+	return nil
+}
+
+func (r *PgBookingRepository) UpdatePayment(ctx context.Context, id int, intentID string, status string) error {
+	_, err := r.pool.Exec(ctx, "UPDATE bookings SET payment_status = $1, stripe_payment_intent_id = $2 WHERE id = $3", status, intentID, id)
+	if err != nil {
+		return fmt.Errorf("update booking payment: %w", err)
 	}
 	return nil
 }

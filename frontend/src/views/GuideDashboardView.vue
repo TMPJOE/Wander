@@ -67,7 +67,7 @@ onMounted(async () => {
         <div class="stat-card">
           <div class="stat-icon bg-warning-light text-warning"><Star :size="20" /></div>
           <div class="stat-info">
-            <span class="stat-value">{{ stats.average_rating }}</span>
+            <span class="stat-value">{{ stats.average_rating.toPrecision(2) }}</span>
             <span class="stat-label">Rating</span>
           </div>
         </div>

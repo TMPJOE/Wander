@@ -73,6 +73,7 @@ func main() {
 	reviewService := service.NewReviewService(reviewRepo, bookingRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo)
 	messageService := service.NewMessageService(messageRepo)
+	paymentService := service.NewPaymentService(bookingRepo, cfg.StripeSecretKey, cfg.StripePublishableKey)
 
 	// Initialize handlers.
 	h := handler.NewHandler(
@@ -85,6 +86,7 @@ func main() {
 		reviewService,
 		favoriteService,
 		messageService,
+		paymentService,
 	)
 
 	// Wire upload handler (saved under backend/uploads, served at /uploads).

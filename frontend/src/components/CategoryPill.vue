@@ -22,7 +22,6 @@ import photogImg from '../assets/categories/photography.png'
 
 const SLUG_TO_IMAGE: Record<string, string> = {
   gastronomia: foodImg,
-  'cultura-historia': culturalImg,
   cultura: culturalImg,
   historia: historicalImg,
   aventura: adventureImg,

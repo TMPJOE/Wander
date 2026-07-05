@@ -80,7 +80,10 @@ function fetchWithFilters() {
       <div class="container">
         <div class="explore__greeting">
           <MapPin :size="20" class="explore__pin" />
-          <span>Explora tu próxima aventura</span>
+          <span>Explora tu próxima aventura con</span>
+          <h1 class="explore__headline">
+            <span class="explore__accent">Wander</span>
+          </h1>
         </div>
         <h1 class="explore__headline">
           Descubre experiencias

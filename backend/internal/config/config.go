@@ -11,19 +11,21 @@ import (
 
 // Config holds all configuration for the application.
 type Config struct {
-	AppName       string
-	AppEnv        string
-	AppPort       string
-	AppHost       string
-	DBHost        string
-	DBPort        string
-	DBUser        string
-	DBPassword    string
-	DBName        string
-	DBSSLMode     string
-	JWTSecret     string
-	JWTExpiration int
-	AllowedOrigins []string
+	AppName              string
+	AppEnv               string
+	AppPort              string
+	AppHost              string
+	DBHost               string
+	DBPort               string
+	DBUser               string
+	DBPassword           string
+	DBName               string
+	DBSSLMode            string
+	JWTSecret            string
+	JWTExpiration        int
+	AllowedOrigins       []string
+	StripeSecretKey      string
+	StripePublishableKey string
 }
 
 // Load reads environment variables and returns a Config.
@@ -38,19 +40,21 @@ func Load() (*Config, error) {
 	allowedOrigins := getEnv("ALLOWED_ORIGINS", "http://localhost:5173")
 
 	return &Config{
-		AppName:        getEnv("APP_NAME", "Wander"),
-		AppEnv:         getEnv("APP_ENV", "development"),
-		AppPort:        getEnv("APP_PORT", "8080"),
-		AppHost:        getEnv("APP_HOST", "0.0.0.0"),
-		DBHost:         getEnv("DB_HOST", "localhost"),
-		DBPort:         getEnv("DB_PORT", "5432"),
-		DBUser:         getEnv("DB_USER", "wander_user"),
-		DBPassword:     getEnv("DB_PASSWORD", "wander_pass"),
-		DBName:         getEnv("DB_NAME", "wander_db"),
-		DBSSLMode:      getEnv("DB_SSLMODE", "disable"),
-		JWTSecret:      getEnv("JWT_SECRET", "default-secret"),
-		JWTExpiration:  jwtExp,
-		AllowedOrigins: strings.Split(allowedOrigins, ","),
+		AppName:              getEnv("APP_NAME", "Wander"),
+		AppEnv:               getEnv("APP_ENV", "development"),
+		AppPort:              getEnv("APP_PORT", "8080"),
+		AppHost:              getEnv("APP_HOST", "0.0.0.0"),
+		DBHost:               getEnv("DB_HOST", "localhost"),
+		DBPort:               getEnv("DB_PORT", "5432"),
+		DBUser:               getEnv("DB_USER", "wander_user"),
+		DBPassword:           getEnv("DB_PASSWORD", "wander_pass"),
+		DBName:               getEnv("DB_NAME", "wander_db"),
+		DBSSLMode:            getEnv("DB_SSLMODE", "disable"),
+		JWTSecret:            getEnv("JWT_SECRET", "default-secret"),
+		JWTExpiration:        jwtExp,
+		AllowedOrigins:       strings.Split(allowedOrigins, ","),
+		StripeSecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
+		StripePublishableKey: getEnv("STRIPE_PUBLISHABLE_KEY", ""),
 	}, nil
 }
 
