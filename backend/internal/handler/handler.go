@@ -17,6 +17,7 @@ type Handler struct {
 	ReviewHandler   *ReviewHandler
 	FavoriteHandler *FavoriteHandler
 	MessageHandler  *MessageHandler
+	UploadHandler   *UploadHandler
 }
 
 // NewHandler creates a new Handler with all sub-handlers.

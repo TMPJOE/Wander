@@ -26,6 +26,14 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	// Auth middleware
 	authMiddleware := middleware.Auth(jwtSecret)
 
+	// Upload route — any authenticated user (guide creates tours; travelers
+	// may upload avatars later). Mounted at /api/v1/uploads.
+	uploadMux := http.NewServeMux()
+	uploadMux.HandleFunc("POST /uploads", h.UploadHandler.UploadImage)
+	uploadGroup := authMiddleware(http.StripPrefix("/api/v1", uploadMux))
+	mux.Handle("/api/v1/uploads", uploadGroup)
+	mux.Handle("/api/v1/uploads/", uploadGroup)
+
 	// Private Traveler/Shared Routes
 	travelerMux := http.NewServeMux()
 	travelerMux.HandleFunc("GET /users/me", h.UserHandler.GetMe)

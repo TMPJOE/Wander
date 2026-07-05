@@ -1,32 +1,32 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useApi } from '../composables/useApi';
-import { ArrowLeft, Plus, Edit2, Calendar } from '@lucide/vue';
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useApi } from '../composables/useApi'
+import { ArrowLeft, Plus, Edit2, Calendar } from '@lucide/vue'
+import { normalizeTourImages } from '../utils/tourImages'
 
-const router = useRouter();
-const api = useApi();
-const tours = ref<any[]>([]);
-const loading = ref(true);
+const router = useRouter()
+const api = useApi()
+const tours = ref<any[]>([])
+const loading = ref(true)
 
 onMounted(async () => {
   try {
-    const res = await api.get('/guide/tours');
-    tours.value = res.data || [];
+    const res = await api.get('/guide/tours')
+    tours.value = res.data || []
   } catch (e) {
-    console.error(e);
+    console.error(e)
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-});
+})
 
-function getImageUrl(images: string) {
-  try {
-    const parsed = JSON.parse(images);
-    return parsed[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop';
-  } catch {
-    return images || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop';
-  }
+function getImageUrl(images: unknown) {
+  const normalized = normalizeTourImages(images)
+  return (
+    normalized[0] ||
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+  )
 }
 </script>
 
@@ -48,26 +48,34 @@ function getImageUrl(images: string) {
       <div v-if="loading" class="flex flex-col gap-4">
         <div v-for="i in 3" :key="i" class="skeleton h-24 rounded-lg"></div>
       </div>
-      
+
       <div v-else-if="tours.length" class="flex flex-col gap-4">
         <div v-for="tour in tours" :key="tour.id" class="tour-item card p-3 flex gap-3">
           <img :src="getImageUrl(tour.images)" class="tour-img" />
           <div class="tour-info">
             <h3 class="font-semibold text-lg leading-tight">{{ tour.title }}</h3>
-            <p class="text-xs text-secondary mt-1">${{ tour.price_per_person }} PAB • {{ tour.duration_minutes }} min</p>
-            
+            <p class="text-xs text-secondary mt-1">
+              ${{ tour.price_per_person }} PAB • {{ tour.duration_minutes }} min
+            </p>
+
             <div class="flex gap-2 mt-auto pt-2">
-              <button class="btn btn-outline btn-xs flex-1" @click="router.push(`/guide/tours/${tour.id}/edit`)">
+              <button
+                class="btn btn-outline btn-xs flex-1"
+                @click="router.push(`/guide/tours/${tour.id}/edit`)"
+              >
                 <Edit2 :size="14" /> Editar
               </button>
-              <button class="btn btn-primary btn-xs flex-1" @click="router.push(`/guide/tours/${tour.id}/schedules`)">
+              <button
+                class="btn btn-primary btn-xs flex-1"
+                @click="router.push(`/guide/tours/${tour.id}/schedules`)"
+              >
                 <Calendar :size="14" /> Horarios
               </button>
             </div>
           </div>
         </div>
       </div>
-      
+
       <div v-else class="text-center py-12">
         <p class="text-secondary mb-4">No has creado ningún tour todavía.</p>
         <button class="btn btn-primary" @click="router.push('/guide/tours/new')">
@@ -131,25 +139,69 @@ function getImageUrl(images: string) {
   overflow: hidden;
 }
 
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.gap-3 { gap: var(--spacing-3); }
-.gap-4 { gap: var(--spacing-4); }
-.gap-2 { gap: var(--spacing-2); }
-.items-center { align-items: center; }
-.py-4 { padding-top: var(--spacing-4); padding-bottom: var(--spacing-4); }
-.p-3 { padding: var(--spacing-3); }
-.h-24 { height: 6rem; }
-.rounded-lg { border-radius: var(--radius-lg); }
-.font-semibold { font-weight: var(--font-weight-semibold); }
-.text-sm { font-size: var(--font-size-sm); }
-.text-xs { font-size: var(--font-size-xs); }
-.text-secondary { color: var(--color-text-secondary); }
-.mt-1 { margin-top: 2px; }
-.mt-auto { margin-top: auto; }
-.pt-2 { padding-top: var(--spacing-2); }
-.flex-1 { flex: 1; }
-.text-center { text-align: center; }
-.py-12 { padding-top: 3rem; padding-bottom: 3rem; }
-.mb-4 { margin-bottom: var(--spacing-4); }
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.gap-3 {
+  gap: var(--spacing-3);
+}
+.gap-4 {
+  gap: var(--spacing-4);
+}
+.gap-2 {
+  gap: var(--spacing-2);
+}
+.items-center {
+  align-items: center;
+}
+.py-4 {
+  padding-top: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+}
+.p-3 {
+  padding: var(--spacing-3);
+}
+.h-24 {
+  height: 6rem;
+}
+.rounded-lg {
+  border-radius: var(--radius-lg);
+}
+.font-semibold {
+  font-weight: var(--font-weight-semibold);
+}
+.text-sm {
+  font-size: var(--font-size-sm);
+}
+.text-xs {
+  font-size: var(--font-size-xs);
+}
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+.mt-1 {
+  margin-top: 2px;
+}
+.mt-auto {
+  margin-top: auto;
+}
+.pt-2 {
+  padding-top: var(--spacing-2);
+}
+.flex-1 {
+  flex: 1;
+}
+.text-center {
+  text-align: center;
+}
+.py-12 {
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+}
+.mb-4 {
+  margin-bottom: var(--spacing-4);
+}
 </style>

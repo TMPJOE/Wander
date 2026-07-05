@@ -71,7 +71,7 @@ onMounted(async () => {
             <span class="stat-label">Rating</span>
           </div>
         </div>
-        <div class="stat-card" @click="router.push('/guide/tours')" style="cursor: pointer">
+        <div class="stat-card clickable-card" @click="router.push('/guide/tours')">
           <div class="stat-icon bg-secondary-light text-secondary"><Map :size="20" /></div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.active_tours }}</span>
@@ -235,6 +235,12 @@ onMounted(async () => {
   align-items: center;
   gap: var(--spacing-3);
   box-shadow: var(--shadow-xs);
+}
+
+.clickable-card {
+  cursor: pointer;
+  background: var(--color-primary-100);
+  border: 2px solid var(--color-primary);
 }
 
 .stat-icon {

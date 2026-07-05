@@ -20,6 +20,7 @@ import ImageGallery from '../components/ImageGallery.vue'
 // StarRating removed: creation is not allowed on tour page
 import ReviewCard from '../components/ReviewCard.vue'
 import GuideCard from '../components/GuideCard.vue'
+import { normalizeTourImages } from '../utils/tourImages'
 
 const route = useRoute()
 const router = useRouter()
@@ -38,10 +39,7 @@ const tour = computed(() => toursStore.currentTour)
 
 const images = computed<string[]>(() => {
   if (!tour.value) return []
-  const imgs =
-    typeof tour.value.images === 'string'
-      ? JSON.parse(tour.value.images || '[]')
-      : tour.value.images || []
+  const imgs = normalizeTourImages(tour.value.images)
   return imgs.length
     ? imgs
     : ['https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop']

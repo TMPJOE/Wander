@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { Heart, MapPin, Clock, Star } from '@lucide/vue'
 import { useFavoritesStore } from '../stores/favorites'
 import { useAuthStore } from '../stores/auth'
+import { normalizeTourImages } from '../utils/tourImages'
 
 const props = defineProps<{
   tour: {
@@ -43,10 +44,7 @@ import { ref } from 'vue'
 const justLiked = ref(false)
 
 const imageUrl = computed(() => {
-  const imgs =
-    typeof props.tour.images === 'string'
-      ? JSON.parse(props.tour.images || '[]')
-      : props.tour.images || []
+  const imgs = normalizeTourImages(props.tour.images)
   return (
     imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
   )

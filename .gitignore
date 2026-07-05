@@ -29,6 +29,7 @@ backend/*.exe
 backend/*.test
 backend/*.out
 backend/coverage.html
+backend/uploads/
 
 # Frontend (Node/Vue)
 frontend/node_modules/

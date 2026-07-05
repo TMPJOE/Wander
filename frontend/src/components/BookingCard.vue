@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Calendar, Users, MapPin, CreditCard } from '@lucide/vue'
+import { normalizeTourImages } from '../utils/tourImages'
 
 const props = defineProps<{
   booking: {
@@ -22,14 +23,11 @@ defineEmits<{
 const imageUrl = computed(() => {
   if (!props.booking.tour_image)
     return 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
-  try {
-    const imgs = JSON.parse(props.booking.tour_image)
-    return (
-      imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
-    )
-  } catch {
-    return props.booking.tour_image
-  }
+
+  const imgs = normalizeTourImages(props.booking.tour_image)
+  return (
+    imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+  )
 })
 
 const formattedDate = computed(() => {

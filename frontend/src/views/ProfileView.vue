@@ -9,6 +9,7 @@ import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import StarRating from '../components/StarRating.vue'
+import { normalizeTourImages } from '../utils/tourImages'
 import {
   LogOut,
   Settings,
@@ -177,12 +178,8 @@ const PLACEHOLDER_IMG =
 
 function bookingImage(booking: any): string {
   if (!booking.tour_image) return PLACEHOLDER_IMG
-  try {
-    const imgs = JSON.parse(booking.tour_image)
-    return imgs[0] || PLACEHOLDER_IMG
-  } catch {
-    return booking.tour_image
-  }
+  const imgs = normalizeTourImages(booking.tour_image)
+  return imgs[0] || PLACEHOLDER_IMG
 }
 
 function bookingDate(booking: any): string {

@@ -87,8 +87,24 @@ func main() {
 		messageService,
 	)
 
+	// Wire upload handler (saved under backend/uploads, served at /uploads).
+	var uploadsDir string
+	if _, err := os.Stat(filepath.Join(cwd, "backend")); err == nil {
+		uploadsDir = filepath.Join(cwd, "backend", "uploads")
+	} else {
+		uploadsDir = filepath.Join(cwd, "uploads") // fallback if running from backend/
+	}
+	h.UploadHandler = handler.NewUploadHandler(uploadsDir)
+
 	// Setup routes.
 	mux := api.SetupRoutes(h, cfg.JWTSecret)
+
+	// Serve uploaded images at /uploads/.
+	if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+		slog.Error("failed to create uploads dir", "error", err)
+	}
+	uploadsFS := http.FileServer(http.Dir(uploadsDir))
+	mux.Handle("/uploads/", http.StripPrefix("/uploads/", uploadsFS))
 
 	// Serve frontend static files (production build).
 	// Look for dist/ relative to cwd (project root or backend dir).
