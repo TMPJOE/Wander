@@ -3,9 +3,8 @@ package config
 import (
 	"context"
 	"fmt"
+	"io/fs"
 	"log/slog"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
 
@@ -35,9 +34,14 @@ func ConnectDB(cfg *Config) (*pgxpool.Pool, error) {
 	return pool, nil
 }
 
-// RunMigrations reads SQL files from the migrations directory and executes them.
-// It uses a simple `schema_migrations` table to track applied migrations.
-func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
+// RunMigrations reads SQL files from migrationsFS (an embedded filesystem,
+// see backend/migrations/embed.go) and executes each ".up.sql" file that has
+// not yet been applied, in filename order. Each migration runs inside its
+// own transaction: a failure rolls the whole file back and is never marked
+// as applied, so partial schema changes can't get silently "recorded" as
+// done. An advisory lock also prevents two instances from racing to apply
+// migrations concurrently on startup.
+func RunMigrations(pool *pgxpool.Pool, migrationsFS fs.FS) error {
 	ctx := context.Background()
 
 	// Create tracking table if not exists.
@@ -51,8 +55,20 @@ func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
 		return fmt.Errorf("create schema_migrations table: %w", err)
 	}
 
-	// Find all .up.sql files.
-	entries, err := os.ReadDir(migrationsDir)
+	// Advisory lock: avoids two processes/replicas applying migrations at
+	// the same time and stepping on each other.
+	const migrationLockID = 727384910
+	if _, err := pool.Exec(ctx, "SELECT pg_advisory_lock($1)", migrationLockID); err != nil {
+		return fmt.Errorf("acquire migration lock: %w", err)
+	}
+	defer func() {
+		if _, err := pool.Exec(ctx, "SELECT pg_advisory_unlock($1)", migrationLockID); err != nil {
+			slog.Warn("failed to release migration advisory lock", "error", err)
+		}
+	}()
+
+	// Find all .up.sql files in the embedded FS.
+	entries, err := fs.ReadDir(migrationsFS, ".")
 	if err != nil {
 		return fmt.Errorf("read migrations dir: %w", err)
 	}
@@ -64,6 +80,10 @@ func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
 		}
 	}
 	sort.Strings(upFiles)
+
+	if len(upFiles) == 0 {
+		slog.Warn("no migration files found in embedded FS — check the go:embed directive picked them up")
+	}
 
 	for _, fileName := range upFiles {
 		version := strings.TrimSuffix(fileName, ".up.sql")
@@ -79,34 +99,43 @@ func RunMigrations(pool *pgxpool.Pool, migrationsDir string) error {
 			continue
 		}
 
-		// Read and execute.
-		sqlBytes, err := os.ReadFile(filepath.Join(migrationsDir, fileName))
+		sqlBytes, err := fs.ReadFile(migrationsFS, fileName)
 		if err != nil {
 			return fmt.Errorf("read migration %s: %w", fileName, err)
 		}
 
-		_, err = pool.Exec(ctx, string(sqlBytes))
-		if err != nil {
-			// If the migration fails because the object already exists (e.g. column added manually),
-			// consider the migration effectively applied and record it so subsequent runs skip it.
-			if strings.Contains(err.Error(), "already exists") {
-				slog.Warn("migration execution reported existing object; recording as applied", "version", version, "error", err)
-				_, insErr := pool.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1)", version)
-				if insErr != nil {
-					return fmt.Errorf("record migration %s after partial apply: %w", version, insErr)
-				}
-				continue
-			}
+		if err := applyMigration(ctx, pool, version, string(sqlBytes)); err != nil {
 			return fmt.Errorf("execute migration %s: %w", fileName, err)
 		}
 
-		// Record as applied.
-		_, err = pool.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1)", version)
-		if err != nil {
-			return fmt.Errorf("record migration %s: %w", version, err)
-		}
-
 		slog.Info("migration applied", "version", version)
+	}
+
+	return nil
+}
+
+// applyMigration executes a single migration file's SQL and records it as
+// applied, both inside one transaction. If anything fails, the transaction
+// rolls back automatically (via the deferred Rollback, which is a no-op
+// after a successful Commit) — so a migration is either fully applied and
+// recorded, or neither happens.
+func applyMigration(ctx context.Context, pool *pgxpool.Pool, version string, sqlText string) error {
+	tx, err := pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, sqlText); err != nil {
+		return err
+	}
+
+	if _, err := tx.Exec(ctx, "INSERT INTO schema_migrations (version) VALUES ($1)", version); err != nil {
+		return fmt.Errorf("record migration: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
 	}
 
 	return nil

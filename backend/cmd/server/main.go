@@ -15,6 +15,7 @@ import (
 	"wander/backend/internal/middleware"
 	"wander/backend/internal/repository"
 	"wander/backend/internal/service"
+	"wander/backend/migrations"
 )
 
 func main() {
@@ -41,14 +42,10 @@ func main() {
 	}
 	defer dbPool.Close()
 
-	// Run DB migrations.
+	// Run DB migrations (embedded at compile time — no cwd/path guessing).
 	cwd, _ := os.Getwd()
-	migrationsDir := filepath.Join(cwd, "backend", "migrations")
-	if _, err := os.Stat(migrationsDir); os.IsNotExist(err) {
-		migrationsDir = filepath.Join(cwd, "migrations") // fallback if already in backend dir
-	}
-	slog.Info("running database migrations", "path", migrationsDir)
-	if err := config.RunMigrations(dbPool, migrationsDir); err != nil {
+	slog.Info("running database migrations")
+	if err := config.RunMigrations(dbPool, migrations.FS); err != nil {
 		slog.Error("failed to run database migrations", "error", err)
 		os.Exit(1)
 	}

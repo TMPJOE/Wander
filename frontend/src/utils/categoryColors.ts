@@ -25,13 +25,21 @@ const CATEGORY_PALETTES: Record<string, CategoryPalette> = {
     primary100: '#f9c4c4',
     rgb: '214, 48, 49',
   },
-  'cultura-historia': {
+  cultura: {
     primary: '#b8860b', // Dorado antiguo
     primaryDark: '#8b6508',
     primaryLight: '#d4a017',
     primary50: '#fdf8eb',
     primary100: '#f5e6c8',
     rgb: '184, 134, 11',
+  },
+  historia: {
+    primary: '#6c3483', // Púrpura histórico
+    primaryDark: '#4a235a',
+    primaryLight: '#8e44ad',
+    primary50: '#f5eef8',
+    primary100: '#e8daef',
+    rgb: '108, 52, 131',
   },
   aventura: {
     primary: '#e67e22', // Naranja aventura
