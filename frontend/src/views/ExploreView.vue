@@ -103,7 +103,7 @@ function fetchWithFilters() {
 </script>
 
 <template>
-  <div class="page explore" ref="pageEl">
+  <div class="explore-page" ref="pageEl">
     <!-- Hero Section -->
     <header class="explore__hero">
       <div class="container">
@@ -213,6 +213,12 @@ function fetchWithFilters() {
 </template>
 
 <style scoped>
+.explore-page {
+  flex: 1;
+  width: 100%;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
+}
+
 .container {
   padding: 0 var(--content-padding);
 }
@@ -334,8 +340,9 @@ function fetchWithFilters() {
   display: flex;
   gap: var(--spacing-2);
   overflow-x: auto;
-  padding: 0 var(--content-padding);
-  scroll-padding: var(--content-padding);
+  padding-left: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
+  padding-right: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
+  scroll-padding-left: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
   cursor: grab;
   user-select: none;
 }

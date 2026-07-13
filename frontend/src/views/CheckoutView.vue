@@ -292,4 +292,10 @@ async function handlePay() {
   font-weight: var(--font-weight-bold);
   color: var(--color-secondary);
 }
+
+@media (min-width: 1024px) {
+  .bottom-bar {
+    right: var(--nav-width);
+  }
+}
 </style>

@@ -26,14 +26,14 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="page">
-    <div class="header">
+  <div class="messages-page bg-surface">
+    <div class="header" style="padding-left: var(--content-padding); padding-right: var(--content-padding);">
       <h1 class="title">Mensajes</h1>
     </div>
 
-    <div class="container-fluid px-0">
+    <div>
       <div v-if="messagesStore.loading" class="flex flex-col">
-        <div v-for="i in 5" :key="i" class="p-4 border-b flex items-center gap-3">
+        <div v-for="i in 5" :key="i" class="p-4 border-b flex items-center gap-3" style="padding-left: var(--content-padding); padding-right: var(--content-padding);">
           <div class="skeleton w-12 h-12 rounded-full"></div>
           <div class="flex-1">
             <div class="skeleton h-4 w-1/3 mb-2"></div>
@@ -47,10 +47,11 @@ onUnmounted(() => {
           v-for="conv in messagesStore.conversations"
           :key="conv.user_id"
           :conversation="conv"
+          style="padding-left: var(--content-padding); padding-right: var(--content-padding);"
         />
       </div>
 
-      <div class="container py-8" v-else>
+      <div class="py-8" v-else>
         <EmptyState
           :icon="MessageCircle"
           title="Sin mensajes"
@@ -64,8 +65,16 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+.messages-page {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .header {
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-4);
+  padding-top: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;

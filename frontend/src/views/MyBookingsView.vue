@@ -21,11 +21,12 @@ const filteredBookings = computed(() => {
   const now = new Date()
   return bookingsStore.bookings.filter(b => {
     const isCancelled = b.status === 'cancelled'
+    const isCompleted = b.status === 'completed'
     const start = new Date(b.schedule_start)
     
     if (currentFilter.value === 'cancelled') return isCancelled
-    if (currentFilter.value === 'past') return !isCancelled && start < now
-    return !isCancelled && start >= now
+    if (currentFilter.value === 'past') return !isCancelled && (start < now || isCompleted)
+    return !isCancelled && !isCompleted && start >= now
   })
 })
 
@@ -42,8 +43,8 @@ async function cancelBooking(id: number) {
 </script>
 
 <template>
-  <div class="page">
-    <div class="header">
+  <div class="bookings-page bg-surface">
+    <div class="header px-content">
       <h1 class="title">Mis Reservas</h1>
       <div class="filters">
         <button 
@@ -64,7 +65,7 @@ async function cancelBooking(id: number) {
       </div>
     </div>
 
-    <div class="container py-4">
+    <div class="px-content py-4">
       <div v-if="bookingsStore.loading" class="flex flex-col gap-4">
         <div v-for="i in 3" :key="i" class="skeleton h-32 rounded-lg"></div>
       </div>
@@ -98,8 +99,22 @@ async function cancelBooking(id: number) {
 </template>
 
 <style scoped>
+.bookings-page {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
+}
+
+.px-content {
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
+}
+
 .header {
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-2);
+  padding-top: var(--spacing-6);
+  padding-bottom: var(--spacing-2);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;
@@ -135,20 +150,20 @@ async function cancelBooking(id: number) {
   font-size: 13px;
   font-weight: 700;
   border: none;
-  background: #dae8fb;
-  color: #0c1a2e;
+  background: var(--color-primary-50);
+  color: var(--color-primary);
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
 }
 
 .filter-pill:hover {
-  background: #c5d9f5;
+  background: var(--color-primary-100);
 }
 
 .filter-pill.active {
-  background: #a03e1c;
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .py-4 {
@@ -169,6 +184,6 @@ async function cancelBooking(id: number) {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
-  padding: var(--spacing-4);
+  padding: var(--spacing-4) 0;
 }
 </style>

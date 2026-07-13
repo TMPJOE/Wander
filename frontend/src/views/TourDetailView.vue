@@ -721,8 +721,6 @@ function messageGuide() {
 @media (min-width: 1024px) {
   .book-bar {
     right: var(--nav-width);
-    max-width: none;
-    width: auto;
   }
 }
 

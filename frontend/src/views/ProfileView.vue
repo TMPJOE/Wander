@@ -291,8 +291,8 @@ const handleSettingsClick = () => {
 </script>
 
 <template>
-  <div class="page">
-    <div class="header">
+  <div class="profile-page bg-surface">
+    <div class="header px-content">
       <h1 class="title">Mi Perfil</h1>
       <button class="logout-btn" @click="handleLogout">
         <LogOut :size="20" />
@@ -300,7 +300,7 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Profile Info -->
-    <div class="profile-header container" v-if="authStore.user">
+    <div class="profile-header px-content" v-if="authStore.user">
       <div class="profile-avatar-wrap">
         <img
           v-if="authStore.user.avatar_url"
@@ -320,7 +320,7 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Tabs -->
-    <div class="tabs container">
+    <div class="tabs px-content">
       <button
         class="tab-btn"
         :class="{ 'tab-btn--active': activeTab === 'favorites' }"
@@ -348,7 +348,7 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Tab Content: Favorites -->
-    <div class="container py-4" v-if="activeTab === 'favorites'">
+    <div class="px-content py-4" v-if="activeTab === 'favorites'">
       <div v-if="favoritesStore.loading" class="grid-2 gap-4">
         <div v-for="i in 2" :key="i" class="skeleton aspect-video rounded-xl"></div>
       </div>
@@ -368,7 +368,7 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Tab Content: Adventures -->
-    <div class="container py-4" v-if="activeTab === 'adventures'">
+    <div class="px-content py-4" v-if="activeTab === 'adventures'">
       <div v-if="adventuresLoading" class="flex flex-col gap-4">
         <div v-for="i in 3" :key="i" class="skeleton h-28 rounded-lg"></div>
       </div>
@@ -482,7 +482,7 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Tab Content: Settings -->
-    <div class="container py-4" v-if="activeTab === 'settings'">
+    <div class="px-content py-4" v-if="activeTab === 'settings'">
       <div class="card settings-card">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold">Información Personal</h3>
@@ -614,14 +614,24 @@ const handleSettingsClick = () => {
   padding: var(--spacing-3) var(--spacing-6);
 }
 
-.container {
-  padding: 0 var(--content-padding);
+.profile-page {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
+}
+
+.px-content {
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
 }
 .header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-4);
+  padding-top: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
 }
 
 .title {
