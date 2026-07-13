@@ -363,7 +363,7 @@ const handleSettingsClick = () => {
       <div v-else class="empty-favorites">
         <Heart :size="48" class="empty-icon" />
         <p class="empty-text">Aún no tienes tours favoritos</p>
-        <button class="btn btn-outline mt-3" @click="router.push('/')">Explorar tours</button>
+        <button class="btn btn-primary mt-3" @click="router.push('/')">Explorar tours</button>
       </div>
     </div>
 
@@ -600,19 +600,6 @@ const handleSettingsClick = () => {
 </template>
 
 <style scoped>
-.btn-outline:hover:not(:disabled) {
-  background: var(--color-warning-bg);
-  border-color: var(--color-warning);
-  color: var(--color-warning);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
-}
-.btn-primary {
-  margin-top: var(--spacing-2);
-  background: var(--color-warning);
-  color: var(--color-text-inverse);
-  padding: var(--spacing-3) var(--spacing-6);
-}
 
 .profile-page {
   flex: 1;
