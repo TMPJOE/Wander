@@ -462,7 +462,11 @@ const handleSettingsClick = () => {
               ></textarea>
             </div>
             <div class="flex justify-end">
-              <button class="btn btn-primary btn-sm" @click="submitReviewForBooking(booking)">
+              <button 
+                class="btn btn_xl btn-review-submit" 
+                style="background-color: var(--color-star); border-color: var(--color-star); color: white;"
+                @click="submitReviewForBooking(booking)"
+              >
                 <Save :size="14" />
                 {{ hasReview(booking.id) ? 'Actualizar' : 'Publicar' }} reseña
               </button>
@@ -798,6 +802,11 @@ const handleSettingsClick = () => {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-4);
+}
+
+.btn-review-submit {
+  padding-top: var(--spacing-4) !important;
+  padding-right: var(--spacing-4) !important;
 }
 
 .adv-card {

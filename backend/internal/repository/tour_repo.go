@@ -166,9 +166,25 @@ func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUp
 }
 
 func (r *PgTourRepository) Delete(ctx context.Context, id int) error {
-	_, err := r.pool.Exec(ctx, "DELETE FROM tours WHERE id = $1", id)
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	// Bookings have ON DELETE RESTRICT to tour_id, so we must delete them explicitly
+	_, err = tx.Exec(ctx, "DELETE FROM bookings WHERE tour_id = $1", id)
+	if err != nil {
+		return fmt.Errorf("delete related bookings: %w", err)
+	}
+
+	_, err = tx.Exec(ctx, "DELETE FROM tours WHERE id = $1", id)
 	if err != nil {
 		return fmt.Errorf("delete tour: %w", err)
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("commit tx: %w", err)
 	}
 	return nil
 }

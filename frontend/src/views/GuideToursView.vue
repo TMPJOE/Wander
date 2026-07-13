@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
-import { ArrowLeft, Plus, Edit2, Calendar } from '@lucide/vue'
+import { ArrowLeft, Plus, Edit2, Calendar, Trash2 } from '@lucide/vue'
 import { normalizeTourImages } from '../utils/tourImages'
 
 const router = useRouter()
@@ -11,6 +11,12 @@ const tours = ref<any[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
+  fetchTours()
+
+})
+
+async function fetchTours() {
+  loading.value = true
   try {
     const res = await api.get('/guide/tours')
     tours.value = res.data || []
@@ -19,7 +25,19 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
-})
+}
+
+async function deleteTour(id: number) {
+  if (confirm('¿Estás seguro que deseas eliminar este tour y todos los datos relacionados? Esta acción no se puede deshacer.')) {
+    try {
+      await api.delete(`/tours/${id}`)
+      await fetchTours()
+    } catch (e) {
+      console.error(e)
+      alert('Error al eliminar el tour.')
+    }
+  }
+}
 
 function getImageUrl(images: unknown) {
   const normalized = normalizeTourImages(images)
@@ -71,6 +89,13 @@ function getImageUrl(images: unknown) {
               >
                 <Calendar :size="14" /> Horarios
               </button>
+              <button
+                class="btn btn-outline btn-xs flex-1 text-error"
+                style="border-color: var(--color-error); color: var(--color-error);"
+                @click="deleteTour(tour.id)"
+              >
+                <Trash2 :size="14" /> Eliminar
+              </button>
             </div>
           </div>
         </div>
@@ -85,6 +110,10 @@ function getImageUrl(images: unknown) {
     </div>
   </div>
 </template>
+
+<script lang="ts">
+// Needed to expose methods if needed, but we are using script setup
+</script>
 
 <style scoped>
 .header {
