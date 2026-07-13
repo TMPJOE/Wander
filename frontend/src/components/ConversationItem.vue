@@ -27,14 +27,19 @@ const timeString = computed(() => {
 
 <template>
   <div class="conversation-item" @click="router.push(`/messages/${conversation.user_id}`)">
-    <img 
-      v-if="conversation.user_avatar" 
-      :src="conversation.user_avatar" 
-      :alt="conversation.user_name" 
-      class="avatar" 
-    />
-    <div v-else class="avatar avatar--placeholder">
-      {{ conversation.user_name[0] }}
+    <div class="avatar-container">
+      <img 
+        v-if="conversation.user_avatar" 
+        :src="conversation.user_avatar" 
+        :alt="conversation.user_name" 
+        class="avatar" 
+      />
+      <div v-else class="avatar avatar--placeholder">
+        {{ conversation.user_name[0] }}
+      </div>
+      <div v-if="conversation.unread_count > 0" class="badge-unread-avatar">
+        {{ conversation.unread_count > 9 ? '9+' : conversation.unread_count }}
+      </div>
     </div>
     
     <div class="info">
@@ -45,10 +50,6 @@ const timeString = computed(() => {
       <p class="last-msg" :class="{ 'last-msg--unread': conversation.unread_count > 0 }">
         {{ conversation.last_message }}
       </p>
-    </div>
-    
-    <div v-if="conversation.unread_count > 0" class="badge-unread">
-      {{ conversation.unread_count > 9 ? '9+' : conversation.unread_count }}
     </div>
   </div>
 </template>
@@ -73,12 +74,17 @@ const timeString = computed(() => {
   border-bottom: none;
 }
 
+.avatar-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .avatar {
   width: 48px;
   height: 48px;
   border-radius: var(--radius-full);
   object-fit: cover;
-  flex-shrink: 0;
+  display: block;
 }
 
 .avatar--placeholder {
@@ -132,8 +138,11 @@ const timeString = computed(() => {
   color: var(--color-text);
 }
 
-.badge-unread {
-  background: var(--color-primary);
+.badge-unread-avatar {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: #25D366; /* WhatsApp style green */
   color: white;
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-bold);
@@ -143,7 +152,9 @@ const timeString = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 6px;
-  flex-shrink: 0;
+  padding: 0 5px;
+  border: 2px solid var(--color-surface);
+  z-index: 2;
+  box-sizing: border-box;
 }
 </style>

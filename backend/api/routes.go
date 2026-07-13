@@ -22,6 +22,7 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	mux.HandleFunc("GET /api/v1/tours/{id}", h.TourHandler.GetByID)
 	mux.HandleFunc("GET /api/v1/tours/{tourId}/schedules", h.ScheduleHandler.ListByTourID)
 	mux.HandleFunc("GET /api/v1/tours/{tourId}/reviews", h.ReviewHandler.ListByTour)
+	mux.HandleFunc("GET /api/v1/users/{id}", h.UserHandler.GetByID)
 
 	// Auth middleware
 	authMiddleware := middleware.Auth(jwtSecret)
@@ -38,7 +39,6 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *http.ServeMux {
 	travelerMux := http.NewServeMux()
 	travelerMux.HandleFunc("GET /users/me", h.UserHandler.GetMe)
 	travelerMux.HandleFunc("PUT /users/me", h.UserHandler.UpdateMe)
-	travelerMux.HandleFunc("GET /users/{id}", h.UserHandler.GetByID)
 
 	travelerMux.HandleFunc("POST /bookings", h.BookingHandler.Create)
 	travelerMux.HandleFunc("GET /bookings", h.BookingHandler.List)

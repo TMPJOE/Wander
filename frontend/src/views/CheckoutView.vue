@@ -76,7 +76,9 @@ onMounted(async () => {
     })
   } catch (e: any) {
     console.error('Failed to create payment intent', e)
-    errorMsg.value = e?.response?.data?.message || 'No se pudo iniciar el pago. Intenta de nuevo.'
+    const backendError = e?.response?.data?.error
+    const backendMessage = e?.response?.data?.message
+    errorMsg.value = backendError ? `${backendMessage}: ${backendError}` : (backendMessage || 'No se pudo iniciar el pago. Intenta de nuevo.')
   }
 })
 

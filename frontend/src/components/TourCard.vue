@@ -46,7 +46,7 @@ const justLiked = ref(false)
 const imageUrl = computed(() => {
   const imgs = normalizeTourImages(props.tour.images)
   return (
-    imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+    imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop'
   )
 })
 

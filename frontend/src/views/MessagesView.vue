@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
 import { useMessagesStore } from '../stores/messages'
 import ConversationItem from '../components/ConversationItem.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -9,8 +9,19 @@ import { useRouter } from 'vue-router'
 const messagesStore = useMessagesStore()
 const router = useRouter()
 
+let pollInterval: any;
+
 onMounted(async () => {
   await messagesStore.fetchConversations()
+  
+  // Poll for new messages silently every 5 seconds
+  pollInterval = setInterval(() => {
+    messagesStore.fetchConversations(true)
+  }, 5000)
+})
+
+onUnmounted(() => {
+  if (pollInterval) clearInterval(pollInterval)
 })
 </script>
 

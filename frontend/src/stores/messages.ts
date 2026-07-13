@@ -8,15 +8,19 @@ export const useMessagesStore = defineStore('messages', () => {
   const loading = ref(false);
   const api = useApi();
 
-  async function fetchConversations() {
-    loading.value = true;
+  async function fetchConversations(silent = false) {
+    if (!silent) {
+      loading.value = true;
+    }
     try {
       const response = await api.get('/messages/conversations');
       conversations.value = response.data;
     } catch (e) {
       console.error('Failed to fetch conversations', e);
     } finally {
-      loading.value = false;
+      if (!silent) {
+        loading.value = false;
+      }
     }
   }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, watch, computed, nextTick } from 'vue'
+import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useFavoritesStore } from '../stores/favorites'
@@ -22,6 +23,10 @@ import {
   MapPin,
   Edit2,
   Star,
+  User,
+  Bell,
+  HelpCircle,
+  ChevronRight,
 } from '@lucide/vue'
 
 const authStore = useAuthStore()
@@ -40,6 +45,68 @@ const bookingReviewForm = ref<{ [k: number]: { rating: number; title: string; co
 const activeBookingForm = ref<number | null>(null)
 const isEditing = ref(false)
 const saving = ref(false)
+const showPaymentMethods = ref(false)
+const isAddingCard = ref(false)
+const cardElement = ref<HTMLElement | null>(null)
+let stripe: any = null
+let elements: any = null
+let card: any = null
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+
+async function showAddCard() {
+  isAddingCard.value = true
+  await nextTick()
+  if (!stripe) {
+    stripe = await stripePromise
+    elements = stripe.elements()
+  }
+  if (!card && cardElement.value) {
+    card = elements.create('card', {
+      style: {
+        base: {
+          iconColor: '#913b1f',
+          color: '#0c1a2e',
+          fontWeight: '500',
+          fontFamily: 'Inter, Roboto, sans-serif',
+          fontSize: '16px',
+          fontSmoothing: 'antialiased',
+          '::placeholder': {
+            color: '#a0aec0',
+          },
+        },
+        invalid: {
+          iconColor: '#e53e3e',
+          color: '#e53e3e',
+        },
+      },
+    })
+    card.mount(cardElement.value)
+  }
+}
+
+function cancelAddCard() {
+  isAddingCard.value = false
+}
+
+async function saveCard() {
+  if (!stripe || !card) return
+  const { paymentMethod, error } = await stripe.createPaymentMethod({
+    type: 'card',
+    card: card,
+  })
+  
+  if (error) {
+    alert(error.message)
+  } else {
+    // Simulated behavior for demonstration
+    alert('Tarjeta añadida con éxito (Simulado)')
+    isAddingCard.value = false
+    if (card) {
+      card.clear()
+    }
+  }
+}
 
 const profileForm = ref({
   first_name: '',
@@ -419,9 +486,6 @@ const handleSettingsClick = () => {
       <div class="card settings-card">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg font-semibold">Información Personal</h3>
-          <button v-if="!isEditing" class="btn btn-ghost btn-sm" @click="isEditing = true">
-            Editar
-          </button>
         </div>
 
         <form v-if="isEditing" @submit.prevent="saveProfile" class="flex-col gap-4">
@@ -465,6 +529,70 @@ const handleSettingsClick = () => {
             <span class="info-label">Biografía</span>
             <span class="info-value">{{ authStore.user?.bio || 'Sin biografía' }}</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Account Settings Menu -->
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-3">Account Settings</h3>
+        <div class="card p-0 overflow-hidden settings-menu-list">
+          <button class="settings-menu-item" @click="isEditing = true">
+            <div class="settings-menu-icon">
+              <User :size="18" />
+            </div>
+            <span>Editar Perfil</span>
+            <ChevronRight :size="18" class="ml-auto text-muted" />
+          </button>
+          
+          <button class="settings-menu-item" @click="showPaymentMethods = !showPaymentMethods">
+            <div class="settings-menu-icon">
+              <CreditCard :size="18" />
+            </div>
+            <span>Métodos de Pago</span>
+            <ChevronRight :size="18" class="ml-auto text-muted" :class="{ 'rotate-90': showPaymentMethods }" style="transition: transform 0.2s;" />
+          </button>
+          
+          <div v-if="showPaymentMethods" class="payment-methods-panel">
+            <h4 class="text-sm font-semibold text-secondary mb-3">Tarjetas Guardadas</h4>
+            <div class="saved-card">
+              <div class="flex items-center gap-3">
+                <CreditCard :size="20" class="text-primary" />
+                <div>
+                  <div class="font-semibold text-sm">•••• •••• •••• 4242</div>
+                  <div class="text-xs text-muted">Expira 12/28</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm text-error">Eliminar</button>
+            </div>
+            <button v-if="!isAddingCard" class="btn btn-outline w-full text-sm mt-3 flex justify-center items-center gap-2" @click="showAddCard">
+              <span>+ Agregar nueva tarjeta</span>
+            </button>
+            
+            <div v-if="isAddingCard" class="mt-4 p-4 border border-border-light rounded-lg bg-white">
+              <h5 class="text-sm font-semibold mb-3">Detalles de la tarjeta</h5>
+              <div ref="cardElement" class="p-3 border border-border-light rounded-md mb-4 bg-surface"></div>
+              <div class="flex gap-2 justify-end">
+                <button class="btn btn-ghost btn-sm" @click="cancelAddCard">Cancelar</button>
+                <button class="btn btn-primary btn-sm" @click="saveCard">Guardar Tarjeta</button>
+              </div>
+            </div>
+          </div>
+          
+          <button class="settings-menu-item">
+            <div class="settings-menu-icon">
+              <Bell :size="18" />
+            </div>
+            <span>Notificaciones</span>
+            <ChevronRight :size="18" class="ml-auto text-muted" />
+          </button>
+          
+          <button class="settings-menu-item">
+            <div class="settings-menu-icon">
+              <HelpCircle :size="18" />
+            </div>
+            <span>Ayuda</span>
+            <ChevronRight :size="18" class="ml-auto text-muted" />
+          </button>
         </div>
       </div>
     </div>
@@ -816,5 +944,86 @@ const handleSettingsClick = () => {
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
+}
+
+.mt-6 {
+  margin-top: var(--spacing-6);
+}
+.mb-3 {
+  margin-bottom: var(--spacing-3);
+}
+.p-0 {
+  padding: 0;
+}
+.overflow-hidden {
+  overflow: hidden;
+}
+.ml-auto {
+  margin-left: auto;
+}
+
+.settings-menu-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #f0ded6;
+}
+
+.settings-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  background: white;
+  border: none;
+  border-bottom: 1px solid #f0ded6;
+  text-align: left;
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  color: #0c1a2e;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.settings-menu-item:last-child {
+  border-bottom: none;
+}
+
+.settings-menu-item:hover {
+  background-color: var(--color-surface);
+}
+
+.settings-menu-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: #f0f4fd;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.payment-methods-panel {
+  padding: var(--spacing-4);
+  background-color: #fafbfc;
+  border-bottom: 1px solid #f0ded6;
+}
+
+.saved-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--spacing-3);
+  background: white;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.rotate-90 {
+  transform: rotate(90deg);
+}
+
+.w-full {
+  width: 100%;
 }
 </style>

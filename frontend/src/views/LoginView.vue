@@ -2,7 +2,8 @@
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../stores/auth';
-import { Eye, EyeOff, MapPin } from '@lucide/vue';
+import { Eye, EyeOff } from '@lucide/vue';
+import wanderLogo from '../assets/wander-logo.svg';
 
 const router = useRouter();
 const route = useRoute();
@@ -24,10 +25,10 @@ async function handleSubmit() {
 <template>
   <div class="auth-page">
     <div class="auth-brand">
-      <div class="auth-brand__icon">
-        <MapPin :size="32" :stroke-width="2" />
+      <div class="auth-brand__title">
+        <h1 class="auth-brand__name">Wander</h1>
+        <img :src="wanderLogo" alt="Wander Logo" class="auth-brand__logo" />
       </div>
-      <h1 class="auth-brand__name">Wander</h1>
       <p class="auth-brand__tagline">Descubre experiencias locales únicas</p>
     </div>
 
@@ -109,17 +110,16 @@ async function handleSubmit() {
   margin-bottom: var(--spacing-10);
 }
 
-.auth-brand__icon {
-  width: 56px;
-  height: 56px;
-  border-radius: var(--radius-xl);
-  background: var(--color-primary);
-  color: white;
+.auth-brand__title {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin-bottom: var(--spacing-3);
-  box-shadow: 0 4px 16px rgba(208, 83, 66, 0.3);
+  gap: var(--spacing-2);
+}
+
+.auth-brand__logo {
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
 }
 
 .auth-brand__name {

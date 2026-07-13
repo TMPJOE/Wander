@@ -5,9 +5,9 @@
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'wander_user') THEN
-        CREATE ROLE wander_user WITH LOGIN PASSWORD 'Josedg0212';
+        CREATE ROLE wander_user WITH LOGIN PASSWORD '123';
     ELSE
-        ALTER ROLE wander_user WITH PASSWORD 'Josedg0212';
+        ALTER ROLE wander_user WITH PASSWORD '123';
     END IF;
 END
 $$;

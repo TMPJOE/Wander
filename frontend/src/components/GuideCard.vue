@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { MapPin, Star, MessageCircle } from '@lucide/vue';
+import { MessageCircle, Star, CheckCircle } from '@lucide/vue';
+import { useRouter } from 'vue-router';
+import { useApi } from '../composables/useApi';
+import { ref, onMounted } from 'vue';
 
-defineProps<{
+const router = useRouter();
+const api = useApi();
+
+const props = defineProps<{
   guide: {
     id: number;
     first_name: string;
@@ -15,23 +21,49 @@ defineProps<{
 defineEmits<{
   message: [guideId: number];
 }>();
+
+const rating = ref(0);
+
+onMounted(async () => {
+  try {
+    const toursRes = await api.get(`/tours?guide_id=${props.guide.id}`);
+    const tours = toursRes.data || [];
+    let totalRating = 0;
+    let totalReviews = 0;
+    tours.forEach((t: any) => {
+      totalRating += (t.avg_rating || 0) * (t.review_count || 0);
+      totalReviews += (t.review_count || 0);
+    });
+    rating.value = totalReviews > 0 ? totalRating / totalReviews : 0;
+  } catch (e) {
+    console.error(e);
+  }
+});
 </script>
 
 <template>
-  <div class="guide-card">
+  <div class="guide-card" @click="router.push(`/guide/profile/${guide.id}`)">
     <div class="guide-card__top">
-      <img
-        v-if="guide.avatar_url"
-        :src="guide.avatar_url"
-        :alt="`${guide.first_name} ${guide.last_name}`"
-        class="guide-card__avatar"
-      />
-      <div v-else class="guide-card__avatar guide-card__avatar--placeholder">
-        {{ guide.first_name[0] }}{{ guide.last_name[0] }}
+      <div class="guide-card__avatar-container">
+        <img
+          v-if="guide.avatar_url"
+          :src="guide.avatar_url"
+          :alt="`${guide.first_name} ${guide.last_name}`"
+          class="guide-card__avatar"
+        />
+        <div v-else class="guide-card__avatar guide-card__avatar--placeholder">
+          {{ guide.first_name[0] }}{{ guide.last_name[0] }}
+        </div>
+        <div class="guide-card__verified">
+          <CheckCircle :size="12" class="text-white" />
+        </div>
       </div>
       <div class="guide-card__info">
         <h4 class="guide-card__name">{{ guide.first_name }} {{ guide.last_name }}</h4>
-        <span class="guide-card__label">Guía local</span>
+        <div class="guide-card__rating">
+          <Star :size="14" class="text-warning fill-current" />
+          <span class="rating-val">{{ rating.toFixed(1) }}</span>
+        </div>
       </div>
       <button class="guide-card__msg-btn" @click.stop="$emit('message', guide.id)">
         <MessageCircle :size="18" :stroke-width="1.8" />
@@ -48,12 +80,21 @@ defineEmits<{
 
 <style scoped>
 .guide-card {
-  background: var(--color-secondary-50);
+  background: white;
   border-radius: var(--radius-lg);
   padding: var(--spacing-4);
   display: flex;
   flex-direction: column;
   gap: var(--spacing-3);
+  border: 1px solid var(--color-border-light);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.guide-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0,0,0,0.04);
 }
 
 .guide-card__top {

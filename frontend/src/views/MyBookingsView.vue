@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, ref, computed } from 'vue'
 import { useBookingsStore } from '../stores/bookings'
 import { useApi } from '../composables/useApi'
 import BookingCard from '../components/BookingCard.vue'
@@ -11,8 +11,22 @@ const bookingsStore = useBookingsStore()
 const api = useApi()
 const router = useRouter()
 
+const currentFilter = ref<'upcoming' | 'past' | 'cancelled'>('upcoming')
+
 onMounted(async () => {
   await bookingsStore.fetchMyBookings()
+})
+
+const filteredBookings = computed(() => {
+  const now = new Date()
+  return bookingsStore.bookings.filter(b => {
+    const isCancelled = b.status === 'cancelled'
+    const start = new Date(b.schedule_start)
+    
+    if (currentFilter.value === 'cancelled') return isCancelled
+    if (currentFilter.value === 'past') return !isCancelled && start < now
+    return !isCancelled && start >= now
+  })
 })
 
 async function cancelBooking(id: number) {
@@ -31,6 +45,23 @@ async function cancelBooking(id: number) {
   <div class="page">
     <div class="header">
       <h1 class="title">Mis Reservas</h1>
+      <div class="filters">
+        <button 
+          class="filter-pill" 
+          :class="{ active: currentFilter === 'upcoming' }"
+          @click="currentFilter = 'upcoming'"
+        >Próximas</button>
+        <button 
+          class="filter-pill" 
+          :class="{ active: currentFilter === 'past' }"
+          @click="currentFilter = 'past'"
+        >Pasadas</button>
+        <button 
+          class="filter-pill" 
+          :class="{ active: currentFilter === 'cancelled' }"
+          @click="currentFilter = 'cancelled'"
+        >Canceladas</button>
+      </div>
     </div>
 
     <div class="container py-4">
@@ -38,9 +69,9 @@ async function cancelBooking(id: number) {
         <div v-for="i in 3" :key="i" class="skeleton h-32 rounded-lg"></div>
       </div>
 
-      <div v-else-if="bookingsStore.bookings.length" class="bookings-list">
+      <div v-else-if="filteredBookings.length" class="bookings-list">
         <BookingCard
-          v-for="booking in bookingsStore.bookings"
+          v-for="booking in filteredBookings"
           :key="booking.id"
           :booking="booking"
           @cancel="cancelBooking"
@@ -48,20 +79,27 @@ async function cancelBooking(id: number) {
       </div>
 
       <EmptyState
-        v-else
+        v-else-if="bookingsStore.bookings.length === 0"
         :icon="CalendarDays"
         title="Sin reservas"
         message="Aún no has reservado ningún tour. ¡Explora las opciones y planifica tu próxima aventura!"
       >
         <button class="btn btn-primary" @click="router.push('/')">Explorar tours</button>
       </EmptyState>
+
+      <EmptyState
+        v-else
+        :icon="CalendarDays"
+        title="No hay resultados"
+        message="No tienes reservas en esta categoría."
+      />
     </div>
   </div>
 </template>
 
 <style scoped>
 .header {
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-4);
+  padding: var(--spacing-6) var(--spacing-4) var(--spacing-2);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;
@@ -73,6 +111,44 @@ async function cancelBooking(id: number) {
   font-size: var(--font-size-2xl);
   font-weight: var(--font-weight-bold);
   letter-spacing: var(--letter-spacing-tight);
+}
+
+.filters {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-2);
+}
+
+.filters::-webkit-scrollbar {
+  display: none;
+}
+.filters {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.filter-pill {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  background: #dae8fb;
+  color: #0c1a2e;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.filter-pill:hover {
+  background: #c5d9f5;
+}
+
+.filter-pill.active {
+  background: #a03e1c;
+  color: white;
 }
 
 .py-4 {

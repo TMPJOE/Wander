@@ -11,6 +11,9 @@ importers:
       '@lucide/vue':
         specifier: ^1.23.0
         version: 1.23.0(vue@3.5.39(typescript@6.0.3))
+      '@stripe/stripe-js':
+        specifier: ^4.10.0
+        version: 4.10.0
       axios:
         specifier: ^1.18.1
         version: 1.18.1
@@ -658,6 +661,10 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
+
+  '@stripe/stripe-js@4.10.0':
+    resolution: {integrity: sha512-KrMOL+sH69htCIXCaZ4JluJ35bchuCCznyPyrbN8JXSGQfwBI1SuIEMZNwvy8L8ykj29t6sa5BAAiL7fNoLZ8A==}
+    engines: {node: '>=12.16'}
 
   '@tsconfig/node24@24.0.4':
     resolution: {integrity: sha512-2A933l5P5oCbv6qSxHs7ckKwobs8BDAe9SJ/Xr2Hy+nDlwmLE1GhFh/g/vXGRZWgxBg9nX/5piDtHR9Dkw/XuA==}
@@ -2796,6 +2803,8 @@ snapshots:
   '@rolldown/pluginutils@1.0.1': {}
 
   '@standard-schema/spec@1.1.0': {}
+
+  '@stripe/stripe-js@4.10.0': {}
 
   '@tsconfig/node24@24.0.4': {}
 

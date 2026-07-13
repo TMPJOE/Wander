@@ -76,7 +76,7 @@ func main() {
 			Role:      "guide",
 			Bio:       "Guía certificado de montaña con más de 10 años explorando la Sierra Madre. Amante de la fauna y la botánica local.",
 			Phone:     "+52 81 1234 5678",
-			Avatar:    "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80",
+			Avatar:    "/uploads/carlos.jpg",
 			Lang:      []string{"es", "en"},
 		},
 		{
@@ -87,7 +87,7 @@ func main() {
 			Role:      "guide",
 			Bio:       "Especialista en escalada en roca y deportes de aventura. Te enseñaré los secretos mejor guardados del cañón.",
 			Phone:     "+52 81 8765 4321",
-			Avatar:    "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80",
+			Avatar:    "/uploads/sofia.jpg",
 			Lang:      []string{"es", "en", "fr"},
 		},
 		{
@@ -147,50 +147,95 @@ func main() {
 		{
 			GuideName:    "carlos_guia",
 			CatSlug:      "senderismo",
-			Title:        "Ruta del Cañón de Chipinque",
-			Desc:         "Una caminata de senderismo moderado por los senderos más hermosos del parque Chipinque. Avistamiento de coatíes y miradores panorámicos espectaculares.",
-			Loc:          "Monterrey, NL",
-			Price:        450.00,
-			Duration:     180,
-			Diff:         "moderate",
-			MeetingPoint: "Entrada del Parque Chipinque, Caseta de cobro.",
-			WhatIncluded: []string{"Entrada al parque", "Snacks nutritivos", "Botella de agua", "Bastones de senderismo"},
+			Title:        "Expedición al Volcán Barú",
+			Desc:         "Asciende al punto más alto de Panamá. Si el clima lo permite, podrás ver ambos océanos desde la cima al amanecer.",
+			Loc:          "Chiriquí, Panamá",
+			Price:        1200.00,
+			Duration:     720,
+			Diff:         "challenging",
+			MeetingPoint: "Entrada del Parque Nacional Volcán Barú, Boquete.",
+			WhatIncluded: []string{"Guía certificado", "Bebida caliente", "Snacks nutritivos", "Entrada al parque"},
 			Images: []string{
-				"https://images.unsplash.com/photo-1551632811-561732d1e306?auto=format&fit=crop&w=800&q=80",
-				"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80",
+				"/uploads/volcanBaru.jpg",
 			},
 		},
 		{
 			GuideName:    "sofia_guia",
 			CatSlug:      "aventura",
-			Title:        "Escalada de Aventura en Potrero Chico",
-			Desc:         "Desafía tus límites escalando las legendarias paredes de piedra caliza de Potrero Chico. Apto para principiantes con buena condición física.",
-			Loc:          "Hidalgo, NL",
-			Price:        1200.00,
-			Duration:     300,
-			Diff:         "challenging",
-			MeetingPoint: "La Posada en Potrero Chico.",
-			WhatIncluded: []string{"Equipo completo de seguridad (arnés, casco, cuerdas)", "Instrucción certificada", "Seguro de accidentes básico"},
+			Title:        "Aventura Guna Yala y Snorkel",
+			Desc:         "Explora las paradisíacas Islas de San Blas. Disfruta de playas de arena blanca y snorkel en arrecifes de coral y barcos hundidos.",
+			Loc:          "Guna Yala, Panamá",
+			Price:        2500.00,
+			Duration:     600,
+			Diff:         "easy",
+			MeetingPoint: "Puerto de Cartí.",
+			WhatIncluded: []string{"Transporte en lancha", "Almuerzo tradicional Guna", "Equipo de snorkel"},
 			Images: []string{
-				"https://images.unsplash.com/photo-1522163182402-834f871fd851?auto=format&fit=crop&w=800&q=80",
+				"/uploads/islaPerro.jpg",
 			},
 		},
 		{
 			GuideName:    "carlos_guia",
+			CatSlug:      "cultural",
+			Title:        "Historia de Panamá Viejo al Atardecer",
+			Desc:         "Camina entre las ruinas del primer asentamiento europeo en la costa pacífica de América, con vistas increíbles a la ciudad moderna.",
+			Loc:          "Ciudad de Panamá",
+			Price:        450.00,
+			Duration:     180,
+			Diff:         "easy",
+			MeetingPoint: "Centro de Visitantes de Panamá Viejo.",
+			WhatIncluded: []string{"Entrada al sitio arqueológico", "Guía histórico", "Botella de agua"},
+			Images: []string{
+				"/uploads/panamaViejo.jpg",
+			},
+		},
+		{
+			GuideName:    "sofia_guia",
 			CatSlug:      "gastronomia",
-			Title:        "Tour de Tacos y Cantinas Tradicionales",
-			Desc:         "Explora la rica cultura culinaria del norte visitando cantinas con historia y degustando los mejores tacos de la ciudad de la mano de un experto.",
-			Loc:          "Monterrey Centro",
-			Price:        650.00,
+			Title:        "Cena Tradicional y Show de Diablicos",
+			Desc:         "Degusta la auténtica comida panameña en el Casco Antiguo mientras disfrutas de un espectáculo en vivo de Diablicos Sucios.",
+			Loc:          "Casco Antiguo, Panamá",
+			Price:        1100.00,
 			Duration:     150,
 			Diff:         "easy",
-			MeetingPoint: "Arco de la Independencia, Av. Pino Suárez.",
-			WhatIncluded: []string{"Degustación en 4 paradas gastronómicas", "1 bebida incluida por parada", "Narrativa histórica local"},
+			MeetingPoint: "Restaurante Diablicos, Casco Antiguo.",
+			WhatIncluded: []string{"Cena completa (plato fuerte y bebida)", "Espectáculo folclórico", "Explicación de las danzas"},
 			Images: []string{
-				"https://images.unsplash.com/photo-1565299585323-38d6b0865b47?auto=format&fit=crop&w=800&q=80",
+				"/uploads/restauranteDiablicos.jpg",
+			},
+		},
+		{
+			GuideName:    "carlos_guia",
+			CatSlug:      "cultural",
+			Title:        "Exploración de Fuertes y Piratas",
+			Desc:         "Visita las ruinas de Portobelo y el Fuerte San Lorenzo. Descubre las historias de piratas y corsarios que atacaron estas costas.",
+			Loc:          "Colón, Panamá",
+			Price:        950.00,
+			Duration:     360,
+			Diff:         "moderate",
+			MeetingPoint: "Plaza principal de Portobelo.",
+			WhatIncluded: []string{"Transporte entre fuertes", "Guía experto en piratería", "Almuerzo ligero"},
+			Images: []string{
+				"/uploads/ruinasPortobelo.jpg",
+			},
+		},
+		{
+			GuideName:    "sofia_guia",
+			CatSlug:      "senderismo",
+			Title:        "Cascada El Gran Tife",
+			Desc:         "Aventura en la selva profunda de la cordillera panameña hasta llegar a una de las cascadas más impresionantes y escondidas.",
+			Loc:          "Parque Nacional Omar Torrijos",
+			Price:        850.00,
+			Duration:     420,
+			Diff:         "challenging",
+			MeetingPoint: "Entrada del Parque Nacional en El Copé.",
+			WhatIncluded: []string{"Guía local", "Almuerzo estilo picnic", "Equipo de primeros auxilios"},
+			Images: []string{
+				"/uploads/granTife.jpg",
 			},
 		},
 	}
+	_, _ = pool.Exec(ctx, "DELETE FROM tours")
 
 	for _, t := range tours {
 		guideID := userIDs[t.GuideName]
@@ -202,7 +247,6 @@ func main() {
 		err := pool.QueryRow(ctx, `
 			INSERT INTO tours (guide_id, category_id, title, description, location, price_per_person, duration_minutes, difficulty, what_included, meeting_point, images, is_published)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
-			ON CONFLICT (title, guide_id) DO UPDATE SET price_per_person = EXCLUDED.price_per_person
 			RETURNING id
 		`, guideID, catID, t.Title, t.Desc, t.Loc, t.Price, t.Duration, t.Diff, whatIncJSON, t.MeetingPoint, imagesJSON).Scan(&tourID)
 
@@ -227,6 +271,41 @@ func main() {
 				slog.Error("insert schedule", "tour_id", tourID, "err", err)
 			}
 		}
+	}
+
+	// 4. Seed Reviews to give guides consistent ratings
+	slog.Info("seeding reviews...")
+	travelerID := userIDs["juan_traveler"]
+	
+	rowsTours, err := pool.Query(ctx, "SELECT id, guide_id FROM tours")
+	if err == nil {
+		var tourInfos []struct{ id, guideID int }
+		for rowsTours.Next() {
+			var tInfo struct{ id, guideID int }
+			_ = rowsTours.Scan(&tInfo.id, &tInfo.guideID)
+			tourInfos = append(tourInfos, tInfo)
+		}
+		rowsTours.Close()
+
+		for _, t := range tourInfos {
+			rating := 5
+			if t.guideID == userIDs["sofia_guia"] {
+				rating = 4 // Make Sofia consistent
+			} else {
+				rating = 5 // Make Carlos consistent
+			}
+			
+			_, err := pool.Exec(ctx, `
+				INSERT INTO reviews (user_id, tour_id, rating, comment)
+				VALUES ($1, $2, $3, 'Excelente experiencia, muy recomendable')
+				ON CONFLICT (user_id, tour_id) DO NOTHING
+			`, travelerID, t.id, rating)
+			if err != nil {
+				slog.Error("insert review", "tour_id", t.id, "err", err)
+			}
+		}
+	} else {
+		slog.Error("failed to query tours for reviews", "err", err)
 	}
 
 	slog.Info("Database seeded successfully!")

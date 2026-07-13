@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 260" fill="none">
+  <defs>
+    <linearGradient id="pinGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#DE7A36"/>
+      <stop offset="100%" stop-color="#BD561D"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Pin with a transparent hole in the middle -->
+  <path d="M100 258 C100 258 10 150 10 95 A90 90 0 1 1 190 95 C190 150 100 258 100 258Z M100 23 A72 72 0 1 0 100 167 A72 72 0 1 0 100 23Z" fill="url(#pinGrad)" fill-rule="evenodd"/>
+
+  <!-- Compass Star (8 points) centered at 100, 95 -->
+  <g transform="translate(100, 95)">
+    <!-- Diagonal star -->
+    <!-- NE -->
+    <polygon points="0,0 50,-50 0,-15" fill="#4B8B43"/>
+    <polygon points="0,0 50,-50 15,0" fill="#1A4A1C"/>
+    <!-- SE -->
+    <polygon points="0,0 50,50 15,0" fill="#4B8B43"/>
+    <polygon points="0,0 50,50 0,15" fill="#1A4A1C"/>
+    <!-- SW -->
+    <polygon points="0,0 -50,50 -15,0" fill="#4B8B43"/>
+    <polygon points="0,0 -50,50 0,15" fill="#1A4A1C"/>
+    <!-- NW -->
+    <polygon points="0,0 -50,-50 0,-15" fill="#4B8B43"/>
+    <polygon points="0,0 -50,-50 -15,0" fill="#1A4A1C"/>
+
+    <!-- Main star -->
+    <!-- N -->
+    <polygon points="0,0 0,-75 -15,-15" fill="#4B8B43"/>
+    <polygon points="0,0 0,-75 15,-15" fill="#1A4A1C"/>
+    <!-- E -->
+    <polygon points="0,0 75,0 15,-15" fill="#4B8B43"/>
+    <polygon points="0,0 75,0 15,15" fill="#1A4A1C"/>
+    <!-- S -->
+    <polygon points="0,0 0,75 -15,15" fill="#4B8B43"/>
+    <polygon points="0,0 0,75 15,15" fill="#1A4A1C"/>
+    <!-- W -->
+    <polygon points="0,0 -75,0 -15,-15" fill="#4B8B43"/>
+    <polygon points="0,0 -75,0 -15,15" fill="#1A4A1C"/>
+
+    <!-- Center circles -->
+    <circle cx="0" cy="0" r="6" fill="#1A4A1C"/>
+    <circle cx="0" cy="0" r="2.5" fill="white"/>
+  </g>
+</svg>

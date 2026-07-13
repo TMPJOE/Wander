@@ -67,6 +67,11 @@ const router = createRouter({
       component: () => import('../views/RegisterView.vue'),
     },
     {
+      path: '/guide/profile/:id',
+      name: 'guide-profile',
+      component: () => import('../views/GuideProfileView.vue'),
+    },
+    {
       path: '/guide/dashboard',
       name: 'guide-dashboard',
       component: () => import('../views/GuideDashboardView.vue'),

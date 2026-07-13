@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
 import { useFavoritesStore } from '../stores/favorites'
-import { Search, SlidersHorizontal, MapPin } from '@lucide/vue'
+import { Search, SlidersHorizontal } from '@lucide/vue'
+import wanderLogo from '../assets/wander-logo.svg'
 import { useToursStore } from '../stores/tours'
 import { useCategoriesStore } from '../stores/categories'
 import { applyCategoryTheme, clearCategoryTheme } from '../utils/categoryColors'
@@ -23,6 +24,34 @@ const currentFilters = ref<FilterValues>({
   max_price: '',
   location: '',
 })
+
+const scrollContainer = ref<HTMLElement | null>(null)
+let isDown = false
+let startX: number
+let scrollLeft: number
+
+function onMouseDown(e: MouseEvent) {
+  if (!scrollContainer.value) return
+  isDown = true
+  startX = e.pageX - scrollContainer.value.offsetLeft
+  scrollLeft = scrollContainer.value.scrollLeft
+}
+
+function onMouseLeave() {
+  isDown = false
+}
+
+function onMouseUp() {
+  isDown = false
+}
+
+function onMouseMove(e: MouseEvent) {
+  if (!isDown || !scrollContainer.value) return
+  e.preventDefault()
+  const x = e.pageX - scrollContainer.value.offsetLeft
+  const walk = (x - startX) * 2
+  scrollContainer.value.scrollLeft = scrollLeft - walk
+}
 
 onMounted(async () => {
   await Promise.all([categoriesStore.fetchCategories(), toursStore.fetchTours()])
@@ -79,10 +108,9 @@ function fetchWithFilters() {
     <header class="explore__hero">
       <div class="container">
         <div class="explore__greeting">
-          <MapPin :size="20" class="explore__pin" />
-          <span>Explora tu próxima aventura con</span>
-          <h1 class="explore__headline">
+          <h1 class="explore__headline explore__headline--flex">
             <span class="explore__accent">Wander</span>
+            <img :src="wanderLogo" alt="Wander Logo" class="explore__logo" />
           </h1>
         </div>
         <h1 class="explore__headline">
@@ -113,7 +141,14 @@ function fetchWithFilters() {
 
     <!-- Categories -->
     <section class="explore__categories">
-      <div class="categories-scroll hide-scrollbar">
+      <div 
+        class="categories-scroll hide-scrollbar" 
+        ref="scrollContainer"
+        @mousedown="onMouseDown"
+        @mouseleave="onMouseLeave"
+        @mouseup="onMouseUp"
+        @mousemove="onMouseMove"
+      >
         <CategoryPill
           name="Todos"
           slug=""
@@ -205,8 +240,10 @@ function fetchWithFilters() {
   margin-bottom: var(--spacing-2);
 }
 
-.explore__pin {
-  color: var(--color-primary);
+.explore__logo {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
 }
 
 .explore__headline {
@@ -214,6 +251,12 @@ function fetchWithFilters() {
   font-weight: var(--font-weight-extrabold);
   letter-spacing: var(--letter-spacing-tight);
   line-height: var(--line-height-tight);
+}
+
+.explore__headline--flex {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
 }
 
 .explore__accent {
@@ -293,6 +336,12 @@ function fetchWithFilters() {
   overflow-x: auto;
   padding: 0 var(--content-padding);
   scroll-padding: var(--content-padding);
+  cursor: grab;
+  user-select: none;
+}
+
+.categories-scroll:active {
+  cursor: grabbing;
 }
 
 .tour-grid {

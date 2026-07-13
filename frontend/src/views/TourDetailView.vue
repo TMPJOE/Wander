@@ -15,6 +15,9 @@ import {
   ChevronRight,
   CheckCircle2,
   Languages,
+  Footprints,
+  Landmark,
+  Utensils
 } from '@lucide/vue'
 import ImageGallery from '../components/ImageGallery.vue'
 // StarRating removed: creation is not allowed on tour page
@@ -36,6 +39,43 @@ const schedules = ref<any[]>([])
 const tourId = computed(() => route.params.id as string)
 
 const tour = computed(() => toursStore.currentTour)
+
+const selectedScheduleId = ref<number | null>(null)
+
+function toggleSchedule(id: number) {
+  selectedScheduleId.value = selectedScheduleId.value === id ? null : id
+}
+
+function getItinerary(startTimeStr: string) {
+  const start = new Date(startTimeStr)
+  const formatTime = (d: Date) => d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true })
+  
+  const t1 = new Date(start)
+  const t2 = new Date(start.getTime() + 60 * 60000)
+  const t3 = new Date(start.getTime() + 150 * 60000)
+  const t4 = new Date(start.getTime() + 180 * 60000)
+  
+  return [
+    { time: formatTime(t1), title: 'Encuentro en Plaza Nueva', desc: 'Introducción a la historia de la ciudad y comienzo del recorrido.', icon: MapPin },
+    { time: formatTime(t2), title: 'Exploración del Barrio de Santa Cruz', desc: 'Caminata por el antiguo barrio judío, conociendo sus leyendas y arquitectura singular.', icon: Footprints },
+    { time: formatTime(t3), title: 'Visita Exterior Catedral y Giralda', desc: 'Contexto histórico de los monumentos más emblemáticos.', icon: Landmark },
+    { time: formatTime(t4), title: 'Degustación de Tapas', desc: 'Finalizamos con una selección de tapas locales y bebida en una taberna histórica.', icon: Utensils }
+  ]
+}
+
+const meetingClue = computed(() => {
+  if (!tour.value) return ''
+  const clues = [
+    'El guía llevará un paraguas naranja para facilitar su ubicación.',
+    'Busca al guía con una gorra azul y una credencial de Wander.',
+    'Nuestro guía te estará esperando con una mochila amarilla visible.',
+    'Identificarás al guía por su chaleco reflectante o chaqueta roja.',
+    'El guía tendrá un pequeño cartel con tu nombre o el nombre del tour.'
+  ]
+  // Use tour ID to reliably pick the same clue for the same tour
+  const index = tour.value.id % clues.length
+  return clues[index]
+})
 
 const images = computed<string[]>(() => {
   if (!tour.value) return []
@@ -195,14 +235,7 @@ function messageGuide() {
           </ul>
         </div>
 
-        <!-- Meeting Point -->
-        <div v-if="tour.meeting_point" class="tour-detail__section">
-          <h2 class="tour-detail__section-title">Punto de encuentro</h2>
-          <div class="meeting-point">
-            <MapPin :size="16" :stroke-width="2" class="meeting-point__icon" />
-            <span>{{ tour.meeting_point }}</span>
-          </div>
-        </div>
+
 
         <!-- Guide -->
         <div class="tour-detail__section">
@@ -223,24 +256,44 @@ function messageGuide() {
         <div v-if="schedules.length" class="tour-detail__section">
           <h2 class="tour-detail__section-title">Fechas disponibles</h2>
           <div class="schedule-preview">
-            <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-chip">
-              <span class="schedule-chip__date">
-                {{
-                  new Date(s.start_time).toLocaleDateString('es-MX', {
-                    day: 'numeric',
-                    month: 'short',
-                  })
-                }}
-              </span>
-              <span class="schedule-chip__time">
-                {{
-                  new Date(s.start_time).toLocaleTimeString('es-MX', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })
-                }}
-              </span>
-              <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
+            <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-item-wrap">
+              <button class="schedule-chip" :class="{ 'schedule-chip--active': selectedScheduleId === s.id }" @click="toggleSchedule(s.id)">
+                <span class="schedule-chip__date">
+                  {{
+                    new Date(s.start_time).toLocaleDateString('es-MX', {
+                      day: 'numeric',
+                      month: 'short',
+                    })
+                  }}
+                </span>
+                <span class="schedule-chip__time">
+                  {{
+                    new Date(s.start_time).toLocaleTimeString('es-MX', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })
+                  }}
+                </span>
+                <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
+              </button>
+              
+              <div v-if="selectedScheduleId === s.id" class="itinerary-card">
+                <h3 class="itinerary-card__title">Itinerario detallado</h3>
+                <div class="timeline">
+                  <div v-for="(item, idx) in getItinerary(s.start_time)" :key="idx" class="timeline-item">
+                    <div class="timeline-marker-icon">
+                      <component :is="item.icon" :size="16" color="white" />
+                    </div>
+                    <div class="timeline-content">
+                      <h4 class="timeline-heading">
+                        <span class="timeline-time">{{ item.time }} - </span>
+                        <span class="timeline-title">{{ item.title }}</span>
+                      </h4>
+                      <p class="timeline-desc">{{ item.desc }}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <p
               v-if="schedules.length > 3"
@@ -249,6 +302,27 @@ function messageGuide() {
             >
               +{{ schedules.length - 3 }} fechas más
             </p>
+          </div>
+        </div>
+
+        <!-- Meeting Point -->
+        <div v-if="tour.meeting_point" class="tour-detail__section">
+          <div class="itinerary-card meeting-point-card">
+            <h3 class="itinerary-card__title meeting-point-card__title">
+              <MapPin :size="20" :stroke-width="2" class="meeting-point__icon" />
+              Punto de encuentro
+            </h3>
+            <p class="meeting-point__desc">{{ tour.meeting_point }}. {{ meetingClue }}</p>
+            <div class="meeting-point__map">
+              <iframe 
+                width="100%" 
+                height="100%" 
+                style="border:0;" 
+                loading="lazy" 
+                allowfullscreen 
+                :src="`https://maps.google.com/maps?q=${encodeURIComponent(tour.meeting_point + ', ' + tour.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`">
+              </iframe>
+            </div>
           </div>
         </div>
 
@@ -441,24 +515,66 @@ function messageGuide() {
   flex-shrink: 0;
 }
 
-.meeting-point {
+.meeting-point-card {
+  margin-top: var(--spacing-4);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-primary-100);
+}
+
+.meeting-point-card__title {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--spacing-2);
-  font-size: var(--font-size-sm);
-  color: var(--color-text-secondary);
-  padding: var(--spacing-3) var(--spacing-4);
-  background: var(--color-primary-50);
-  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-3);
 }
 
 .meeting-point__icon {
   color: var(--color-primary);
   flex-shrink: 0;
-  margin-top: 2px;
+}
+
+.meeting-point__desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--spacing-4);
+}
+
+.meeting-point__map {
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1.5px solid var(--color-border-light);
+}
+
+.map-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: #e5e9ea;
+  background-image: 
+    linear-gradient(white 2px, transparent 2px),
+    linear-gradient(90deg, white 2px, transparent 2px),
+    linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px);
+  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
+  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-pin {
+  filter: drop-shadow(0 4px 6px rgba(160, 62, 28, 0.3));
 }
 
 .schedule-preview {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.schedule-item-wrap {
   display: flex;
   flex-direction: column;
   gap: var(--spacing-2);
@@ -470,13 +586,23 @@ function messageGuide() {
   gap: var(--spacing-3);
   padding: var(--spacing-3) var(--spacing-4);
   background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
+  border: 1.5px solid var(--color-border-light);
   border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  width: 100%;
+  text-align: left;
+}
+
+.schedule-chip:hover, .schedule-chip--active {
+  border-color: var(--color-primary-300);
+  background: var(--color-primary-50);
 }
 
 .schedule-chip__date {
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
 }
 
 .schedule-chip__time {
@@ -489,6 +615,84 @@ function messageGuide() {
   font-size: var(--font-size-xs);
   color: var(--color-success);
   font-weight: var(--font-weight-medium);
+}
+
+.itinerary-card {
+  background: var(--color-primary-50);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-4) var(--spacing-5);
+  margin-top: var(--spacing-2);
+  margin-bottom: var(--spacing-3);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.itinerary-card__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary-dark);
+  margin-bottom: var(--spacing-4);
+}
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  top: 16px;
+  bottom: 16px;
+  left: 15px;
+  width: 2px;
+  background: #a9dbbc; /* Lighter green line */
+}
+
+.timeline-item {
+  position: relative;
+  padding-left: 48px;
+  padding-bottom: var(--spacing-6);
+}
+
+.timeline-item:last-child {
+  padding-bottom: 0;
+}
+
+.timeline-marker-icon {
+  position: absolute;
+  left: 0;
+  top: -2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #0b6b47; /* Dark green */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.timeline-heading {
+  font-size: var(--font-size-sm);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+.timeline-time {
+  color: #1e293b;
+  font-weight: 800;
+}
+
+.timeline-title {
+  color: #0b6b47;
+  font-weight: 700;
+}
+
+.timeline-desc {
+  font-size: var(--font-size-sm);
+  color: #5c626a;
+  line-height: var(--line-height-relaxed);
 }
 
 .reviews-list {
