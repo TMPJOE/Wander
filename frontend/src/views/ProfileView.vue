@@ -805,8 +805,8 @@ const handleSettingsClick = () => {
 }
 
 .btn-review-submit {
-  padding-top: var(--spacing-4) !important;
-  padding-right: var(--spacing-4) !important;
+  margin-top: var(--spacing-4);
+  margin-bottom: var(--spacing-4);
 }
 
 .adv-card {
