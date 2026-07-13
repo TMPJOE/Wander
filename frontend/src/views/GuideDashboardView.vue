@@ -41,13 +41,13 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="page">
-    <header class="header">
+  <div class="dashboard-page bg-surface">
+    <header class="header px-content">
       <h1 class="title">Panel de Guía</h1>
       <p class="subtitle">Hola, {{ authStore.user?.first_name }}</p>
     </header>
 
-    <div class="container py-4">
+    <div class="px-content py-4">
       <!-- Stats Grid -->
       <div class="stats-grid mb-6">
         <div class="stat-card">
@@ -146,13 +146,23 @@ onMounted(async () => {
 </template>
 
 <style scoped>
-.header {
-  padding: var(--spacing-6) var(--spacing-4) var(--spacing-4);
-  background: var(--color-primary-50);
+.dashboard-page {
+  flex: 1;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: calc(var(--bottom-nav-height) + var(--spacing-4));
 }
 
-.container {
-  padding: var(--spacing-4);
+.px-content {
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
+}
+
+.header {
+  padding-top: var(--spacing-6);
+  padding-bottom: var(--spacing-4);
+  background: var(--color-primary-50);
 }
 
 .title {
