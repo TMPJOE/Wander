@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
 import { Map, Calendar, DollarSign, Star, ChevronRight } from '@lucide/vue'
 
-const authStore = useAuthStore()
+const authState = useAuthState()
 const router = useRouter()
 const api = useApi()
 
@@ -19,7 +19,7 @@ const stats = ref({
 const recentBookings = ref<any[]>([])
 
 onMounted(async () => {
-  if (authStore.user?.role !== 'guide') {
+  if (authState.user.value?.role !== 'guide') {
     router.push('/')
     return
   }
@@ -44,7 +44,7 @@ onMounted(async () => {
   <div class="dashboard-page bg-surface">
     <header class="header px-content">
       <h1 class="title">Panel de Guía</h1>
-      <p class="subtitle">Hola, {{ authStore.user?.first_name }}</p>
+      <p class="subtitle">Hola, {{ authState.user.value?.first_name }}</p>
     </header>
 
     <div class="px-content py-4">

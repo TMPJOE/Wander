@@ -3,7 +3,6 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
 import { ArrowLeft, Plus, Edit2, Calendar, Trash2 } from '@lucide/vue'
-import { normalizeTourImages } from '../utils/tourImages'
 
 const router = useRouter()
 const api = useApi()
@@ -39,10 +38,9 @@ async function deleteTour(id: number) {
   }
 }
 
-function getImageUrl(images: unknown) {
-  const normalized = normalizeTourImages(images)
+function getImageUrl(images: any) {
   return (
-    normalized[0] ||
+    images?.[0] ||
     'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
   )
 }

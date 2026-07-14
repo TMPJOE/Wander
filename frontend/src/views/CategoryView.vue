@@ -2,24 +2,34 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@lucide/vue'
-import { useToursStore } from '../stores/tours'
-import { useCategoriesStore } from '../stores/categories'
+import { useApi } from '../composables/useApi'
 import TourCard from '../components/TourCard.vue'
 
 const route = useRoute()
 const router = useRouter()
-const toursStore = useToursStore()
-const categoriesStore = useCategoriesStore()
+const api = useApi()
 
 const slug = computed(() => route.params.slug as string)
-
-const category = computed(() => categoriesStore.categories.find((c) => c.slug === slug.value))
+const category = ref<any>(null)
+const tours = ref<any[]>([])
+const loading = ref(false)
 
 onMounted(async () => {
-  if (!categoriesStore.categories.length) {
-    await categoriesStore.fetchCategories()
+  loading.value = true
+  try {
+    const catsRes = await api.get('/categories')
+    const found = (catsRes.data || []).find((c: any) => c.slug === slug.value)
+    if (found) {
+      category.value = found
+    }
+
+    const toursRes = await api.get('/tours', { params: { category: slug.value } })
+    tours.value = toursRes.data || []
+  } catch (e) {
+    console.error('Failed to load category tours', e)
+  } finally {
+    loading.value = false
   }
-  toursStore.fetchTours({ category_slug: slug.value })
 })
 </script>
 
@@ -34,7 +44,7 @@ onMounted(async () => {
     </header>
 
     <section class="container">
-      <div v-if="toursStore.loading" class="tour-grid">
+      <div v-if="loading" class="tour-grid">
         <div v-for="i in 4" :key="i" class="tour-skeleton">
           <div class="skeleton" style="aspect-ratio: 4/3"></div>
           <div style="padding: var(--spacing-3)">
@@ -45,8 +55,8 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-else-if="toursStore.tours.length" class="tour-grid">
-        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" :allow-like="true" />
+      <div v-else-if="tours.length" class="tour-grid">
+        <TourCard v-for="tour in tours" :key="tour.id" :tour="tour" :allow-like="true" />
       </div>
 
       <div v-else class="empty">

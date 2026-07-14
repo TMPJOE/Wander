@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { onMounted, computed, ref, watch } from 'vue'
+import { onMounted, computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useToursStore } from '../stores/tours'
-import { useAuthStore } from '../stores/auth'
+import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
 import {
   ArrowLeft,
@@ -10,8 +9,6 @@ import {
   Clock,
   Users,
   Star,
-  Share2,
-  Heart,
   ChevronRight,
   CheckCircle2,
   Languages,
@@ -20,26 +17,21 @@ import {
   Utensils
 } from '@lucide/vue'
 import ImageGallery from '../components/ImageGallery.vue'
-// StarRating removed: creation is not allowed on tour page
 import ReviewCard from '../components/ReviewCard.vue'
 import GuideCard from '../components/GuideCard.vue'
-import { normalizeTourImages } from '../utils/tourImages'
 
 const route = useRoute()
 const router = useRouter()
-const toursStore = useToursStore()
-const authStore = useAuthStore()
+const authState = useAuthState()
 const api = useApi()
 
+const tour = ref<any>(null)
+const loading = ref(true)
 const reviews = ref<any[]>([])
 const reviewsLoading = ref(false)
 const schedules = ref<any[]>([])
-// review creation removed from tour detail
 
 const tourId = computed(() => route.params.id as string)
-
-const tour = computed(() => toursStore.currentTour)
-
 const selectedScheduleId = ref<number | null>(null)
 
 function toggleSchedule(id: number) {
@@ -72,26 +64,20 @@ const meetingClue = computed(() => {
     'Identificarás al guía por su chaleco reflectante o chaqueta roja.',
     'El guía tendrá un pequeño cartel con tu nombre o el nombre del tour.'
   ]
-  // Use tour ID to reliably pick the same clue for the same tour
   const index = tour.value.id % clues.length
   return clues[index]
 })
 
 const images = computed<string[]>(() => {
   if (!tour.value) return []
-  const imgs = normalizeTourImages(tour.value.images)
-  return imgs.length
-    ? imgs
+  return tour.value.images && tour.value.images.length
+    ? tour.value.images
     : ['https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=500&fit=crop']
 })
 
 const whatIncluded = computed<string[]>(() => {
   if (!tour.value) return []
-  const wi =
-    typeof tour.value.what_included === 'string'
-      ? JSON.parse(tour.value.what_included || '[]')
-      : tour.value.what_included || []
-  return wi
+  return tour.value.what_included || []
 })
 
 const formattedDuration = computed(() => {
@@ -110,7 +96,15 @@ const difficultyLabels: Record<string, { label: string; class: string }> = {
 }
 
 onMounted(async () => {
-  await toursStore.fetchTourById(tourId.value)
+  loading.value = true
+  try {
+    const res = await api.get(`/tours/${tourId.value}`)
+    tour.value = res.data
+  } catch (e) {
+    console.error('Failed to fetch tour by id', e)
+  } finally {
+    loading.value = false
+  }
   fetchReviews()
   fetchSchedules()
 })
@@ -139,7 +133,7 @@ async function fetchSchedules() {
 }
 
 function goBook() {
-  if (!authStore.isAuthenticated) {
+  if (!authState.isAuthenticated.value) {
     router.push({ name: 'login', query: { redirect: `/tours/${tourId.value}/book` } })
     return
   }
@@ -147,7 +141,7 @@ function goBook() {
 }
 
 function messageGuide() {
-  if (!authStore.isAuthenticated || !tour.value) return
+  if (!authState.isAuthenticated.value || !tour.value) return
   router.push(`/messages/${tour.value.guide_id}`)
 }
 </script>

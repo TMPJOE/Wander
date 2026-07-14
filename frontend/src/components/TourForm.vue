@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useCategoriesStore } from '../stores/categories'
-import { useAuthStore } from '../stores/auth'
-import { normalizeTourImages } from '../utils/tourImages'
+import { useAuthState } from '../composables/useAuthState'
+import { useApi } from '../composables/useApi'
 
 const props = defineProps<{
   initialData?: any
@@ -14,9 +13,10 @@ const emit = defineEmits<{
   cancel: []
 }>()
 
-const categoriesStore = useCategoriesStore()
-const authStore = useAuthStore()
+const authState = useAuthState()
+const api = useApi()
 
+const categories = ref<any[]>([])
 const form = ref({
   title: '',
   description: '',
@@ -41,12 +41,14 @@ const isUploadingImages = ref(false)
 const uploadError = ref('')
 
 onMounted(async () => {
-  if (categoriesStore.categories.length === 0) {
-    await categoriesStore.fetchCategories()
+  try {
+    const catsRes = await api.get('/categories')
+    categories.value = catsRes.data || []
+  } catch (e) {
+    console.error('Failed to load categories', e)
   }
 
   if (props.initialData) {
-    // Merge initial data
     const d = props.initialData
     form.value = {
       title: d.title || '',
@@ -60,12 +62,9 @@ onMounted(async () => {
       max_guests: d.max_guests || 10,
       difficulty: d.difficulty || 'moderate',
       languages: d.languages || ['Español'],
-      what_included:
-        typeof d.what_included === 'string'
-          ? JSON.parse(d.what_included || '[]')
-          : d.what_included || [],
+      what_included: d.what_included || [],
       meeting_point: d.meeting_point || '',
-      images: normalizeTourImages(d.images),
+      images: d.images || [],
       is_published: d.is_published !== undefined ? d.is_published : true,
     }
   }
@@ -102,7 +101,7 @@ async function handleImageSelect(event: Event) {
         const response = await fetch('/api/v1/uploads', {
           method: 'POST',
           headers: {
-            Authorization: `Bearer ${authStore.token || ''}`,
+            Authorization: `Bearer ${authState.token.value || ''}`,
           },
           body: formData,
         })
@@ -142,12 +141,7 @@ function removeLanguage(index: number) {
 }
 
 function handleSubmit() {
-  const payload = {
-    ...form.value,
-    what_included: JSON.stringify(form.value.what_included),
-    images: JSON.stringify(form.value.images),
-  }
-  emit('submit', payload)
+  emit('submit', form.value)
 }
 </script>
 
@@ -167,7 +161,7 @@ function handleSubmit() {
       <div class="form-group">
         <label class="form-label">Categoría</label>
         <select v-model="form.category_id" class="form-input" required>
-          <option v-for="cat in categoriesStore.categories" :key="cat.id" :value="cat.id">
+          <option v-for="cat in categories" :key="cat.id" :value="cat.id">
             {{ cat.name }}
           </option>
         </select>

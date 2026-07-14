@@ -2,15 +2,12 @@
 import { ref, onMounted, watch, computed, nextTick } from 'vue'
 import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { useFavoritesStore } from '../stores/favorites'
-import { useBookingsStore } from '../stores/bookings'
+import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
 import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import StarRating from '../components/StarRating.vue'
-import { normalizeTourImages } from '../utils/tourImages'
 import {
   LogOut,
   Settings,
@@ -29,15 +26,17 @@ import {
   ChevronRight,
 } from '@lucide/vue'
 
-const authStore = useAuthStore()
-const favoritesStore = useFavoritesStore()
+const authState = useAuthState()
 const api = useApi()
 const router = useRouter()
 
 const activeTab = ref('favorites')
+const favorites = ref<any[]>([])
+const favoritesLoading = ref(false)
 const adventures = ref<any[]>([])
 const adventuresLoading = ref(false)
-const bookingsStore = useBookingsStore()
+const bookings = ref<any[]>([])
+const bookingsLoading = ref(false)
 const completedBookings = ref<any[]>([])
 const bookingReviewForm = ref<{ [k: number]: { rating: number; title: string; comment: string } }>(
   {},
@@ -53,6 +52,19 @@ let elements: any = null
 let card: any = null
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY)
+
+async function uploadAvatar(e: Event) {
+  const file = (e.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  const formData = new FormData()
+  formData.append('image', file)
+  try {
+    const res = await api.post('/uploads', formData)
+    profileForm.value.avatar_url = res.data.url
+  } catch {
+    alert('Error al subir la imagen')
+  }
+}
 
 async function showAddCard() {
   isAddingCard.value = true
@@ -99,7 +111,6 @@ async function saveCard() {
   if (error) {
     alert(error.message)
   } else {
-    // Simulated behavior for demonstration
     alert('Tarjeta añadida con éxito (Simulado)')
     isAddingCard.value = false
     if (card) {
@@ -113,6 +124,7 @@ const profileForm = ref({
   last_name: '',
   bio: '',
   phone: '',
+  avatar_url: '',
 })
 
 // Helper to find review for a booking
@@ -126,25 +138,35 @@ function hasReview(bookingId: number) {
 }
 
 onMounted(async () => {
-  if (authStore.user) {
+  if (authState.user.value) {
     initForm()
   }
-  try {
-    await favoritesStore.fetchFavorites()
-  } catch {
-    // Ignore — favorites tab will show empty state
-  }
+  fetchFavorites()
 })
 
 function initForm() {
-  if (!authStore.user) return
+  if (!authState.user.value) return
   profileForm.value = {
-    first_name: authStore.user.first_name || '',
-    last_name: authStore.user.last_name || '',
-    bio: authStore.user.bio || '',
-    phone: authStore.user.phone || '',
+    first_name: authState.user.value.first_name || '',
+    last_name: authState.user.value.last_name || '',
+    bio: authState.user.value.bio || '',
+    phone: authState.user.value.phone || '',
+    avatar_url: authState.user.value.avatar_url || '',
   }
 }
+
+async function fetchFavorites() {
+  favoritesLoading.value = true
+  try {
+    const res = await api.get('/favorites')
+    favorites.value = res.data || []
+  } catch (e) {
+    console.error('Failed to fetch favorites', e)
+  } finally {
+    favoritesLoading.value = false
+  }
+}
+
 
 async function fetchAdventures() {
   adventuresLoading.value = true
@@ -161,13 +183,13 @@ async function fetchAdventures() {
 watch(activeTab, async (tab) => {
   if (tab === 'adventures') {
     if (adventures.value.length === 0) await fetchAdventures()
-    // ensure we have bookings to allow creating reviews from profile
+    bookingsLoading.value = true
     try {
-      await bookingsStore.fetchMyBookings()
-      completedBookings.value = (bookingsStore.bookings || []).filter(
+      const bookingsRes = await api.get('/bookings')
+      bookings.value = bookingsRes.data || []
+      completedBookings.value = bookings.value.filter(
         (b: any) => b.status === 'completed',
       )
-      // initialize per-booking form state
       completedBookings.value.forEach((b: any) => {
         const existingReview = getReviewForBooking(b.id)
         bookingReviewForm.value[b.id] = {
@@ -178,6 +200,8 @@ watch(activeTab, async (tab) => {
       })
     } catch (e) {
       console.error('Failed to fetch bookings for adventures tab', e)
+    } finally {
+      bookingsLoading.value = false
     }
   }
 })
@@ -193,20 +217,18 @@ async function submitReviewForBooking(booking: any) {
 
   try {
     if (existingReview) {
-      // Update existing review
       await api.put(`/reviews/${existingReview.id}`, form)
     } else {
-      // Create new review
       await api.post(`/tours/${booking.tour_id}/reviews`, {
         ...form,
         booking_id: booking.id,
       })
     }
 
-    // refresh lists
     await fetchAdventures()
-    await bookingsStore.fetchMyBookings()
-    completedBookings.value = (bookingsStore.bookings || []).filter(
+    const bookingsRes = await api.get('/bookings')
+    bookings.value = bookingsRes.data || []
+    completedBookings.value = bookings.value.filter(
       (b: any) => b.status === 'completed',
     )
     activeBookingForm.value = null
@@ -218,7 +240,6 @@ async function submitReviewForBooking(booking: any) {
 
 function openReviewForm(booking: any) {
   activeBookingForm.value = booking.id
-  // Pre-fill form with existing review if any
   const existingReview = getReviewForBooking(booking.id)
   if (existingReview) {
     bookingReviewForm.value[booking.id] = {
@@ -244,9 +265,7 @@ const PLACEHOLDER_IMG =
   'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
 
 function bookingImage(booking: any): string {
-  if (!booking.tour_image) return PLACEHOLDER_IMG
-  const imgs = normalizeTourImages(booking.tour_image)
-  return imgs[0] || PLACEHOLDER_IMG
+  return booking.tour_image || PLACEHOLDER_IMG
 }
 
 function bookingDate(booking: any): string {
@@ -269,7 +288,7 @@ async function saveProfile() {
   saving.value = true
   try {
     const res = await api.put('/users/me', profileForm.value)
-    authStore.user = res.data
+    authState.user.value = res.data
     isEditing.value = false
   } catch (e) {
     console.error(e)
@@ -280,7 +299,7 @@ async function saveProfile() {
 }
 
 function handleLogout() {
-  authStore.logout()
+  authState.logout()
   router.push('/login')
 }
 
@@ -300,21 +319,21 @@ const handleSettingsClick = () => {
     </div>
 
     <!-- Profile Info -->
-    <div class="profile-header px-content" v-if="authStore.user">
+    <div class="profile-header px-content" v-if="authState.user.value">
       <div class="profile-avatar-wrap">
         <img
-          v-if="authStore.user.avatar_url"
-          :src="authStore.user.avatar_url"
+          v-if="authState.user.value.avatar_url"
+          :src="authState.user.value.avatar_url"
           class="profile-avatar"
         />
         <div v-else class="profile-avatar profile-avatar--placeholder">
-          {{ (authStore.user.first_name || 'U').charAt(0) }}
+          {{ (authState.user.value.first_name || 'U').charAt(0) }}
         </div>
       </div>
       <div class="profile-meta">
-        <h2 class="profile-name">{{ authStore.fullName }}</h2>
+        <h2 class="profile-name">{{ authState.fullName.value }}</h2>
         <span class="profile-role">
-          {{ authStore.user.role === 'guide' ? 'Guía Local' : 'Viajero' }}
+          {{ authState.user.value.role === 'guide' ? 'Guía Local' : 'Viajero' }}
         </span>
       </div>
     </div>
@@ -349,12 +368,12 @@ const handleSettingsClick = () => {
 
     <!-- Tab Content: Favorites -->
     <div class="px-content py-4" v-if="activeTab === 'favorites'">
-      <div v-if="favoritesStore.loading" class="grid-2 gap-4">
+      <div v-if="favoritesLoading" class="grid-2 gap-4">
         <div v-for="i in 2" :key="i" class="skeleton aspect-video rounded-xl"></div>
       </div>
-      <div v-else-if="favoritesStore.favorites.length" class="grid-2 gap-4">
+      <div v-else-if="favorites.length" class="grid-2 gap-4">
         <TourCard
-          v-for="fav in favoritesStore.favorites"
+          v-for="fav in favorites"
           :key="fav.id"
           :tour="{ ...fav, is_favorited: true }"
           :allow-like="false"
@@ -493,6 +512,21 @@ const handleSettingsClick = () => {
         </div>
 
         <form v-if="isEditing" @submit.prevent="saveProfile" class="flex-col gap-4">
+          <div class="form-group mb-3">
+            <label class="form-label">Foto de perfil</label>
+            <div class="flex items-center gap-4">
+              <img
+                v-if="profileForm.avatar_url"
+                :src="profileForm.avatar_url"
+                class="profile-avatar"
+                style="width: 60px; height: 60px; margin-bottom: 0"
+              />
+              <div v-else class="profile-avatar profile-avatar--placeholder" style="width: 60px; height: 60px; font-size: var(--font-size-lg)">
+                {{ (profileForm.first_name || 'U').charAt(0) }}
+              </div>
+              <input type="file" accept="image/*" @change="uploadAvatar" />
+            </div>
+          </div>
           <div class="grid-2 gap-3">
             <div class="form-group">
               <label class="form-label">Nombre</label>
@@ -523,15 +557,15 @@ const handleSettingsClick = () => {
         <div v-else class="info-grid">
           <div class="info-item">
             <span class="info-label">Email</span>
-            <span class="info-value">{{ authStore.user?.email }}</span>
+            <span class="info-value">{{ authState.user.value?.email }}</span>
           </div>
           <div class="info-item">
             <span class="info-label">Teléfono</span>
-            <span class="info-value">{{ authStore.user?.phone || 'No especificado' }}</span>
+            <span class="info-value">{{ authState.user.value?.phone || 'No especificado' }}</span>
           </div>
           <div class="info-item col-span-2">
             <span class="info-label">Biografía</span>
-            <span class="info-value">{{ authStore.user?.bio || 'Sin biografía' }}</span>
+            <span class="info-value">{{ authState.user.value?.bio || 'Sin biografía' }}</span>
           </div>
         </div>
       </div>

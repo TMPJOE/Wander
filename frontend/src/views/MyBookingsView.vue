@@ -1,25 +1,37 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue'
-import { useBookingsStore } from '../stores/bookings'
 import { useApi } from '../composables/useApi'
 import BookingCard from '../components/BookingCard.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { CalendarDays } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 
-const bookingsStore = useBookingsStore()
 const api = useApi()
 const router = useRouter()
 
+const bookings = ref<any[]>([])
+const loading = ref(false)
 const currentFilter = ref<'upcoming' | 'past' | 'cancelled'>('upcoming')
 
 onMounted(async () => {
-  await bookingsStore.fetchMyBookings()
+  fetchMyBookings()
 })
+
+async function fetchMyBookings() {
+  loading.value = true
+  try {
+    const res = await api.get('/bookings')
+    bookings.value = res.data || []
+  } catch (e) {
+    console.error('Failed to load bookings', e)
+  } finally {
+    loading.value = false
+  }
+}
 
 const filteredBookings = computed(() => {
   const now = new Date()
-  return bookingsStore.bookings.filter(b => {
+  return bookings.value.filter(b => {
     const isCancelled = b.status === 'cancelled'
     const isCompleted = b.status === 'completed'
     const start = new Date(b.schedule_start)
@@ -34,7 +46,7 @@ async function cancelBooking(id: number) {
   if (!confirm('¿Estás seguro de que deseas cancelar esta reserva?')) return
   try {
     await api.patch(`/bookings/${id}/cancel`)
-    await bookingsStore.fetchMyBookings()
+    await fetchMyBookings()
   } catch (e) {
     console.error(e)
     alert('Error al cancelar la reserva')
@@ -66,7 +78,7 @@ async function cancelBooking(id: number) {
     </div>
 
     <div class="px-content py-4">
-      <div v-if="bookingsStore.loading" class="flex flex-col gap-4">
+      <div v-if="loading" class="flex flex-col gap-4">
         <div v-for="i in 3" :key="i" class="skeleton h-32 rounded-lg"></div>
       </div>
 
@@ -80,7 +92,7 @@ async function cancelBooking(id: number) {
       </div>
 
       <EmptyState
-        v-else-if="bookingsStore.bookings.length === 0"
+        v-else-if="bookings.length === 0"
         :icon="CalendarDays"
         title="Sin reservas"
         message="Aún no has reservado ningún tour. ¡Explora las opciones y planifica tu próxima aventura!"

@@ -3,7 +3,6 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
 import { Search, Map, Star, Languages, Calendar, Users, MapPin } from '@lucide/vue'
-import { normalizeTourImages } from '../utils/tourImages'
 
 const route = useRoute()
 const router = useRouter()
@@ -53,8 +52,7 @@ const stats = computed(() => {
 })
 
 function getTourImage(tour: any) {
-  const imgs = normalizeTourImages(tour.images)
-  return imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
+  return tour.images?.[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'
 }
 </script>
 

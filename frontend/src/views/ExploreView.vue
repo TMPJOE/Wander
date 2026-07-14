@@ -1,19 +1,20 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
-import { useFavoritesStore } from '../stores/favorites'
 import { Search, SlidersHorizontal } from '@lucide/vue'
 import wanderLogo from '../assets/wander-logo.svg'
-import { useToursStore } from '../stores/tours'
-import { useCategoriesStore } from '../stores/categories'
+import { useApi } from '../composables/useApi'
 import { applyCategoryTheme, clearCategoryTheme } from '../utils/categoryColors'
 import TourCard from '../components/TourCard.vue'
 import CategoryPill from '../components/CategoryPill.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import type { FilterValues } from '../components/FilterDrawer.vue'
 
-const toursStore = useToursStore()
-const categoriesStore = useCategoriesStore()
-const favoritesStore = useFavoritesStore()
+const api = useApi()
+
+const tours = ref<any[]>([])
+const categories = ref<any[]>([])
+const favorites = ref<any[]>([])
+const loading = ref(false)
 
 const searchQuery = ref('')
 const activeCategory = ref('')
@@ -54,10 +55,20 @@ function onMouseMove(e: MouseEvent) {
 }
 
 onMounted(async () => {
-  await Promise.all([categoriesStore.fetchCategories(), toursStore.fetchTours()])
-  // Ensure favorites are available so cards render correct liked state
+  loading.value = true
   try {
-    await favoritesStore.fetchFavorites()
+    const [catsRes, toursRes] = await Promise.all([api.get('/categories'), api.get('/tours')])
+    categories.value = catsRes.data || []
+    tours.value = toursRes.data || []
+  } catch (e) {
+    console.error('Failed to load explore data', e)
+  } finally {
+    loading.value = false
+  }
+
+  try {
+    const favsRes = await api.get('/favorites')
+    favorites.value = favsRes.data || []
   } catch {
     /* ignore */
   }
@@ -90,7 +101,8 @@ function applyFilters(filters: FilterValues) {
   fetchWithFilters()
 }
 
-function fetchWithFilters() {
+async function fetchWithFilters() {
+  loading.value = true
   const params: Record<string, string> = {}
   if (searchQuery.value) params.q = searchQuery.value
   if (activeCategory.value) params.category = activeCategory.value
@@ -98,7 +110,15 @@ function fetchWithFilters() {
   if (currentFilters.value.min_price) params.min_price = currentFilters.value.min_price
   if (currentFilters.value.max_price) params.max_price = currentFilters.value.max_price
   if (currentFilters.value.location) params.location = currentFilters.value.location
-  toursStore.fetchTours(params)
+
+  try {
+    const res = await api.get('/tours', { params })
+    tours.value = res.data || []
+  } catch (e) {
+    console.error('Failed to fetch filtered tours', e)
+  } finally {
+    loading.value = false
+  }
 }
 </script>
 
@@ -141,8 +161,8 @@ function fetchWithFilters() {
 
     <!-- Categories -->
     <section class="explore__categories">
-      <div 
-        class="categories-scroll hide-scrollbar" 
+      <div
+        class="categories-scroll hide-scrollbar"
         ref="scrollContainer"
         @mousedown="onMouseDown"
         @mouseleave="onMouseLeave"
@@ -157,7 +177,7 @@ function fetchWithFilters() {
           @select="selectCategory"
         />
         <CategoryPill
-          v-for="cat in categoriesStore.categories"
+          v-for="cat in categories"
           :key="cat.id"
           :name="cat.name"
           :slug="cat.slug"
@@ -174,17 +194,13 @@ function fetchWithFilters() {
         <h2 class="section-title">
           {{ activeCategory ? 'Resultados' : 'Tours populares' }}
         </h2>
-        <span
-          v-if="toursStore.tours.length"
-          class="text-muted"
-          style="font-size: var(--font-size-sm)"
-        >
-          {{ toursStore.tours.length }} tour{{ toursStore.tours.length !== 1 ? 's' : '' }}
+        <span v-if="tours.length" class="text-muted" style="font-size: var(--font-size-sm)">
+          {{ tours.length }} tour{{ tours.length !== 1 ? 's' : '' }}
         </span>
       </div>
 
       <!-- Loading State -->
-      <div v-if="toursStore.loading" class="tour-grid">
+      <div v-if="loading" class="tour-grid">
         <div v-for="i in 4" :key="i" class="tour-skeleton">
           <div class="skeleton" style="aspect-ratio: 4/3"></div>
           <div style="padding: var(--spacing-3)">
@@ -196,8 +212,8 @@ function fetchWithFilters() {
       </div>
 
       <!-- Tour Cards -->
-      <div v-else-if="toursStore.tours.length" class="tour-grid">
-        <TourCard v-for="tour in toursStore.tours" :key="tour.id" :tour="tour" :allow-like="true" />
+      <div v-else-if="tours.length" class="tour-grid">
+        <TourCard v-for="tour in tours" :key="tour.id" :tour="tour" :allow-like="true" />
       </div>
 
       <!-- Empty State -->
@@ -337,12 +353,23 @@ function fetchWithFilters() {
 }
 
 .categories-scroll {
+  padding-top: var(--spacing-2);
+  padding-bottom: var(--spacing-2);
   display: flex;
   gap: var(--spacing-2);
   overflow-x: auto;
-  padding-left: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
-  padding-right: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
-  scroll-padding-left: max(var(--content-padding), calc(50% - (var(--max-width) / 2) + var(--content-padding)));
+  padding-left: max(
+    var(--content-padding),
+    calc(50% - (var(--max-width) / 2) + var(--content-padding))
+  );
+  padding-right: max(
+    var(--content-padding),
+    calc(50% - (var(--max-width) / 2) + var(--content-padding))
+  );
+  scroll-padding-left: max(
+    var(--content-padding),
+    calc(50% - (var(--max-width) / 2) + var(--content-padding))
+  );
   cursor: grab;
   user-select: none;
 }

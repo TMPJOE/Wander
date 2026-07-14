@@ -1,24 +1,41 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
-import { useMessagesStore } from '../stores/messages'
+import { onMounted, onUnmounted, ref } from 'vue'
+import { useApi } from '../composables/useApi'
 import ConversationItem from '../components/ConversationItem.vue'
 import EmptyState from '../components/EmptyState.vue'
 import { MessageCircle } from '@lucide/vue'
 import { useRouter } from 'vue-router'
 
-const messagesStore = useMessagesStore()
+const api = useApi()
 const router = useRouter()
 
+const conversations = ref<any[]>([])
+const loading = ref(false)
 let pollInterval: any;
 
 onMounted(async () => {
-  await messagesStore.fetchConversations()
+  fetchConversations()
   
-  // Poll for new messages silently every 5 seconds
   pollInterval = setInterval(() => {
-    messagesStore.fetchConversations(true)
+    fetchConversations(true)
   }, 5000)
 })
+
+async function fetchConversations(silent = false) {
+  if (!silent) {
+    loading.value = true
+  }
+  try {
+    const res = await api.get('/messages/conversations')
+    conversations.value = res.data || []
+  } catch (e) {
+    console.error('Failed to load conversations', e)
+  } finally {
+    if (!silent) {
+      loading.value = false
+    }
+  }
+}
 
 onUnmounted(() => {
   if (pollInterval) clearInterval(pollInterval)
@@ -32,7 +49,7 @@ onUnmounted(() => {
     </div>
 
     <div>
-      <div v-if="messagesStore.loading" class="flex flex-col">
+      <div v-if="loading" class="flex flex-col">
         <div v-for="i in 5" :key="i" class="p-4 border-b flex items-center gap-3" style="padding-left: var(--content-padding); padding-right: var(--content-padding);">
           <div class="skeleton w-12 h-12 rounded-full"></div>
           <div class="flex-1">
@@ -42,9 +59,9 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div v-else-if="messagesStore.conversations.length" class="conversations-list">
+      <div v-else-if="conversations.length" class="conversations-list">
         <ConversationItem
-          v-for="conv in messagesStore.conversations"
+          v-for="conv in conversations"
           :key="conv.user_id"
           :conversation="conv"
           style="padding-left: var(--content-padding); padding-right: var(--content-padding);"

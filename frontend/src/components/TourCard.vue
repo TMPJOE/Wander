@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Heart, MapPin, Clock, Star } from '@lucide/vue'
-import { useFavoritesStore } from '../stores/favorites'
-import { useAuthStore } from '../stores/auth'
-import { normalizeTourImages } from '../utils/tourImages'
+import { useAuthState } from '../composables/useAuthState'
+import { useApi } from '../composables/useApi'
 
 const props = defineProps<{
   tour: {
@@ -13,7 +12,7 @@ const props = defineProps<{
     location: string
     price_per_person: number
     duration_minutes: number
-    images: string | string[]
+    images: string[]
     avg_rating: number
     review_count: number
     difficulty?: string
@@ -25,28 +24,22 @@ const props = defineProps<{
 }>()
 
 const router = useRouter()
-const favoritesStore = useFavoritesStore()
-const authStore = useAuthStore()
+const authState = useAuthState()
+const api = useApi()
 
-const isFavorited = computed(() => {
-  const id = String(props.tour.id)
-  return favoritesStore.favorites.some((f: any) => {
-    const favId = String(f.tour_id ?? f.tour?.id ?? f.id ?? '')
-    return favId === id
-  })
-})
+const localIsFavorited = ref<boolean>(!!props.tour.is_favorited)
+
+const isFavorited = computed(() => localIsFavorited.value)
 
 const allowLike = computed(() => {
   return props.allowLike !== false
 })
 
-import { ref } from 'vue'
 const justLiked = ref(false)
 
 const imageUrl = computed(() => {
-  const imgs = normalizeTourImages(props.tour.images)
   return (
-    imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop'
+    props.tour.images?.[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop'
   )
 })
 
@@ -74,28 +67,29 @@ function goToDetail() {
 
 async function toggleFavorite(e: Event) {
   e.stopPropagation()
-  if (!authStore.isAuthenticated) {
+  if (!authState.isAuthenticated.value) {
     router.push({ name: 'login' })
     return
   }
 
-  const currentlyFavorited = isFavorited.value || !!props.tour.is_favorited
+  const currentlyFavorited = localIsFavorited.value
 
-  // If liking is disabled (e.g., Profile view) and the item is not already favorited,
-  // prevent adding a favorite. Allow unliking always.
   if (!allowLike.value && !currentlyFavorited) return
 
-  // Optimistic local animation for like
   if (!currentlyFavorited) {
     justLiked.value = true
     setTimeout(() => (justLiked.value = false), 700)
   }
 
   try {
-    const ok = await favoritesStore.toggleFavorite(String(props.tour.id), currentlyFavorited)
-    ok // no-op to satisfy linter
+    localIsFavorited.value = !currentlyFavorited
+    if (currentlyFavorited) {
+      await api.delete(`/favorites/${props.tour.id}`)
+    } else {
+      await api.post(`/favorites/${props.tour.id}`)
+    }
   } catch (e) {
-    // rollback animation if API failed and surface error for debugging
+    localIsFavorited.value = currentlyFavorited
     console.error('Failed toggling favorite', e)
     justLiked.value = false
   }

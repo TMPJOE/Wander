@@ -2,23 +2,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Calendar, Users, Info } from '@lucide/vue'
-import { useToursStore } from '../stores/tours'
-import { useBookingsStore } from '../stores/bookings'
 import { useApi } from '../composables/useApi'
 
 const route = useRoute()
 const router = useRouter()
-const toursStore = useToursStore()
-const bookingsStore = useBookingsStore()
 const api = useApi()
 
 const tourId = computed(() => route.params.id as string)
+const tour = ref<any>(null)
 const schedules = ref<any[]>([])
 const selectedScheduleId = ref<number | null>(null)
 const guestCount = ref(1)
 const notes = ref('')
-
-const tour = computed(() => toursStore.currentTour)
+const loading = ref(false)
 
 const selectedSchedule = computed(() =>
   schedules.value.find((s) => s.id === selectedScheduleId.value),
@@ -30,8 +26,11 @@ const totalPrice = computed(() => {
 })
 
 onMounted(async () => {
-  if (!tour.value || tour.value.id !== parseInt(tourId.value)) {
-    await toursStore.fetchTourById(tourId.value)
+  try {
+    const tourRes = await api.get(`/tours/${tourId.value}`)
+    tour.value = tourRes.data
+  } catch (e) {
+    console.error('Failed to load tour', e)
   }
   await fetchSchedules()
 })
@@ -62,17 +61,19 @@ function formatTime(dateStr: string) {
 
 async function handleBook() {
   if (!selectedScheduleId.value) return
-
+  loading.value = true
   try {
-    const response = await bookingsStore.createBooking({
+    const response = await api.post('/bookings', {
       schedule_id: selectedScheduleId.value,
       guest_count: guestCount.value,
       notes: notes.value,
     })
-    router.push(`/checkout/${response.id}`)
+    router.push(`/checkout/${response.data.id}`)
   } catch (e) {
     console.error('Failed to book', e)
     alert('Ocurrió un error al procesar tu reserva.')
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -160,9 +161,9 @@ async function handleBook() {
       <button
         class="btn btn-secondary-light btn-lg"
         @click="handleBook"
-        :disabled="bookingsStore.loading"
+        :disabled="loading"
       >
-        {{ bookingsStore.loading ? 'Procesando...' : 'Continuar al pago' }}
+        {{ loading ? 'Procesando...' : 'Continuar al pago' }}
       </button>
     </div>
   </div>

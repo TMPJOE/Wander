@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+import { useAuthState } from '../composables/useAuthState';
 import { Eye, EyeOff } from '@lucide/vue';
 import wanderLogo from '../assets/wander-logo.svg';
 
 const router = useRouter();
 const route = useRoute();
-const authStore = useAuthStore();
+const authState = useAuthState();
 
 const email = ref('');
 const password = ref('');
 const showPassword = ref(false);
 
 async function handleSubmit() {
-  const success = await authStore.login(email.value, password.value);
+  const success = await authState.login(email.value, password.value);
   if (success) {
     const redirect = route.query.redirect as string;
     router.push(redirect || '/');
@@ -35,8 +35,8 @@ async function handleSubmit() {
     <form class="auth-form" @submit.prevent="handleSubmit">
       <h2 class="auth-form__title">Iniciar Sesión</h2>
 
-      <div v-if="authStore.error" class="auth-error">
-        {{ authStore.error }}
+      <div v-if="authState.error.value" class="auth-error">
+        {{ authState.error.value }}
       </div>
 
       <div class="form-group">
@@ -78,9 +78,9 @@ async function handleSubmit() {
       <button
         type="submit"
         class="btn btn-primary btn-block btn-lg"
-        :disabled="authStore.loading"
+        :disabled="authState.loading.value"
       >
-        {{ authStore.loading ? 'Ingresando...' : 'Ingresar' }}
+        {{ authState.loading.value ? 'Ingresando...' : 'Ingresar' }}
       </button>
 
       <p class="auth-footer">

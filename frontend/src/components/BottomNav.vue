@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthState } from '../composables/useAuthState'
 import { Compass, CalendarDays, MessageCircle, User, LayoutDashboard } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
+const authState = useAuthState()
 
 interface NavItem {
   name: string
@@ -37,7 +37,7 @@ const tabs = computed<NavItem[]>(() => {
     { name: 'profile', icon: User, route: '/profile', label: 'Perfil', requiresAuth: true },
   ]
 
-  if (authStore.isGuide) {
+  if (authState.isGuide.value) {
     items.splice(1, 0, {
       name: 'guide-dashboard',
       icon: LayoutDashboard,
@@ -56,7 +56,7 @@ function isActive(tab: NavItem): boolean {
 }
 
 function navigate(tab: NavItem) {
-  if (tab.requiresAuth && !authStore.isAuthenticated) {
+  if (tab.requiresAuth && !authState.isAuthenticated.value) {
     router.push({ name: 'login', query: { redirect: tab.route } })
     return
   }

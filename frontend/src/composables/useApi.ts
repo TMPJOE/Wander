@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useAuthStore } from '../stores/auth'
+import { useAuthState } from './useAuthState'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api/v1',
@@ -7,9 +7,9 @@ const api = axios.create({
 
 api.interceptors.request.use(
   (config) => {
-    const authStore = useAuthStore()
-    if (authStore.token) {
-      config.headers.Authorization = `Bearer ${authStore.token}`
+    const authState = useAuthState()
+    if (authState.token.value) {
+      config.headers.Authorization = `Bearer ${authState.token.value}`
     }
 
     if (config.data instanceof FormData) {
@@ -39,8 +39,8 @@ api.interceptors.response.use(
       // Don't auto-logout if the failing request was the initial user fetch
       const url = error.config?.url || ''
       if (!url.endsWith('/users/me')) {
-        const authStore = useAuthStore()
-        authStore.logout()
+        const authState = useAuthState()
+        authState.logout()
       }
     }
     return Promise.reject(error)

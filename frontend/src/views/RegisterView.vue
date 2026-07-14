@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { useAuthStore } from '../stores/auth';
+import { useAuthState } from '../composables/useAuthState';
 import { Eye, EyeOff } from '@lucide/vue';
 import wanderLogo from '../assets/wander-logo.svg';
 
 const router = useRouter();
-const authStore = useAuthStore();
+const authState = useAuthState();
 
 const form = ref({
   first_name: '',
@@ -19,7 +19,7 @@ const form = ref({
 const showPassword = ref(false);
 
 async function handleSubmit() {
-  const success = await authStore.register({
+  const success = await authState.register({
     email: form.value.email,
     username: form.value.username,
     password: form.value.password,
@@ -46,8 +46,8 @@ async function handleSubmit() {
     <form class="auth-form" @submit.prevent="handleSubmit">
       <h2 class="auth-form__title">Crear Cuenta</h2>
 
-      <div v-if="authStore.error" class="auth-error">
-        {{ authStore.error }}
+      <div v-if="authState.error.value" class="auth-error">
+        {{ authState.error.value }}
       </div>
 
       <!-- Role Selector -->
@@ -149,9 +149,9 @@ async function handleSubmit() {
       <button
         type="submit"
         class="btn btn-primary btn-block btn-lg"
-        :disabled="authStore.loading"
+        :disabled="authState.loading.value"
       >
-        {{ authStore.loading ? 'Creando cuenta...' : 'Crear Cuenta' }}
+        {{ authState.loading.value ? 'Creando cuenta...' : 'Crear Cuenta' }}
       </button>
 
       <p class="auth-footer">

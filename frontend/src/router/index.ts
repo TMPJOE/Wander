@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
+import { useAuthState } from '../composables/useAuthState'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -118,19 +118,19 @@ const router = createRouter({
 let isInitialLoad = true
 
 router.beforeEach(async (to, _from) => {
-  const authStore = useAuthStore()
+  const authState = useAuthState()
 
   // On first load, if we have a token but no user object, fetch the user
-  if (isInitialLoad && authStore.token && !authStore.user) {
+  if (isInitialLoad && authState.token.value && !authState.user.value) {
     isInitialLoad = false
-    await authStore.fetchMe()
+    await authState.fetchMe()
   }
 
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+  if (to.meta.requiresAuth && !authState.isAuthenticated.value) {
     return { name: 'login', query: { redirect: to.fullPath } }
   }
 
-  if (to.meta.requiresGuide && !authStore.isGuide) {
+  if (to.meta.requiresGuide && !authState.isGuide.value) {
     return { name: 'explore' }
   }
 

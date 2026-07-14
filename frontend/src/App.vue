@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { RouterView, useRoute } from 'vue-router'
-import { useAuthStore } from './stores/auth'
+import { useAuthState } from './composables/useAuthState'
 import { useApi } from './composables/useApi'
 import BottomNav from './components/BottomNav.vue'
 
-const authStore = useAuthStore()
+const authState = useAuthState()
 const api = useApi()
 const route = useRoute()
 
 const hideBottomNav = ['login', 'register']
 
 onMounted(async () => {
-  if (authStore.token && !authStore.user) {
+  if (authState.token.value && !authState.user.value) {
     try {
       const response = await api.get('/users/me')
-      authStore.user = response.data
+      authState.user.value = response.data
     } catch {
-      authStore.logout()
+      authState.logout()
     }
   }
 })
@@ -25,7 +25,7 @@ onMounted(async () => {
 
 <template>
   <div class="app-shell">
-    <main class="app-main">
+    <main class="app-main" :class="{ 'app-main--full': hideBottomNav.includes(route.name as string) }">
       <RouterView v-slot="{ Component, route: viewRoute }">
         <Transition name="fade" mode="out-in">
           <div :key="viewRoute.path" class="route-view-wrapper">
@@ -72,6 +72,10 @@ onMounted(async () => {
     min-width: 0;
     max-width: calc(100vw - var(--nav-width));
     width: 100%;
+  }
+
+  .app-main--full {
+    max-width: 100vw;
   }
 }
 </style>

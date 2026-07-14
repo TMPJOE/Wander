@@ -1,7 +1,6 @@
 package models
 
 import (
-	"encoding/json"
 	"time"
 )
 
@@ -20,9 +19,9 @@ type Tour struct {
 	MaxGuests       int             `json:"max_guests"`
 	Difficulty      string          `json:"difficulty"`
 	Languages       []string        `json:"languages"`
-	WhatIncluded    json.RawMessage `json:"what_included"`
+	WhatIncluded    []string        `json:"what_included"`
 	MeetingPoint    string          `json:"meeting_point"`
-	Images          json.RawMessage `json:"images"`
+	Images          []string        `json:"images"`
 	IsPublished     bool            `json:"is_published"`
 	AvgRating       float64         `json:"avg_rating"`
 	ReviewCount     int             `json:"review_count"`
@@ -39,40 +38,40 @@ type Tour struct {
 
 // TourCreateRequest is used by guides to create a tour.
 type TourCreateRequest struct {
-	CategoryID      int             `json:"category_id"`
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	Location        string          `json:"location"`
-	Latitude        *float64        `json:"latitude,omitempty"`
-	Longitude       *float64        `json:"longitude,omitempty"`
-	DurationMinutes int             `json:"duration_minutes"`
-	PricePerPerson  float64         `json:"price_per_person"`
-	MaxGuests       int             `json:"max_guests"`
-	Difficulty      string          `json:"difficulty"`
-	Languages       []string        `json:"languages"`
-	WhatIncluded    json.RawMessage `json:"what_included"`
-	MeetingPoint    string          `json:"meeting_point"`
-	Images          json.RawMessage `json:"images"`
-	IsPublished     bool            `json:"is_published"`
+	CategoryID      int      `json:"category_id"`
+	Title           string   `json:"title"`
+	Description     string   `json:"description"`
+	Location        string   `json:"location"`
+	Latitude        *float64 `json:"latitude,omitempty"`
+	Longitude       *float64 `json:"longitude,omitempty"`
+	DurationMinutes int      `json:"duration_minutes"`
+	PricePerPerson  float64  `json:"price_per_person"`
+	MaxGuests       int      `json:"max_guests"`
+	Difficulty      string   `json:"difficulty"`
+	Languages       []string `json:"languages"`
+	WhatIncluded    []string `json:"what_included"`
+	MeetingPoint    string   `json:"meeting_point"`
+	Images          []string `json:"images"`
+	IsPublished     bool     `json:"is_published"`
 }
 
 // TourUpdateRequest is used by guides to update a tour.
 type TourUpdateRequest struct {
-	CategoryID      *int             `json:"category_id,omitempty"`
-	Title           string           `json:"title,omitempty"`
-	Description     string           `json:"description,omitempty"`
-	Location        string           `json:"location,omitempty"`
-	Latitude        *float64         `json:"latitude,omitempty"`
-	Longitude       *float64         `json:"longitude,omitempty"`
-	DurationMinutes *int             `json:"duration_minutes,omitempty"`
-	PricePerPerson  *float64         `json:"price_per_person,omitempty"`
-	MaxGuests       *int             `json:"max_guests,omitempty"`
-	Difficulty      string           `json:"difficulty,omitempty"`
-	Languages       []string         `json:"languages,omitempty"`
-	WhatIncluded    *json.RawMessage `json:"what_included,omitempty"`
-	MeetingPoint    string           `json:"meeting_point,omitempty"`
-	Images          *json.RawMessage `json:"images,omitempty"`
-	IsPublished     *bool            `json:"is_published,omitempty"`
+	CategoryID      *int      `json:"category_id,omitempty"`
+	Title           string    `json:"title,omitempty"`
+	Description     string    `json:"description,omitempty"`
+	Location        string    `json:"location,omitempty"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	DurationMinutes *int      `json:"duration_minutes,omitempty"`
+	PricePerPerson  *float64  `json:"price_per_person,omitempty"`
+	MaxGuests       *int      `json:"max_guests,omitempty"`
+	Difficulty      string    `json:"difficulty,omitempty"`
+	Languages       []string  `json:"languages,omitempty"`
+	WhatIncluded    []string  `json:"what_included,omitempty"`
+	MeetingPoint    string    `json:"meeting_point,omitempty"`
+	Images          []string  `json:"images,omitempty"`
+	IsPublished     *bool     `json:"is_published,omitempty"`
 }
 
 // TourFilter defines filters for listing tours.

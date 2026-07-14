@@ -3,7 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"wander/backend/internal/models"
 
@@ -47,7 +46,8 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 	query := `
 		SELECT b.id, b.user_id, b.schedule_id, b.tour_id, b.guest_count, b.total_price, b.status, b.notes, b.created_at, b.updated_at,
 		       b.payment_status, b.stripe_payment_intent_id,
-		       t.title as tour_title, t.location as tour_location, t.images as tour_images,
+		       t.title as tour_title, t.location as tour_location,
+		       (SELECT url FROM tour_images WHERE tour_id = t.id ORDER BY position ASC LIMIT 1) as tour_image,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       tu.first_name || ' ' || tu.last_name as user_name,
 		       s.start_time as schedule_start, s.end_time as schedule_end
@@ -59,23 +59,26 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 		WHERE b.id = $1
 	`
 	b := &models.Booking{}
-	var tourImages []byte
+	var tourImage *string
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
 		&b.PaymentStatus, &b.StripePaymentIntentID,
-		&b.TourTitle, &b.TourLocation, &tourImages, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
+		&b.TourTitle, &b.TourLocation, &tourImage, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
 	)
 	if err != nil {
 		return nil, models.ErrNotFound
 	}
-	b.TourImage = parseFirstImage(tourImages)
+	if tourImage != nil {
+		b.TourImage = *tourImage
+	}
 	return b, nil
 }
 
 func (r *PgBookingRepository) ListByUserID(ctx context.Context, userID int) ([]models.Booking, error) {
 	query := `
 		SELECT b.id, b.user_id, b.schedule_id, b.tour_id, b.guest_count, b.total_price, b.status, b.notes, b.created_at, b.updated_at,
-		       t.title as tour_title, t.location as tour_location, t.images as tour_images,
+		       t.title as tour_title, t.location as tour_location,
+		       (SELECT url FROM tour_images WHERE tour_id = t.id ORDER BY position ASC LIMIT 1) as tour_image,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       s.start_time as schedule_start, s.end_time as schedule_end
 		FROM bookings b
@@ -94,15 +97,17 @@ func (r *PgBookingRepository) ListByUserID(ctx context.Context, userID int) ([]m
 	var bookings []models.Booking
 	for rows.Next() {
 		var b models.Booking
-		var tourImages []byte
+		var tourImage *string
 		err := rows.Scan(
 			&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
-			&b.TourTitle, &b.TourLocation, &tourImages, &b.GuideName, &b.GuideAvatar, &b.ScheduleStart, &b.ScheduleEnd,
+			&b.TourTitle, &b.TourLocation, &tourImage, &b.GuideName, &b.GuideAvatar, &b.ScheduleStart, &b.ScheduleEnd,
 		)
 		if err != nil {
 			return nil, err
 		}
-		b.TourImage = parseFirstImage(tourImages)
+		if tourImage != nil {
+			b.TourImage = *tourImage
+		}
 		bookings = append(bookings, b)
 	}
 	return bookings, nil
@@ -111,7 +116,8 @@ func (r *PgBookingRepository) ListByUserID(ctx context.Context, userID int) ([]m
 func (r *PgBookingRepository) ListByGuideID(ctx context.Context, guideID int) ([]models.Booking, error) {
 	query := `
 		SELECT b.id, b.user_id, b.schedule_id, b.tour_id, b.guest_count, b.total_price, b.status, b.notes, b.created_at, b.updated_at,
-		       t.title as tour_title, t.location as tour_location, t.images as tour_images,
+		       t.title as tour_title, t.location as tour_location,
+		       (SELECT url FROM tour_images WHERE tour_id = t.id ORDER BY position ASC LIMIT 1) as tour_image,
 		       tu.first_name || ' ' || tu.last_name as user_name, tu.avatar_url as user_avatar,
 		       s.start_time as schedule_start, s.end_time as schedule_end
 		FROM bookings b
@@ -130,16 +136,18 @@ func (r *PgBookingRepository) ListByGuideID(ctx context.Context, guideID int) ([
 	var bookings []models.Booking
 	for rows.Next() {
 		var b models.Booking
-		var tourImages []byte
+		var tourImage *string
 		err := rows.Scan(
 			&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
-			&b.TourTitle, &b.TourLocation, &tourImages, &b.UserName, &b.GuideAvatar,
+			&b.TourTitle, &b.TourLocation, &tourImage, &b.UserName, &b.GuideAvatar,
 			&b.ScheduleStart, &b.ScheduleEnd,
 		)
 		if err != nil {
 			return nil, err
 		}
-		b.TourImage = parseFirstImage(tourImages)
+		if tourImage != nil {
+			b.TourImage = *tourImage
+		}
 		bookings = append(bookings, b)
 	}
 	return bookings, nil
@@ -159,17 +167,4 @@ func (r *PgBookingRepository) UpdatePayment(ctx context.Context, id int, intentI
 		return fmt.Errorf("update booking payment: %w", err)
 	}
 	return nil
-}
-
-func parseFirstImage(imagesRaw []byte) string {
-	if len(imagesRaw) == 0 {
-		return ""
-	}
-	s := string(imagesRaw)
-	s = strings.Trim(s, "[]\" ")
-	parts := strings.Split(s, "\",\"")
-	if len(parts) > 0 && parts[0] != "" {
-		return parts[0]
-	}
-	return ""
 }

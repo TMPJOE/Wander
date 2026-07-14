@@ -17,24 +17,47 @@ func NewPgTourRepository(pool *pgxpool.Pool) TourRepository {
 }
 
 func (r *PgTourRepository) Create(ctx context.Context, guideID int, req models.TourCreateRequest) (*models.Tour, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin create tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
 	query := `
-		INSERT INTO tours (guide_id, category_id, title, description, location, latitude, longitude, duration_minutes, price_per_person, max_guests, difficulty, languages, what_included, meeting_point, images, is_published)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-		RETURNING id, guide_id, category_id, title, description, location, latitude, longitude, duration_minutes, price_per_person, max_guests, difficulty, languages, what_included, meeting_point, images, is_published, avg_rating, review_count, created_at, updated_at
+		INSERT INTO tours (guide_id, category_id, title, description, location, latitude, longitude, duration_minutes, price_per_person, max_guests, difficulty, languages, what_included, meeting_point, is_published)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+		RETURNING id, guide_id, category_id, title, description, location, latitude, longitude, duration_minutes, price_per_person, max_guests, difficulty, languages, what_included, meeting_point, is_published, avg_rating, review_count, created_at, updated_at
 	`
 	t := &models.Tour{}
-	err := r.pool.QueryRow(ctx, query,
+	err = tx.QueryRow(ctx, query,
 		guideID, req.CategoryID, req.Title, req.Description, req.Location, req.Latitude, req.Longitude,
 		req.DurationMinutes, req.PricePerPerson, req.MaxGuests, req.Difficulty, req.Languages,
-		req.WhatIncluded, req.MeetingPoint, req.Images, req.IsPublished,
+		req.WhatIncluded, req.MeetingPoint, req.IsPublished,
 	).Scan(
 		&t.ID, &t.GuideID, &t.CategoryID, &t.Title, &t.Description, &t.Location, &t.Latitude, &t.Longitude,
 		&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
-		&t.MeetingPoint, &t.Images, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
+		&t.MeetingPoint, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
 	)
 	if err != nil {
-		return nil, fmt.Errorf("create tour db: %w", err)
+		return nil, fmt.Errorf("insert tour: %w", err)
 	}
+
+	// Insert images
+	for i, imgURL := range req.Images {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO tour_images (tour_id, url, position)
+			VALUES ($1, $2, $3)
+		`, t.ID, imgURL, i+1)
+		if err != nil {
+			return nil, fmt.Errorf("insert tour image %d: %w", i, err)
+		}
+	}
+	t.Images = req.Images
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit create tx: %w", err)
+	}
+
 	return t, nil
 }
 
@@ -42,7 +65,7 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 	query := `
 		SELECT t.id, t.guide_id, t.category_id, t.title, t.description, t.location, t.latitude, t.longitude,
 		       t.duration_minutes, t.price_per_person, t.max_guests, t.difficulty, t.languages, t.what_included,
-		       t.meeting_point, t.images, t.is_published, t.avg_rating, t.review_count, t.created_at, t.updated_at,
+		       t.meeting_point, t.is_published, t.avg_rating, t.review_count, t.created_at, t.updated_at,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       c.name as category_name, c.slug as category_slug,
 		       EXISTS(SELECT 1 FROM favorites f WHERE f.tour_id = t.id AND f.user_id = $2) as is_favorited
@@ -55,16 +78,40 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
 		&t.ID, &t.GuideID, &t.CategoryID, &t.Title, &t.Description, &t.Location, &t.Latitude, &t.Longitude,
 		&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
-		&t.MeetingPoint, &t.Images, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
+		&t.MeetingPoint, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
 		&t.GuideName, &t.GuideAvatar, &t.CategoryName, &t.CategorySlug, &t.IsFavorited,
 	)
 	if err != nil {
 		return nil, models.ErrNotFound
 	}
+
+	// Fetch images
+	rows, err := r.pool.Query(ctx, `
+		SELECT url FROM tour_images WHERE tour_id = $1 ORDER BY position ASC
+	`, id)
+	if err != nil {
+		return nil, fmt.Errorf("fetch tour images: %w", err)
+	}
+	defer rows.Close()
+
+	t.Images = []string{}
+	for rows.Next() {
+		var url string
+		if err := rows.Scan(&url); err == nil {
+			t.Images = append(t.Images, url)
+		}
+	}
+
 	return t, nil
 }
 
 func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUpdateRequest) (*models.Tour, error) {
+	tx, err := r.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("begin update tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
 	query := "UPDATE tours SET "
 	args := []interface{}{}
 	argID := 1
@@ -126,17 +173,12 @@ func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUp
 	}
 	if req.WhatIncluded != nil {
 		query += fmt.Sprintf("what_included = $%d, ", argID)
-		args = append(args, *req.WhatIncluded)
+		args = append(args, req.WhatIncluded)
 		argID++
 	}
 	if req.MeetingPoint != "" {
 		query += fmt.Sprintf("meeting_point = $%d, ", argID)
 		args = append(args, req.MeetingPoint)
-		argID++
-	}
-	if req.Images != nil {
-		query += fmt.Sprintf("images = $%d, ", argID)
-		args = append(args, *req.Images)
 		argID++
 	}
 	if req.IsPublished != nil {
@@ -145,24 +187,39 @@ func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUp
 		argID++
 	}
 
-	if len(args) == 0 {
-		return r.GetByID(ctx, id, 0)
+	if len(args) > 0 {
+		query = query[:len(query)-2]
+		query += fmt.Sprintf(" WHERE id = $%d", argID)
+		args = append(args, id)
+
+		_, err = tx.Exec(ctx, query, args...)
+		if err != nil {
+			return nil, fmt.Errorf("update tour core: %w", err)
+		}
 	}
 
-	query = query[:len(query)-2]
-	query += fmt.Sprintf(" WHERE id = $%d RETURNING id, guide_id, category_id, title, description, location, latitude, longitude, duration_minutes, price_per_person, max_guests, difficulty, languages, what_included, meeting_point, images, is_published, avg_rating, review_count, created_at, updated_at", argID)
-	args = append(args, id)
-
-	t := &models.Tour{}
-	err := r.pool.QueryRow(ctx, query, args...).Scan(
-		&t.ID, &t.GuideID, &t.CategoryID, &t.Title, &t.Description, &t.Location, &t.Latitude, &t.Longitude,
-		&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
-		&t.MeetingPoint, &t.Images, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("update tour db: %w", err)
+	// If images are provided in the update, replace them
+	if req.Images != nil {
+		_, err = tx.Exec(ctx, "DELETE FROM tour_images WHERE tour_id = $1", id)
+		if err != nil {
+			return nil, fmt.Errorf("clear tour images: %w", err)
+		}
+		for i, imgURL := range req.Images {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO tour_images (tour_id, url, position)
+				VALUES ($1, $2, $3)
+			`, id, imgURL, i+1)
+			if err != nil {
+				return nil, fmt.Errorf("insert updated tour image %d: %w", i, err)
+			}
+		}
 	}
-	return t, nil
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("commit update tx: %w", err)
+	}
+
+	return r.GetByID(ctx, id, 0)
 }
 
 func (r *PgTourRepository) Delete(ctx context.Context, id int) error {
@@ -193,7 +250,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 	query := `
 		SELECT t.id, t.guide_id, t.category_id, t.title, t.description, t.location, t.latitude, t.longitude,
 		       t.duration_minutes, t.price_per_person, t.max_guests, t.difficulty, t.languages, t.what_included,
-		       t.meeting_point, t.images, t.is_published, t.avg_rating, t.review_count, t.created_at, t.updated_at,
+		       t.meeting_point, t.is_published, t.avg_rating, t.review_count, t.created_at, t.updated_at,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       c.name as category_name, c.slug as category_slug,
 		       EXISTS(SELECT 1 FROM favorites f WHERE f.tour_id = t.id AND f.user_id = $1) as is_favorited
@@ -262,24 +319,53 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 
 	rows, err := r.pool.Query(ctx, query, args...)
 	if err != nil {
-		return nil, fmt.Errorf("list tours: %w", err)
+		return nil, fmt.Errorf("list tours query: %w", err)
 	}
 	defer rows.Close()
 
 	var tours []models.Tour
+	tourIDs := []int{}
 	for rows.Next() {
 		var t models.Tour
 		err := rows.Scan(
 			&t.ID, &t.GuideID, &t.CategoryID, &t.Title, &t.Description, &t.Location, &t.Latitude, &t.Longitude,
 			&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
-			&t.MeetingPoint, &t.Images, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
+			&t.MeetingPoint, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
 			&t.GuideName, &t.GuideAvatar, &t.CategoryName, &t.CategorySlug, &t.IsFavorited,
 		)
 		if err != nil {
 			return nil, err
 		}
+		t.Images = []string{}
 		tours = append(tours, t)
+		tourIDs = append(tourIDs, t.ID)
 	}
+
+	if len(tourIDs) > 0 {
+		// Bulk fetch images to avoid N+1 query problem
+		imgQuery := `SELECT tour_id, url FROM tour_images WHERE tour_id = ANY($1) ORDER BY position ASC`
+		imgRows, err := r.pool.Query(ctx, imgQuery, tourIDs)
+		if err != nil {
+			return nil, fmt.Errorf("fetch list images: %w", err)
+		}
+		defer imgRows.Close()
+
+		imgMap := make(map[int][]string)
+		for imgRows.Next() {
+			var tID int
+			var url string
+			if err := imgRows.Scan(&tID, &url); err == nil {
+				imgMap[tID] = append(imgMap[tID], url)
+			}
+		}
+
+		for i := range tours {
+			if imgs, ok := imgMap[tours[i].ID]; ok {
+				tours[i].Images = imgs
+			}
+		}
+	}
+
 	return tours, nil
 }
 

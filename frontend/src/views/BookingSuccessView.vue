@@ -3,7 +3,6 @@ import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Check, MapPin, Calendar, Clock } from '@lucide/vue'
 import { useApi } from '../composables/useApi'
-import { normalizeTourImages } from '../utils/tourImages'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,9 +21,7 @@ onMounted(async () => {
 })
 
 const tourImageUrl = computed(() => {
-  if (!booking.value?.tour_image) return 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&h=200&fit=crop'
-  const imgs = normalizeTourImages(booking.value.tour_image)
-  return imgs[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&h=200&fit=crop'
+  return booking.value?.tour_image || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=200&h=200&fit=crop'
 })
 
 const defaultAvatar = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'

@@ -2,19 +2,18 @@
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ArrowLeft, Send } from '@lucide/vue';
-import { useMessagesStore } from '../stores/messages';
-import { useAuthStore } from '../stores/auth';
+import { useAuthState } from '../composables/useAuthState';
 import { useApi } from '../composables/useApi';
 import MessageBubble from '../components/MessageBubble.vue';
 
 const route = useRoute();
 const router = useRouter();
-const messagesStore = useMessagesStore();
-const authStore = useAuthStore();
+const authState = useAuthState();
 const api = useApi();
 
 const userId = computed(() => route.params.userId as string);
 const newMessage = ref('');
+const messages = ref<any[]>([]);
 const messagesContainer = ref<HTMLElement | null>(null);
 const otherUser = ref<any>(null);
 
@@ -22,12 +21,11 @@ let pollInterval: any;
 
 onMounted(async () => {
   await fetchOtherUser();
-  await messagesStore.fetchMessages(userId.value);
+  await fetchMessages();
   scrollToBottom();
   
-  // Basic polling for new messages every 5 seconds
   pollInterval = setInterval(async () => {
-    await messagesStore.fetchMessages(userId.value);
+    await fetchMessages();
   }, 5000);
 });
 
@@ -44,12 +42,26 @@ async function fetchOtherUser() {
   }
 }
 
+async function fetchMessages() {
+  try {
+    const res = await api.get(`/messages/${userId.value}`);
+    messages.value = res.data || [];
+  } catch (e) {
+    console.error('Failed to fetch messages', e);
+  }
+}
+
 async function sendMessage() {
   if (!newMessage.value.trim()) return;
   const content = newMessage.value;
   newMessage.value = '';
-  await messagesStore.sendMessage(userId.value, content);
-  scrollToBottom();
+  try {
+    await api.post(`/messages/${userId.value}`, { content });
+    await fetchMessages();
+    scrollToBottom();
+  } catch (e) {
+    console.error('Failed to send message', e);
+  }
 }
 
 function scrollToBottom() {
@@ -88,10 +100,10 @@ function scrollToBottom() {
     <div class="chat-body" ref="messagesContainer">
       <div class="messages-list">
         <MessageBubble
-          v-for="msg in messagesStore.currentMessages"
+          v-for="msg in messages"
           :key="msg.id"
           :message="msg"
-          :isMine="msg.sender_id === authStore.user?.id"
+          :isMine="msg.sender_id === authState.user.value?.id"
         />
       </div>
     </div>
