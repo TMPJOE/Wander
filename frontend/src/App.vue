@@ -60,6 +60,10 @@ onMounted(async () => {
   padding-bottom: var(--bottom-nav-height);
 }
 
+.app-main--full {
+  padding-bottom: 0;
+}
+
 /* Desktop: sidebar nav sits beside content and spans the full viewport width. */
 @media (min-width: 1024px) {
   .app-shell {
