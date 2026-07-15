@@ -41,3 +41,4 @@ frontend/*.local
 # OS generated files
 *.tmp
 *.temp
+implementation_plan.md
