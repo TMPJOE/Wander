@@ -95,10 +95,10 @@ function formatTime(dateStr: string) {
       </div>
 
       <div class="actions">
-        <button class="btn btn-success-solid btn-block mb-4" @click="router.push(`/bookings/${bookingId}`)">
+        <button class="btn btn-secondary-light btn-lg btn-block mb-4" @click="router.push(`/bookings/${bookingId}`)">
           Ver Detalles de Reserva
         </button>
-        <button class="btn btn-ghost btn-block btn-back" @click="router.push('/')">
+        <button class="btn btn-ghost btn-block" @click="router.push('/')">
           Volver a Explorar
         </button>
       </div>
@@ -276,29 +276,5 @@ function formatTime(dateStr: string) {
 
 .actions {
   width: 100%;
-}
-
-.btn-success-solid {
-  background-color: #0b6b47;
-  color: white;
-  font-weight: 700;
-  padding: 14px;
-  border-radius: var(--radius-md);
-  border: none;
-  transition: all 0.2s ease;
-}
-
-.btn-success-solid:hover {
-  background-color: #085035;
-  transform: translateY(-1px);
-}
-
-.btn-back {
-  color: var(--color-primary-dark);
-  font-weight: 700;
-  background: transparent;
-}
-.btn-back:hover {
-  background: var(--color-primary-50);
 }
 </style>

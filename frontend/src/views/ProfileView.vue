@@ -107,7 +107,7 @@ async function saveCard() {
     type: 'card',
     card: card,
   })
-  
+
   if (error) {
     alert(error.message)
   } else {
@@ -167,7 +167,6 @@ async function fetchFavorites() {
   }
 }
 
-
 async function fetchAdventures() {
   adventuresLoading.value = true
   try {
@@ -187,9 +186,7 @@ watch(activeTab, async (tab) => {
     try {
       const bookingsRes = await api.get('/bookings')
       bookings.value = bookingsRes.data || []
-      completedBookings.value = bookings.value.filter(
-        (b: any) => b.status === 'completed',
-      )
+      completedBookings.value = bookings.value.filter((b: any) => b.status === 'completed')
       completedBookings.value.forEach((b: any) => {
         const existingReview = getReviewForBooking(b.id)
         bookingReviewForm.value[b.id] = {
@@ -228,9 +225,7 @@ async function submitReviewForBooking(booking: any) {
     await fetchAdventures()
     const bookingsRes = await api.get('/bookings')
     bookings.value = bookingsRes.data || []
-    completedBookings.value = bookings.value.filter(
-      (b: any) => b.status === 'completed',
-    )
+    completedBookings.value = bookings.value.filter((b: any) => b.status === 'completed')
     activeBookingForm.value = null
   } catch (e) {
     console.error('Failed to submit review from profile', e)
@@ -448,7 +443,7 @@ const handleSettingsClick = () => {
           <div class="adv-card__footer">
             <button
               v-if="activeBookingForm !== booking.id"
-              class="btn btn-outline btn-md"
+              class="btn btn-warning-light btn-md"
               @click="openReviewForm(booking)"
             >
               <Edit2 :size="16" />
@@ -481,9 +476,8 @@ const handleSettingsClick = () => {
               ></textarea>
             </div>
             <div class="flex justify-end">
-              <button 
-                class="btn btn_xl btn-review-submit" 
-                style="background-color: var(--color-star); border-color: var(--color-star); color: white;"
+              <button
+                class="btn btn-warning-light btn-md mt-2"
                 @click="submitReviewForBooking(booking)"
               >
                 <Save :size="14" />
@@ -521,7 +515,11 @@ const handleSettingsClick = () => {
                 class="profile-avatar"
                 style="width: 60px; height: 60px; margin-bottom: 0"
               />
-              <div v-else class="profile-avatar profile-avatar--placeholder" style="width: 60px; height: 60px; font-size: var(--font-size-lg)">
+              <div
+                v-else
+                class="profile-avatar profile-avatar--placeholder"
+                style="width: 60px; height: 60px; font-size: var(--font-size-lg)"
+              >
                 {{ (profileForm.first_name || 'U').charAt(0) }}
               </div>
               <input type="file" accept="image/*" @change="uploadAvatar" />
@@ -581,15 +579,20 @@ const handleSettingsClick = () => {
             <span>Editar Perfil</span>
             <ChevronRight :size="18" class="ml-auto text-muted" />
           </button>
-          
+
           <button class="settings-menu-item" @click="showPaymentMethods = !showPaymentMethods">
             <div class="settings-menu-icon">
               <CreditCard :size="18" />
             </div>
             <span>Métodos de Pago</span>
-            <ChevronRight :size="18" class="ml-auto text-muted" :class="{ 'rotate-90': showPaymentMethods }" style="transition: transform 0.2s;" />
+            <ChevronRight
+              :size="18"
+              class="ml-auto text-muted"
+              :class="{ 'rotate-90': showPaymentMethods }"
+              style="transition: transform 0.2s"
+            />
           </button>
-          
+
           <div v-if="showPaymentMethods" class="payment-methods-panel">
             <h4 class="text-sm font-semibold text-secondary mb-3">Tarjetas Guardadas</h4>
             <div class="saved-card">
@@ -602,20 +605,30 @@ const handleSettingsClick = () => {
               </div>
               <button class="btn btn-ghost btn-sm text-error">Eliminar</button>
             </div>
-            <button v-if="!isAddingCard" class="btn btn-outline w-full text-sm mt-3 flex justify-center items-center gap-2" @click="showAddCard">
+            <button
+              v-if="!isAddingCard"
+              class="btn btn-outline w-full text-sm mt-3 flex justify-center items-center gap-2"
+              @click="showAddCard"
+            >
               <span>+ Agregar nueva tarjeta</span>
             </button>
-            
-            <div v-if="isAddingCard" class="mt-4 p-4 border border-border-light rounded-lg bg-white">
+
+            <div
+              v-if="isAddingCard"
+              class="mt-4 p-4 border border-border-light rounded-lg bg-white"
+            >
               <h5 class="text-sm font-semibold mb-3">Detalles de la tarjeta</h5>
-              <div ref="cardElement" class="p-3 border border-border-light rounded-md mb-4 bg-surface"></div>
+              <div
+                ref="cardElement"
+                class="p-3 border border-border-light rounded-md mb-4 bg-surface"
+              ></div>
               <div class="flex gap-2 justify-end">
                 <button class="btn btn-ghost btn-sm" @click="cancelAddCard">Cancelar</button>
                 <button class="btn btn-primary btn-sm" @click="saveCard">Guardar Tarjeta</button>
               </div>
             </div>
           </div>
-          
+
           <button class="settings-menu-item">
             <div class="settings-menu-icon">
               <Bell :size="18" />
@@ -623,7 +636,7 @@ const handleSettingsClick = () => {
             <span>Notificaciones</span>
             <ChevronRight :size="18" class="ml-auto text-muted" />
           </button>
-          
+
           <button class="settings-menu-item">
             <div class="settings-menu-icon">
               <HelpCircle :size="18" />
@@ -638,7 +651,6 @@ const handleSettingsClick = () => {
 </template>
 
 <style scoped>
-
 .profile-page {
   flex: 1;
   width: 100%;
@@ -980,8 +992,8 @@ const handleSettingsClick = () => {
 .adv-card__review-form {
   margin: 0 var(--spacing-3) var(--spacing-3);
   padding: var(--spacing-4);
-  background: var(--color-warning-bg);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-warning);
   display: flex;
   flex-direction: column;
 }

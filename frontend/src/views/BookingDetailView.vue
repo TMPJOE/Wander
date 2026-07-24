@@ -108,7 +108,7 @@ function formatTime(dateStr: string) {
 </script>
 
 <template>
-  <div class="booking-detail-page bg-surface min-h-screen">
+  <div class="booking-detail-page page">
     <header class="header">
       <div class="container flex items-center justify-between">
         <button class="back-btn" @click="router.back()">
@@ -123,7 +123,7 @@ function formatTime(dateStr: string) {
       Cargando detalle...
     </div>
 
-    <div v-else-if="booking" class="container py-6 pb-20">
+    <div v-else-if="booking" class="container py-6">
       <!-- Tour Hero Image Card -->
       <div class="card hero-card overflow-hidden mb-6">
         <div class="hero-image-wrap">
@@ -134,7 +134,7 @@ function formatTime(dateStr: string) {
           />
           <div class="hero-overlay">
             <span
-              class="badge status-badge"
+              class="badge"
               :class="{
                 'badge-success': booking.status === 'confirmed',
                 'badge-warning': booking.status === 'pending',
@@ -192,7 +192,7 @@ function formatTime(dateStr: string) {
           <div class="info-item">
             <DollarSign :size="18" class="icon-accent" />
             <div>
-              <span class="info-label">Total Paid</span>
+              <span class="info-label">Total Pagado</span>
               <span class="info-value font-bold text-primary">${{ booking.total_price.toFixed(2) }} USD</span>
             </div>
           </div>
@@ -219,7 +219,7 @@ function formatTime(dateStr: string) {
 
       <!-- Add to Calendar Action -->
       <div class="mb-6">
-        <button class="btn btn-outline btn-block flex items-center justify-center gap-2" @click="handleAddToCalendar">
+        <button class="btn btn-outline btn-block" @click="handleAddToCalendar">
           <Calendar :size="18" />
           Añadir a mi Calendario (.ics)
         </button>
@@ -241,7 +241,7 @@ function formatTime(dateStr: string) {
         </div>
 
         <button
-          class="btn btn-error-outline btn-block"
+          class="btn btn-danger-light btn-block"
           :disabled="cancelling"
           @click="handleCancel"
         >
@@ -253,10 +253,6 @@ function formatTime(dateStr: string) {
 </template>
 
 <style scoped>
-.pb-20 {
-  padding-bottom: 5rem;
-}
-
 .container {
   padding: 0 var(--content-padding, 1rem);
   max-width: 600px;
@@ -321,13 +317,6 @@ function formatTime(dateStr: string) {
   align-items: center;
 }
 
-.status-badge {
-  padding: 4px 10px;
-  font-size: 0.75rem;
-  font-weight: 700;
-  border-radius: 8px;
-}
-
 .ref-code {
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(4px);
@@ -373,34 +362,6 @@ function formatTime(dateStr: string) {
   height: 44px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.btn-block {
-  width: 100%;
-  padding: 0.75rem;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid var(--color-primary);
-  color: var(--color-primary);
-}
-
-.btn-outline:hover {
-  background: var(--color-primary-50);
-}
-
-.btn-error-outline {
-  background: transparent;
-  border: 1.5px solid #ef4444;
-  color: #ef4444;
-}
-
-.btn-error-outline:hover {
-  background: #fef2f2;
 }
 
 .bg-success-light {

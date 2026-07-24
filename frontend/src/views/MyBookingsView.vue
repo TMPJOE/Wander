@@ -41,11 +41,11 @@ async function fetchMyBookings() {
 
 const filteredBookings = computed(() => {
   const now = new Date()
-  return bookings.value.filter(b => {
+  return bookings.value.filter((b) => {
     const isCancelled = b.status === 'cancelled'
     const isCompleted = b.status === 'completed'
     const start = new Date(b.schedule_start)
-    
+
     if (currentFilter.value === 'cancelled') return isCancelled
     if (currentFilter.value === 'past') return !isCancelled && (start < now || isCompleted)
     return !isCancelled && !isCompleted && start >= now
@@ -54,7 +54,7 @@ const filteredBookings = computed(() => {
 
 const unreviewedPastBookings = computed(() => {
   if (currentFilter.value !== 'past') return []
-  return filteredBookings.value.filter(b => !dismissedReviewBookings.value.has(b.id))
+  return filteredBookings.value.filter((b) => !dismissedReviewBookings.value.has(b.id))
 })
 
 function setRating(bookingId: number, rating: number) {
@@ -74,7 +74,7 @@ async function submitReview(booking: any) {
     await api.post(`/tours/${booking.tour_id}/reviews`, {
       rating,
       comment,
-      booking_id: booking.id
+      booking_id: booking.id,
     })
     toast.success('¡Gracias por tu reseña!')
     dismissReview(booking.id)
@@ -113,21 +113,27 @@ async function cancelBooking(id: number) {
     <div class="header px-content">
       <h1 class="title">Mis Reservas</h1>
       <div class="filters">
-        <button 
-          class="filter-pill" 
+        <button
+          class="filter-pill"
           :class="{ active: currentFilter === 'upcoming' }"
           @click="currentFilter = 'upcoming'"
-        >Próximas</button>
-        <button 
-          class="filter-pill" 
+        >
+          Próximas
+        </button>
+        <button
+          class="filter-pill"
           :class="{ active: currentFilter === 'past' }"
           @click="currentFilter = 'past'"
-        >Pasadas</button>
-        <button 
-          class="filter-pill" 
+        >
+          Pasadas
+        </button>
+        <button
+          class="filter-pill"
           :class="{ active: currentFilter === 'cancelled' }"
           @click="currentFilter = 'cancelled'"
-        >Canceladas</button>
+        >
+          Canceladas
+        </button>
       </div>
     </div>
 
@@ -137,8 +143,15 @@ async function cancelBooking(id: number) {
       </div>
 
       <!-- Post-trip Review Prompt Banner -->
-      <div v-if="currentFilter === 'past' && unreviewedPastBookings.length" class="review-prompt-section mb-4">
-        <div v-for="booking in unreviewedPastBookings" :key="`review-${booking.id}`" class="review-prompt-card">
+      <div
+        v-if="currentFilter === 'past' && unreviewedPastBookings.length"
+        class="review-prompt-section mb-4"
+      >
+        <div
+          v-for="booking in unreviewedPastBookings"
+          :key="`review-${booking.id}`"
+          class="review-prompt-card"
+        >
           <button class="dismiss-btn" title="Descartar" @click="dismissReview(booking.id)">
             <X :size="16" />
           </button>
@@ -146,7 +159,9 @@ async function cancelBooking(id: number) {
             <Star :size="18" class="text-warning fill-warning" />
             <h3 class="text-sm font-bold text-dark">Califica tu experiencia</h3>
           </div>
-          <p class="text-xs text-secondary mt-1">¿Qué tal estuvo tu tour "{{ booking.tour_title }}"?</p>
+          <p class="text-xs text-secondary mt-1">
+            ¿Qué tal estuvo tu tour "{{ booking.tour_title }}"?
+          </p>
 
           <div class="star-rating my-2">
             <button
@@ -158,7 +173,11 @@ async function cancelBooking(id: number) {
             >
               <Star
                 :size="20"
-                :class="(reviewRatings[booking.id] || 5) >= star ? 'text-warning fill-warning' : 'text-muted'"
+                :class="
+                  (reviewRatings[booking.id] || 5) >= star
+                    ? 'text-warning fill-warning'
+                    : 'text-muted'
+                "
               />
             </button>
           </div>
@@ -171,7 +190,7 @@ async function cancelBooking(id: number) {
               placeholder="Escribe un comentario breve (opcional)..."
             />
             <button
-              class="btn btn-primary btn-sm flex items-center gap-1"
+              class="btn btn-warning-light btn-md flex items-center gap-1"
               :disabled="submittingReview[booking.id]"
               @click="submitReview(booking)"
             >
@@ -251,8 +270,8 @@ async function cancelBooking(id: number) {
   display: none;
 }
 .filters {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .filter-pill {
@@ -301,8 +320,7 @@ async function cancelBooking(id: number) {
 .review-prompt-card {
   position: relative;
   background: var(--color-surface);
-  border: 1.5px solid #fef08a;
-  background-color: #fefce8;
+  border: 1.5px solid var(--color-warning);
   border-radius: var(--radius-lg);
   padding: var(--spacing-4);
   box-shadow: 0 4px 12px rgba(234, 179, 8, 0.08);

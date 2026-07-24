@@ -32,12 +32,12 @@ const handleCancel = () => {
             <p>{{ confirmModalBody }}</p>
           </div>
           <div class="modal-footer">
-            <button class="btn btn-secondary" @click="handleCancel">
+            <button class="btn btn-ghost" @click="handleCancel">
               {{ confirmModalCancelText }}
             </button>
             <button
               class="btn"
-              :class="confirmModalVariant === 'danger' ? 'btn-danger' : 'btn-primary'"
+              :class="confirmModalVariant === 'danger' ? 'btn-danger-light btn-md' : 'btn-secondary-light btn-md'"
               @click="handleConfirm"
             >
               {{ confirmModalConfirmText }}
@@ -94,43 +94,6 @@ const handleCancel = () => {
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.5rem;
-}
-
-.btn {
-  padding: 0.625rem 1.25rem;
-  border-radius: 10px;
-  font-weight: 600;
-  font-size: 0.875rem;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-secondary {
-  background: #f1f5f9;
-  color: #475569;
-}
-
-.btn-secondary:hover {
-  background: #e2e8f0;
-}
-
-.btn-primary {
-  background: var(--color-primary, #6366f1);
-  color: #ffffff;
-}
-
-.btn-primary:hover {
-  filter: brightness(1.1);
-}
-
-.btn-danger {
-  background: #ef4444;
-  color: #ffffff;
-}
-
-.btn-danger:hover {
-  background: #dc2626;
 }
 
 /* Modal Transition */

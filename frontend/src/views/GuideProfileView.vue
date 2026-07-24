@@ -136,8 +136,8 @@ function getTourImage(tour: any) {
                 <span><Calendar :size="12" /> {{ Math.floor(tour.duration_minutes / 60) }}h {{ tour.duration_minutes % 60 ? (tour.duration_minutes % 60) + 'm' : '' }}</span>
                 <span><Users :size="12" /> Máx {{ tour.max_guests }}</span>
               </div>
-              <button class="btn btn-outline-primary btn-sm mt-3 w-full" @click="router.push(`/tours/${tour.id}`)">
-                Ver Detalles
+              <button class="btn btn-outline btn-block" @click="router.push(`/tours/${tour.id}`)">
+                Ver detalles
               </button>
             </div>
           </div>

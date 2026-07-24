@@ -100,7 +100,7 @@ const statusClass: Record<string, string> = {
       class="booking-card__footer"
       v-if="booking.status === 'pending' || booking.status === 'confirmed'"
     >
-      <button class="btn btn-outline btn-md" @click.stop="$emit('cancel', booking.id)">
+      <button class="btn btn-danger-light btn-md" @click.stop="$emit('cancel', booking.id)">
         Cancelar reserva
       </button>
     </div>

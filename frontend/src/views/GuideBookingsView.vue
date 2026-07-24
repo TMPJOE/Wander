@@ -165,13 +165,13 @@ function formatTime(dateStr: string) {
 
             <div class="flex gap-2" v-if="booking.status === 'pending'">
               <button
-                class="btn btn-error btn-xs flex items-center gap-1"
+                class="btn btn-danger-light btn-md flex items-center gap-1"
                 @click="rejectBooking(booking.id)"
               >
                 <X :size="14" /> Rechazar
               </button>
               <button
-                class="btn btn-success btn-xs flex items-center gap-1"
+                class="btn btn-success-light btn-md flex items-center gap-1"
                 @click="confirmBooking(booking.id)"
               >
                 <Check :size="14" /> Confirmar
@@ -179,7 +179,7 @@ function formatTime(dateStr: string) {
             </div>
             <div v-else-if="booking.status === 'confirmed'">
               <button
-                class="btn btn-primary btn-xs flex items-center gap-1"
+                class="btn btn-secondary-light btn-md flex items-center gap-1"
                 @click="completeBooking(booking.id)"
               >
                 <Check :size="14" /> Marcar completado
