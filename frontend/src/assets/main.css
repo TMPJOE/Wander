@@ -94,7 +94,6 @@ button {
 .page {
   flex: 1;
   width: 100%;
-  max-width: var(--max-width);
   margin: 0 auto;
   /* Leave room for the bottom nav on mobile/tablet; collapses to 0 on desktop
      where the nav becomes a sidebar handled via --nav-width offset. */

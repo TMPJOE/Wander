@@ -110,22 +110,21 @@ function formatTime(dateStr: string) {
 <template>
   <div class="booking-detail-page page">
     <header class="header">
-      <div class="container flex items-center justify-between">
-        <button class="back-btn" @click="router.back()">
-          <ArrowLeft :size="20" />
-        </button>
-        <h1 class="title">Detalle de Reserva</h1>
-        <div style="width: 36px"></div>
-      </div>
+      <button class="back-btn" @click="router.back()">
+        <ArrowLeft :size="20" />
+      </button>
+      <h1 class="header-title">Detalle de Reserva</h1>
+      <div style="width: 40px"></div>
     </header>
 
     <div v-if="loading" class="container py-8 text-center text-secondary">
-      Cargando detalle...
+      <div class="skeleton" style="height: 120px; margin-bottom: var(--spacing-4)"></div>
+      <div class="skeleton" style="height: 200px"></div>
     </div>
 
-    <div v-else-if="booking" class="container py-6">
+    <div v-else-if="booking" class="container">
       <!-- Tour Hero Image Card -->
-      <div class="card hero-card overflow-hidden mb-6">
+      <div class="card hero-card">
         <div class="hero-image-wrap">
           <img
             :src="booking.tour_image || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop'"
@@ -148,50 +147,55 @@ function formatTime(dateStr: string) {
           </div>
         </div>
 
-        <div class="p-5">
-          <h2 class="text-xl font-bold text-dark mb-2">{{ booking.tour_title }}</h2>
-          <div class="flex items-center gap-2 text-sm text-secondary">
+        <div class="hero-body">
+          <h2 class="hero-title">{{ booking.tour_title }}</h2>
+          <div class="hero-location">
             <MapPin :size="16" class="text-primary" />
             <span>{{ booking.tour_location }}</span>
           </div>
         </div>
       </div>
 
-      <!-- Booking Info Details Grid -->
-      <div class="card p-5 mb-6 flex flex-col gap-4">
-        <h3 class="text-md font-semibold border-b pb-2">Información del Tour</h3>
+      <!-- Booking Info Details Grid (2x2 Grid) -->
+      <div class="card detail-card">
+        <h3 class="card-section-title">Información del Tour</h3>
 
-        <div class="info-row">
-          <div class="info-item">
-            <Calendar :size="18" class="icon-accent" />
-            <div>
+        <div class="info-grid">
+          <div class="info-cell">
+            <div class="info-icon-wrap">
+              <Calendar :size="18" class="icon-accent" />
+            </div>
+            <div class="info-text">
               <span class="info-label">Fecha</span>
               <span class="info-value">{{ formatDate(booking.schedule_start) }}</span>
             </div>
           </div>
-        </div>
 
-        <div class="info-row">
-          <div class="info-item">
-            <Clock :size="18" class="icon-accent" />
-            <div>
+          <div class="info-cell">
+            <div class="info-icon-wrap">
+              <Clock :size="18" class="icon-accent" />
+            </div>
+            <div class="info-text">
               <span class="info-label">Hora</span>
               <span class="info-value">{{ formatTime(booking.schedule_start) }}</span>
             </div>
           </div>
-        </div>
 
-        <div class="info-row">
-          <div class="info-item">
-            <Users :size="18" class="icon-accent" />
-            <div>
+          <div class="info-cell">
+            <div class="info-icon-wrap">
+              <Users :size="18" class="icon-accent" />
+            </div>
+            <div class="info-text">
               <span class="info-label">Asistentes</span>
               <span class="info-value">{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span>
             </div>
           </div>
-          <div class="info-item">
-            <DollarSign :size="18" class="icon-accent" />
-            <div>
+
+          <div class="info-cell">
+            <div class="info-icon-wrap">
+              <DollarSign :size="18" class="icon-accent" />
+            </div>
+            <div class="info-text">
               <span class="info-label">Total Pagado</span>
               <span class="info-value font-bold text-primary">${{ booking.total_price.toFixed(2) }} USD</span>
             </div>
@@ -200,48 +204,48 @@ function formatTime(dateStr: string) {
       </div>
 
       <!-- Guide Info Card -->
-      <div class="card p-5 mb-6">
-        <h3 class="text-md font-semibold border-b pb-2 mb-3">Tu Guía Local</h3>
-        <div class="flex items-center gap-3">
+      <div class="card detail-card">
+        <h3 class="card-section-title">Tu Guía Local</h3>
+        <div class="guide-profile">
           <img
             :src="booking.guide_avatar || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'"
             alt="Guide"
             class="guide-avatar"
           />
-          <div>
-            <span class="font-bold text-dark block">{{ booking.guide_name || 'Guía Wander' }}</span>
-            <span class="text-xs text-secondary flex items-center gap-1">
-              <UserCheck :size="12" /> Guía Verificado
+          <div class="guide-details">
+            <span class="guide-name">{{ booking.guide_name || 'Guía Wander' }}</span>
+            <span class="guide-badge">
+              <UserCheck :size="13" class="text-success" /> Guía Verificado
             </span>
           </div>
         </div>
       </div>
 
       <!-- Add to Calendar Action -->
-      <div class="mb-6">
-        <button class="btn btn-outline btn-block" @click="handleAddToCalendar">
+      <div>
+        <button class="btn btn-outline btn-block btn-lg" @click="handleAddToCalendar">
           <Calendar :size="18" />
           Añadir a mi Calendario (.ics)
         </button>
       </div>
 
       <!-- Cancellation Section -->
-      <div v-if="booking.status !== 'cancelled' && booking.status !== 'completed'" class="card cancel-card p-5">
-        <h3 class="text-md font-semibold text-error mb-2 flex items-center gap-2">
+      <div v-if="booking.status !== 'cancelled' && booking.status !== 'completed'" class="card cancel-card">
+        <h3 class="cancel-title">
           <AlertTriangle :size="18" /> Política de Cancelación
         </h3>
-        <p class="text-xs text-secondary mb-4 leading-relaxed">
+        <p class="cancel-desc">
           Cancela con más de 48h de anticipación para un <strong>reembolso del 100%</strong>. Cancelaciones entre 48h y 0h reciben un <strong>reembolso del 50%</strong>.
         </p>
 
-        <div class="policy-status mb-4 p-3 rounded-lg" :class="isEligibleForFullRefund ? 'bg-success-light' : 'bg-warning-light'">
-          <span class="text-xs font-semibold" :class="isEligibleForFullRefund ? 'text-success' : 'text-warning'">
+        <div class="policy-status" :class="isEligibleForFullRefund ? 'policy-status--success' : 'policy-status--warning'">
+          <span class="policy-status-text">
             {{ isEligibleForFullRefund ? '✓ Cancelación gratuita disponible (Reembolso 100%)' : '⚠️ Cancelación tardía (<48h) — Reembolso del 50%' }}
           </span>
         </div>
 
         <button
-          class="btn btn-danger-light btn-block"
+          class="btn btn-danger-light btn-block btn-lg"
           :disabled="cancelling"
           @click="handleCancel"
         >
@@ -253,43 +257,58 @@ function formatTime(dateStr: string) {
 </template>
 
 <style scoped>
-.container {
-  padding: 0 var(--content-padding, 1rem);
-  max-width: 600px;
-  margin: 0 auto;
+.booking-detail-page {
+  background-color: var(--color-background);
+  min-height: 100vh;
 }
 
 .header {
-  padding: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-4);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;
   top: 0;
-  z-index: 10;
+  z-index: var(--z-sticky);
 }
 
 .back-btn {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--color-background);
-  border: none;
+  width: 40px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
+  border-radius: var(--radius-full);
+  background: var(--color-background);
+  transition: background-color var(--transition-fast);
 }
 
-.title {
-  font-size: 1.125rem;
-  font-weight: 700;
+.back-btn:hover {
+  background: var(--color-border-light);
+}
+
+.header-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+.container {
+  padding: var(--spacing-5) var(--content-padding);
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-5);
 }
 
 .card {
   background: var(--color-surface);
-  border-radius: 16px;
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-border-light);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
 }
 
 .hero-card {
@@ -298,7 +317,7 @@ function formatTime(dateStr: string) {
 
 .hero-image-wrap {
   position: relative;
-  height: 180px;
+  height: 200px;
 }
 
 .hero-image {
@@ -309,78 +328,193 @@ function formatTime(dateStr: string) {
 
 .hero-overlay {
   position: absolute;
-  top: 12px;
-  left: 12px;
-  right: 12px;
+  top: var(--spacing-3);
+  left: var(--spacing-3);
+  right: var(--spacing-3);
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .ref-code {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
   color: white;
-  padding: 4px 8px;
-  border-radius: 6px;
-  font-size: 0.75rem;
-  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
 }
 
-.info-row {
-  display: flex;
-  gap: 1.5rem;
+.hero-body {
+  padding: var(--spacing-4) var(--spacing-5);
 }
 
-.info-item {
+.hero-title {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin-bottom: var(--spacing-2);
+  line-height: var(--line-height-tight);
+}
+
+.hero-location {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  flex: 1;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.detail-card {
+  padding: var(--spacing-5);
+}
+
+.card-section-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  padding-bottom: var(--spacing-3);
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: var(--spacing-4);
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-4);
+}
+
+@media (max-width: 480px) {
+  .info-grid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-3);
+  }
+}
+
+.info-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+  padding: var(--spacing-2) 0;
+}
+
+.info-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .info-label {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
   text-transform: uppercase;
-  font-weight: 600;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.5px;
 }
 
 .info-value {
-  font-size: 0.95rem;
-  font-weight: 600;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text);
+  line-height: var(--line-height-tight);
 }
 
 .icon-accent {
   color: var(--color-primary);
 }
 
+.font-bold {
+  font-weight: var(--font-weight-bold);
+}
+
+.guide-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
 .guide-avatar {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
   object-fit: cover;
+  border: 2px solid var(--color-border-light);
 }
 
-.bg-success-light {
-  background: #f0fdf4;
+.guide-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.text-success {
-  color: #16a34a;
+.guide-name {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
 }
 
-.bg-warning-light {
-  background: #fefce8;
+.guide-badge {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
-.text-warning {
-  color: #ca8a04;
+.cancel-card {
+  padding: var(--spacing-5);
 }
 
-.text-error {
-  color: #ef4444;
+.cancel-title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-error-dark);
+  margin-bottom: var(--spacing-2);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}
+
+.cancel-desc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin-bottom: var(--spacing-4);
+  line-height: var(--line-height-relaxed);
+}
+
+.policy-status {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-3) var(--spacing-4);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+}
+
+.policy-status--success {
+  background: var(--color-success-bg);
+  border-color: color-mix(in srgb, var(--color-success) 20%, transparent);
+  color: var(--color-success);
+}
+
+.policy-status--warning {
+  background: var(--color-warning-bg);
+  border-color: color-mix(in srgb, var(--color-warning) 20%, transparent);
+  color: #b45309;
+}
+
+.policy-status-text {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
 }
 </style>

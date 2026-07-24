@@ -29,6 +29,7 @@
 
   /* ─── Semantic ─── */
   --color-error: #dc2626;
+  --color-error-dark: #991b1b;
   --color-error-bg: #fef2f2;
   --color-success: #16a34a;
   --color-success-bg: #f0fdf4;

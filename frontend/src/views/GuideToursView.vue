@@ -143,7 +143,11 @@ function getImageUrl(images: any) {
 
 .tour-item {
   flex-direction: row;
-  margin: 2px 8px 2px 8px;
+  padding-left: var(--content-padding);
+  padding-right: var(--content-padding);
+  padding-top: var(--spacing-4);
+  padding-bottom: var(--spacing-4);
+  margin: var(--spacing-4);
 }
 
 .tour-img {
@@ -188,9 +192,6 @@ function getImageUrl(images: any) {
 .py-4 {
   padding-top: var(--spacing-4);
   padding-bottom: var(--spacing-4);
-}
-.p-3 {
-  padding: var(--spacing-3);
 }
 .h-24 {
   height: 6rem;
