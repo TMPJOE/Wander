@@ -253,7 +253,9 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 		       t.meeting_point, t.is_published, t.avg_rating, t.review_count, t.created_at, t.updated_at,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       c.name as category_name, c.slug as category_slug,
-		       EXISTS(SELECT 1 FROM favorites f WHERE f.tour_id = t.id AND f.user_id = $1) as is_favorited
+		       EXISTS(SELECT 1 FROM favorites f WHERE f.tour_id = t.id AND f.user_id = $1) as is_favorited,
+		       (SELECT MIN(start_time) FROM tour_schedules WHERE tour_id = t.id AND start_time > NOW() AND is_active = true) as next_schedule_start,
+		       (SELECT MIN(available_spots) FROM tour_schedules WHERE tour_id = t.id AND start_time > NOW() AND is_active = true) as available_spots
 		FROM tours t
 		JOIN users u ON t.guide_id = u.id
 		JOIN categories c ON t.category_id = c.id
@@ -332,6 +334,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 			&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
 			&t.MeetingPoint, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
 			&t.GuideName, &t.GuideAvatar, &t.CategoryName, &t.CategorySlug, &t.IsFavorited,
+			&t.NextScheduleStart, &t.AvailableSpots,
 		)
 		if err != nil {
 			return nil, err

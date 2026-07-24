@@ -92,7 +92,16 @@ onBeforeUnmount(() => {
   clearCategoryTheme(document.documentElement)
 })
 
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
+watch(searchQuery, () => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    fetchWithFilters()
+  }, 400)
+})
+
 function handleSearch() {
+  if (debounceTimer) clearTimeout(debounceTimer)
   fetchWithFilters()
 }
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Calendar, Users, MapPin, CreditCard } from '@lucide/vue'
 
 const props = defineProps<{
@@ -18,6 +19,12 @@ const props = defineProps<{
 defineEmits<{
   cancel: [id: number]
 }>()
+
+const router = useRouter()
+
+function goToDetail() {
+  router.push(`/bookings/${props.booking.id}`)
+}
 
 const imageUrl = computed(() => {
   return props.booking.tour_image || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop'

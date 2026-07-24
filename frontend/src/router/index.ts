@@ -39,6 +39,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/bookings/:id',
+      name: 'booking-detail',
+      component: () => import('../views/BookingDetailView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/messages',
       name: 'messages',
       component: () => import('../views/MessagesView.vue'),

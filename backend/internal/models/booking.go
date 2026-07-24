@@ -36,3 +36,13 @@ type BookingCreateRequest struct {
 	GuestCount int    `json:"guest_count"`
 	Notes      string `json:"notes,omitempty"`
 }
+
+// CancellationResult returns refund details upon booking cancellation.
+type CancellationResult struct {
+	BookingID    int     `json:"booking_id"`
+	Status       string  `json:"status"`
+	RefundAmount float64 `json:"refund_amount"`
+	RefundPct    int     `json:"refund_pct"`
+	Message      string  `json:"message"`
+}
+

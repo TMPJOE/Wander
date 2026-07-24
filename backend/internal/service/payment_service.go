@@ -8,6 +8,7 @@ import (
 
 	"github.com/stripe/stripe-go/v76"
 	"github.com/stripe/stripe-go/v76/paymentintent"
+	"github.com/stripe/stripe-go/v76/refund"
 
 	"wander/backend/internal/models"
 	"wander/backend/internal/repository"
@@ -26,8 +27,10 @@ func NewPaymentService(bookingRepo repository.BookingRepository, secretKey strin
 	}
 }
 
-// CreateIntent creates a Stripe PaymentIntent for a booking and returns the
-// client secret the frontend needs to confirm the card payment.
+// CreateIntent returns a Stripe PaymentIntent client_secret for the checkout page.
+// If an existing PaymentIntent is still usable (requires_payment_method, requires_action),
+// it is reused. If already authorized (requires_capture), AlreadyAuthorized is set so the
+// frontend can skip confirmCardPayment and go straight to the server confirm step.
 func (s *PaymentService) CreateIntent(ctx context.Context, bookingID int, userID int) (*models.PaymentIntentResponse, error) {
 	b, err := s.bookingRepo.GetByID(ctx, bookingID)
 	if err != nil {
@@ -40,12 +43,44 @@ func (s *PaymentService) CreateIntent(ctx context.Context, bookingID int, userID
 		return nil, fmt.Errorf("booking already paid: %w", models.ErrConflict)
 	}
 
-	// Demo currency: Stripe test mode, amounts treated as USD cents.
+	// If there is already a PaymentIntent for this booking, try to reuse it.
+	if b.StripePaymentIntentID != "" {
+		pi, err := paymentintent.Get(b.StripePaymentIntentID, nil)
+		if err == nil {
+			switch pi.Status {
+			case stripe.PaymentIntentStatusRequiresPaymentMethod,
+				stripe.PaymentIntentStatusRequiresAction,
+				stripe.PaymentIntentStatusRequiresConfirmation:
+				// Still needs the card — return existing client_secret so the frontend can confirm.
+				return &models.PaymentIntentResponse{
+					ClientSecret:   pi.ClientSecret,
+					PublishableKey: s.publishableKey,
+					Amount:         b.TotalPrice,
+					Currency:       "usd",
+				}, nil
+			case stripe.PaymentIntentStatusRequiresCapture:
+				// Card already authorized — tell the frontend to skip confirmCardPayment.
+				if dbErr := s.bookingRepo.UpdatePayment(ctx, bookingID, pi.ID, "authorized"); dbErr != nil {
+					fmt.Printf("warning: sync authorized status for booking %d: %v\n", bookingID, dbErr)
+				}
+				return &models.PaymentIntentResponse{
+					ClientSecret:      pi.ClientSecret,
+					PublishableKey:    s.publishableKey,
+					Amount:            b.TotalPrice,
+					Currency:          "usd",
+					AlreadyAuthorized: true,
+				}, nil
+			}
+			// For any other terminal state (succeeded, canceled), fall through and create a new PI.
+		}
+	}
+
 	amount := int64(math.Round(b.TotalPrice * 100))
 
 	params := &stripe.PaymentIntentParams{
-		Amount:   stripe.Int64(amount),
-		Currency: stripe.String(string(stripe.CurrencyUSD)),
+		CaptureMethod: stripe.String("manual"),
+		Amount:        stripe.Int64(amount),
+		Currency:      stripe.String(string(stripe.CurrencyUSD)),
 	}
 	params.AddMetadata("booking_id", strconv.Itoa(bookingID))
 
@@ -66,9 +101,8 @@ func (s *PaymentService) CreateIntent(ctx context.Context, bookingID int, userID
 	}, nil
 }
 
-// ConfirmPayment verifies with Stripe that the payment succeeded and updates
-// the booking's payment status accordingly.
-func (s *PaymentService) ConfirmPayment(ctx context.Context, bookingID int, userID int) (*models.PaymentConfirmResponse, error) {
+// AuthorizePayment verifies with Stripe that card authorization succeeded.
+func (s *PaymentService) AuthorizePayment(ctx context.Context, bookingID int, userID int) (*models.PaymentConfirmResponse, error) {
 	b, err := s.bookingRepo.GetByID(ctx, bookingID)
 	if err != nil {
 		return nil, err
@@ -85,17 +119,18 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, bookingID int, user
 		return nil, fmt.Errorf("retrieve stripe payment intent: %w", err)
 	}
 
-	status := "pending"
-	if pi.Status == stripe.PaymentIntentStatusSucceeded {
+	var status string
+	switch pi.Status {
+	case stripe.PaymentIntentStatusRequiresCapture:
+		status = "authorized"
+	case stripe.PaymentIntentStatusSucceeded:
 		status = "paid"
+	default:
+		return nil, fmt.Errorf("payment not authorized, status: %s: %w", pi.Status, models.ErrConflict)
 	}
 
 	if err := s.bookingRepo.UpdatePayment(ctx, bookingID, b.StripePaymentIntentID, status); err != nil {
 		return nil, err
-	}
-
-	if status != "paid" {
-		return nil, fmt.Errorf("payment not completed, status: %s: %w", pi.Status, models.ErrConflict)
 	}
 
 	return &models.PaymentConfirmResponse{
@@ -103,3 +138,66 @@ func (s *PaymentService) ConfirmPayment(ctx context.Context, bookingID int, user
 		PaymentStatus: status,
 	}, nil
 }
+
+// CapturePayment captures an authorized PaymentIntent when a guide confirms the booking.
+func (s *PaymentService) CapturePayment(ctx context.Context, bookingID int) error {
+	b, err := s.bookingRepo.GetByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+	if b.StripePaymentIntentID == "" {
+		// If no payment intent (e.g. cash or test mode without stripe intent), mark as paid directly
+		return s.bookingRepo.UpdatePayment(ctx, bookingID, "", "paid")
+	}
+
+	_, err = paymentintent.Capture(b.StripePaymentIntentID, nil)
+	if err != nil {
+		return fmt.Errorf("capture stripe payment intent: %w", err)
+	}
+
+	return s.bookingRepo.UpdatePayment(ctx, bookingID, b.StripePaymentIntentID, "paid")
+}
+
+// CancelPaymentIntent cancels an uncaptured PaymentIntent (releases authorization hold).
+func (s *PaymentService) CancelPaymentIntent(ctx context.Context, bookingID int) error {
+	b, err := s.bookingRepo.GetByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+	if b.StripePaymentIntentID == "" {
+		return nil
+	}
+
+	_, err = paymentintent.Cancel(b.StripePaymentIntentID, nil)
+	if err != nil {
+		// If already canceled or unable to cancel, log and proceed
+		fmt.Printf("warning: cancel payment intent %s failed: %v\n", b.StripePaymentIntentID, err)
+	}
+
+	return s.bookingRepo.UpdatePayment(ctx, bookingID, b.StripePaymentIntentID, "failed")
+}
+
+// RefundPayment issues a full or partial refund for a paid booking via Stripe.
+func (s *PaymentService) RefundPayment(ctx context.Context, bookingID int, amount float64) error {
+	b, err := s.bookingRepo.GetByID(ctx, bookingID)
+	if err != nil {
+		return err
+	}
+	if b.StripePaymentIntentID == "" {
+		return nil
+	}
+
+	cents := int64(math.Round(amount * 100))
+	params := &stripe.RefundParams{
+		PaymentIntent: stripe.String(b.StripePaymentIntentID),
+		Amount:        stripe.Int64(cents),
+	}
+
+	_, err = refund.New(params)
+	if err != nil {
+		return fmt.Errorf("refund stripe payment: %w", err)
+	}
+
+	return nil
+}
+

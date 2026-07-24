@@ -38,35 +38,7 @@ function toggleSchedule(id: number) {
   selectedScheduleId.value = selectedScheduleId.value === id ? null : id
 }
 
-function getItinerary(startTimeStr: string) {
-  const start = new Date(startTimeStr)
-  const formatTime = (d: Date) => d.toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true })
-  
-  const t1 = new Date(start)
-  const t2 = new Date(start.getTime() + 60 * 60000)
-  const t3 = new Date(start.getTime() + 150 * 60000)
-  const t4 = new Date(start.getTime() + 180 * 60000)
-  
-  return [
-    { time: formatTime(t1), title: 'Encuentro en Plaza Nueva', desc: 'Introducción a la historia de la ciudad y comienzo del recorrido.', icon: MapPin },
-    { time: formatTime(t2), title: 'Exploración del Barrio de Santa Cruz', desc: 'Caminata por el antiguo barrio judío, conociendo sus leyendas y arquitectura singular.', icon: Footprints },
-    { time: formatTime(t3), title: 'Visita Exterior Catedral y Giralda', desc: 'Contexto histórico de los monumentos más emblemáticos.', icon: Landmark },
-    { time: formatTime(t4), title: 'Degustación de Tapas', desc: 'Finalizamos con una selección de tapas locales y bebida en una taberna histórica.', icon: Utensils }
-  ]
-}
-
-const meetingClue = computed(() => {
-  if (!tour.value) return ''
-  const clues = [
-    'El guía llevará un paraguas naranja para facilitar su ubicación.',
-    'Busca al guía con una gorra azul y una credencial de Wander.',
-    'Nuestro guía te estará esperando con una mochila amarilla visible.',
-    'Identificarás al guía por su chaleco reflectante o chaqueta roja.',
-    'El guía tendrá un pequeño cartel con tu nombre o el nombre del tour.'
-  ]
-  const index = tour.value.id % clues.length
-  return clues[index]
-})
+const meetingNote = "Tu guía confirmará los detalles exactos del punto de encuentro después de reservar."
 
 const images = computed<string[]>(() => {
   if (!tour.value) return []
@@ -270,24 +242,6 @@ function messageGuide() {
                 </span>
                 <span class="schedule-chip__spots">{{ s.available_spots }} lugares</span>
               </button>
-              
-              <div v-if="selectedScheduleId === s.id" class="itinerary-card">
-                <h3 class="itinerary-card__title">Itinerario detallado</h3>
-                <div class="timeline">
-                  <div v-for="(item, idx) in getItinerary(s.start_time)" :key="idx" class="timeline-item">
-                    <div class="timeline-marker-icon">
-                      <component :is="item.icon" :size="16" color="white" />
-                    </div>
-                    <div class="timeline-content">
-                      <h4 class="timeline-heading">
-                        <span class="timeline-time">{{ item.time }} - </span>
-                        <span class="timeline-title">{{ item.title }}</span>
-                      </h4>
-                      <p class="timeline-desc">{{ item.desc }}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
             <p
               v-if="schedules.length > 3"
@@ -306,7 +260,7 @@ function messageGuide() {
               <MapPin :size="20" :stroke-width="2" class="meeting-point__icon" />
               Punto de encuentro
             </h3>
-            <p class="meeting-point__desc">{{ tour.meeting_point }}. {{ meetingClue }}</p>
+            <p class="meeting-point__desc">{{ tour.meeting_point || tour.location }}. {{ meetingNote }}</p>
             <div class="meeting-point__map">
               <iframe 
                 width="100%" 
@@ -353,12 +307,20 @@ function messageGuide() {
     </div>
   </div>
 
-  <!-- Loading State -->
-  <div v-else class="page container" style="padding-top: var(--spacing-8)">
-    <div class="skeleton" style="aspect-ratio: 16/10; margin-bottom: var(--spacing-4)"></div>
-    <div class="skeleton" style="height: 24px; width: 30%; margin-bottom: var(--spacing-3)"></div>
-    <div class="skeleton" style="height: 32px; width: 80%; margin-bottom: var(--spacing-3)"></div>
-    <div class="skeleton" style="height: 16px; width: 50%"></div>
+  <!-- Loading Skeleton State -->
+  <div v-else class="page container" style="padding-top: var(--spacing-4); max-width: var(--max-width); margin: 0 auto;">
+    <div class="skeleton" style="aspect-ratio: 16/9; border-radius: var(--radius-xl); margin-bottom: var(--spacing-6)"></div>
+    <div class="skeleton" style="height: 20px; width: 25%; margin-bottom: var(--spacing-3); border-radius: var(--radius-sm)"></div>
+    <div class="skeleton" style="height: 36px; width: 85%; margin-bottom: var(--spacing-4); border-radius: var(--radius-md)"></div>
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); margin-bottom: var(--spacing-6)">
+      <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
+      <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
+      <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
+    </div>
+    <div class="skeleton" style="height: 18px; width: 40%; margin-bottom: var(--spacing-3); border-radius: var(--radius-sm)"></div>
+    <div class="skeleton" style="height: 14px; width: 100%; margin-bottom: var(--spacing-2); border-radius: var(--radius-xs)"></div>
+    <div class="skeleton" style="height: 14px; width: 95%; margin-bottom: var(--spacing-2); border-radius: var(--radius-xs)"></div>
+    <div class="skeleton" style="height: 14px; width: 70%; margin-bottom: var(--spacing-6); border-radius: var(--radius-xs)"></div>
   </div>
 </template>
 

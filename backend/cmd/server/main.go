@@ -64,11 +64,12 @@ func main() {
 	categoryService := service.NewCategoryService(categoryRepo)
 	tourService := service.NewTourService(tourRepo)
 	scheduleService := service.NewTourScheduleService(scheduleRepo, tourRepo)
-	bookingService := service.NewBookingService(bookingRepo, scheduleRepo, tourRepo)
+	paymentService := service.NewPaymentService(bookingRepo, cfg.StripeSecretKey, cfg.StripePublishableKey)
+	bookingService := service.NewBookingService(bookingRepo, scheduleRepo, tourRepo, paymentService)
 	reviewService := service.NewReviewService(reviewRepo, bookingRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo)
 	messageService := service.NewMessageService(messageRepo)
-	paymentService := service.NewPaymentService(bookingRepo, cfg.StripeSecretKey, cfg.StripePublishableKey)
+
 
 	// Initialize handlers.
 	h := handler.NewHandler(

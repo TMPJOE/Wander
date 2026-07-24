@@ -29,11 +29,13 @@ type Tour struct {
 	UpdatedAt       time.Time       `json:"updated_at"`
 
 	// Joined fields (not always populated).
-	GuideName     string `json:"guide_name,omitempty"`
-	GuideAvatar   string `json:"guide_avatar,omitempty"`
-	CategoryName  string `json:"category_name,omitempty"`
-	CategorySlug  string `json:"category_slug,omitempty"`
-	IsFavorited   bool   `json:"is_favorited,omitempty"`
+	GuideName         string     `json:"guide_name,omitempty"`
+	GuideAvatar       string     `json:"guide_avatar,omitempty"`
+	CategoryName      string     `json:"category_name,omitempty"`
+	CategorySlug      string     `json:"category_slug,omitempty"`
+	IsFavorited       bool       `json:"is_favorited,omitempty"`
+	NextScheduleStart *time.Time `json:"next_schedule_start,omitempty"`
+	AvailableSpots    *int       `json:"available_spots,omitempty"`
 }
 
 // TourCreateRequest is used by guides to create a tour.

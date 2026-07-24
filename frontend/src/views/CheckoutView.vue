@@ -21,6 +21,7 @@ const loading = ref(true)
 const processing = ref(false)
 const errorMsg = ref('')
 const cardReady = ref(false)
+const alreadyAuthorized = ref(false)
 
 let stripe: Stripe | null = null
 let elements: StripeElements | null = null
@@ -44,6 +45,12 @@ onMounted(async () => {
     clientSecret = intentRes.data.client_secret
     const publishableKey =
       intentRes.data.publishable_key || import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY
+
+    // If the card hold was already placed in a prior session, skip the card form.
+    if (intentRes.data.already_authorized) {
+      alreadyAuthorized.value = true
+      return
+    }
 
     stripe = await loadStripe(publishableKey)
     if (!stripe) {
@@ -87,30 +94,36 @@ onBeforeUnmount(() => {
 })
 
 async function handlePay() {
-  if (!stripe || !cardElement || processing.value) return
+  if (processing.value) return
 
   processing.value = true
   errorMsg.value = ''
 
   try {
-    const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-      payment_method: { card: cardElement },
-    })
+    // If the card was already authorized in a prior session, skip confirmCardPayment.
+    if (!alreadyAuthorized.value) {
+      if (!stripe || !cardElement) return
 
-    if (error) {
-      errorMsg.value = error.message || 'El pago no pudo completarse.'
-      return
+      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
+        payment_method: { card: cardElement },
+      })
+
+      if (error) {
+        // Stripe errors (declined, auth failure, etc.) — show the message and stop.
+        throw new Error(error.message || 'El pago no pudo completarse.')
+      }
+
+      // With manual capture, a successful authorization lands in requires_capture, not succeeded.
+      if (paymentIntent?.status !== 'requires_capture' && paymentIntent?.status !== 'succeeded') {
+        throw new Error('El pago no pudo completarse. Intenta de nuevo.')
+      }
     }
 
-    if (paymentIntent?.status === 'succeeded') {
-      await api.post(`/payments/bookings/${bookingId.value}/confirm`)
-      router.push(`/booking-success/${bookingId.value}`)
-    } else {
-      errorMsg.value = 'El pago no pudo completarse.'
-    }
+    await api.post(`/payments/bookings/${bookingId.value}/confirm`)
+    router.push(`/booking-success/${bookingId.value}`)
   } catch (e: any) {
-    console.error('Payment failed', e)
-    errorMsg.value = e?.response?.data?.message || 'Ocurrió un error al procesar el pago.'
+    // Stripe errors have a plain .message; axios errors have .response.data.message
+    errorMsg.value = e?.response?.data?.message || e?.message || 'Ocurrió un error al procesar el pago.'
   } finally {
     processing.value = false
   }
@@ -148,9 +161,21 @@ async function handlePay() {
 
       <div class="section">
         <h3 class="section-title"><Lock :size="16" /> Detalles de la tarjeta</h3>
-        <div class="card-input-wrap">
+
+        <!-- Already authorized from a previous session -->
+        <div v-if="alreadyAuthorized" class="authorized-banner">
+          <ShieldCheck :size="20" class="text-success" />
+          <div>
+            <p class="authorized-title">Cargo ya autorizado</p>
+            <p class="authorized-sub">Tu tarjeta ya tiene un cargo autorizado. Pulsa "Confirmar reserva" para finalizar.</p>
+          </div>
+        </div>
+
+        <!-- Normal card entry -->
+        <div v-else class="card-input-wrap">
           <div id="card-element"></div>
         </div>
+
         <p v-if="errorMsg" class="form-error mt-2">{{ errorMsg }}</p>
       </div>
 
@@ -168,9 +193,9 @@ async function handlePay() {
       <button
         class="btn btn-secondary-light btn-lg"
         @click="handlePay"
-        :disabled="processing || !cardReady"
+        :disabled="processing || (!alreadyAuthorized && !cardReady)"
       >
-        {{ processing ? 'Procesando...' : 'Pagar ahora' }}
+        {{ processing ? 'Procesando...' : alreadyAuthorized ? 'Confirmar reserva' : 'Pagar ahora' }}
       </button>
     </div>
   </div>
@@ -297,5 +322,24 @@ async function handlePay() {
   .bottom-bar {
     right: var(--nav-width);
   }
+}
+.authorized-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  padding: var(--spacing-4);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-success) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-success) 30%, transparent);
+}
+.authorized-title {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-success);
+  margin-bottom: var(--spacing-1);
+}
+.authorized-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
 }
 </style>

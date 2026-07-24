@@ -22,6 +22,7 @@ func NewBookingHandler(service *service.BookingService) *BookingHandler {
 func (h *BookingHandler) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /bookings", h.Create)
 	mux.HandleFunc("GET /bookings", h.List)
+	mux.HandleFunc("GET /guide/bookings", h.GetGuideBookings)
 	mux.HandleFunc("GET /bookings/{id}", h.GetByID)
 	mux.HandleFunc("PATCH /bookings/{id}/cancel", h.Cancel)
 	mux.HandleFunc("PATCH /bookings/{id}/confirm", h.Confirm)
@@ -106,13 +107,13 @@ func (h *BookingHandler) Cancel(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.service.Cancel(r.Context(), id, userID)
+	result, err := h.service.Cancel(r.Context(), id, userID)
 	if err != nil {
 		utils.SendError(w, http.StatusInternalServerError, "Error al cancelar", err.Error())
 		return
 	}
 
-	utils.SendSuccess(w, http.StatusOK, "Reserva cancelada exitosamente", nil)
+	utils.SendSuccess(w, http.StatusOK, "Reserva cancelada exitosamente", result)
 }
 
 func (h *BookingHandler) Confirm(w http.ResponseWriter, r *http.Request) {
@@ -183,3 +184,20 @@ func (h *BookingHandler) Reject(w http.ResponseWriter, r *http.Request) {
 
 	utils.SendSuccess(w, http.StatusOK, "Reserva rechazada exitosamente", nil)
 }
+
+func (h *BookingHandler) GetGuideBookings(w http.ResponseWriter, r *http.Request) {
+	guideID, ok := middleware.GetUserID(r.Context())
+	if !ok {
+		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
+		return
+	}
+
+	bookings, err := h.service.ListByUser(r.Context(), guideID, "guide")
+	if err != nil {
+		utils.SendError(w, http.StatusInternalServerError, "Error al listar reservas del guía", err.Error())
+		return
+	}
+
+	utils.SendSuccess(w, http.StatusOK, "Reservas del guía recuperadas", bookings)
+}
+

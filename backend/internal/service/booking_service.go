@@ -3,22 +3,25 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"wander/backend/internal/models"
 	"wander/backend/internal/repository"
 )
 
 type BookingService struct {
-	repo         repository.BookingRepository
-	scheduleRepo repository.TourScheduleRepository
-	tourRepo     repository.TourRepository
+	repo           repository.BookingRepository
+	scheduleRepo   repository.TourScheduleRepository
+	tourRepo       repository.TourRepository
+	paymentService *PaymentService
 }
 
-func NewBookingService(repo repository.BookingRepository, scheduleRepo repository.TourScheduleRepository, tourRepo repository.TourRepository) *BookingService {
+func NewBookingService(repo repository.BookingRepository, scheduleRepo repository.TourScheduleRepository, tourRepo repository.TourRepository, paymentService *PaymentService) *BookingService {
 	return &BookingService{
-		repo:         repo,
-		scheduleRepo: scheduleRepo,
-		tourRepo:     tourRepo,
+		repo:           repo,
+		scheduleRepo:   scheduleRepo,
+		tourRepo:       tourRepo,
+		paymentService: paymentService,
 	}
 }
 
@@ -89,27 +92,64 @@ func (s *BookingService) ListByUser(ctx context.Context, userID int, role string
 	return s.repo.ListByUserID(ctx, userID)
 }
 
-func (s *BookingService) Cancel(ctx context.Context, id int, userID int) error {
+func (s *BookingService) Cancel(ctx context.Context, id int, userID int) (*models.CancellationResult, error) {
 	b, err := s.repo.GetByID(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if b.UserID != userID {
-		return models.ErrForbidden
+		return nil, models.ErrForbidden
 	}
 
 	if b.Status == "cancelled" || b.Status == "completed" {
-		return fmt.Errorf("booking already %s: %w", b.Status, models.ErrConflict)
+		return nil, fmt.Errorf("booking already %s: %w", b.Status, models.ErrConflict)
+	}
+
+	schedule, err := s.scheduleRepo.GetByID(ctx, b.ScheduleID)
+	if err != nil {
+		return nil, fmt.Errorf("find schedule: %w", err)
+	}
+
+	hoursUntilTour := time.Until(schedule.StartTime).Hours()
+	var refundPct int
+	var refundAmount float64
+	var msg string
+
+	if hoursUntilTour > 48 {
+		refundPct = 100
+		refundAmount = b.TotalPrice
+		msg = "Full refund issued (cancelled > 48 hours in advance)."
+	} else {
+		refundPct = 50
+		refundAmount = b.TotalPrice * 0.5
+		msg = "50% partial refund issued (cancelled within 48 hours)."
+	}
+
+	// Handle Stripe payment status
+	if s.paymentService != nil {
+		if b.PaymentStatus == "authorized" {
+			_ = s.paymentService.CancelPaymentIntent(ctx, id)
+		} else if b.PaymentStatus == "paid" && refundAmount > 0 {
+			_ = s.paymentService.RefundPayment(ctx, id, refundAmount)
+		}
 	}
 
 	err = s.repo.UpdateStatus(ctx, id, "cancelled")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	// Restore spots.
-	return s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
+	_ = s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
+
+	return &models.CancellationResult{
+		BookingID:    id,
+		Status:       "cancelled",
+		RefundAmount: refundAmount,
+		RefundPct:    refundPct,
+		Message:      msg,
+	}, nil
 }
 
 func (s *BookingService) Confirm(ctx context.Context, id int, guideID int) error {
@@ -131,7 +171,17 @@ func (s *BookingService) Confirm(ctx context.Context, id int, guideID int) error
 		return fmt.Errorf("booking is not pending: %w", models.ErrConflict)
 	}
 
-	return s.repo.UpdateStatus(ctx, id, "confirmed")
+	if err := s.repo.UpdateStatus(ctx, id, "confirmed"); err != nil {
+		return err
+	}
+
+	if s.paymentService != nil {
+		if err := s.paymentService.CapturePayment(ctx, id); err != nil {
+			fmt.Printf("warning: capture payment failed for booking %d: %v\n", id, err)
+		}
+	}
+
+	return nil
 }
 
 func (s *BookingService) Complete(ctx context.Context, id int, guideID int) error {
@@ -179,6 +229,11 @@ func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error 
 		return err
 	}
 
+	if s.paymentService != nil {
+		_ = s.paymentService.CancelPaymentIntent(ctx, id)
+	}
+
 	// Restore spots to the schedule.
 	return s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
 }
+

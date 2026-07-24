@@ -143,6 +143,7 @@ function getImageUrl(images: any) {
 
 .tour-item {
   flex-direction: row;
+  margin: 2px 8px 2px 8px;
 }
 
 .tour-img {

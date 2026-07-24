@@ -4,6 +4,8 @@ import { RouterView, useRoute } from 'vue-router'
 import { useAuthState } from './composables/useAuthState'
 import { useApi } from './composables/useApi'
 import BottomNav from './components/BottomNav.vue'
+import ToastContainer from './components/ToastContainer.vue'
+import ConfirmModal from './components/ConfirmModal.vue'
 
 const authState = useAuthState()
 const api = useApi()
@@ -25,6 +27,8 @@ onMounted(async () => {
 
 <template>
   <div class="app-shell">
+    <ToastContainer />
+    <ConfirmModal />
     <main class="app-main" :class="{ 'app-main--full': hideBottomNav.includes(route.name as string) }">
       <RouterView v-slot="{ Component, route: viewRoute }">
         <Transition name="fade" mode="out-in">

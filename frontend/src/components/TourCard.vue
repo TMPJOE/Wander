@@ -19,6 +19,8 @@ const props = defineProps<{
     category_name?: string
     is_favorited?: boolean
     guide_name?: string
+    next_schedule_start?: string
+    available_spots?: number
   }
   allowLike?: boolean
 }>()
@@ -94,6 +96,18 @@ async function toggleFavorite(e: Event) {
     justLiked.value = false
   }
 }
+
+const nextDateSignal = computed(() => {
+  if (!props.tour.next_schedule_start) return null
+  const startDate = new Date(props.tour.next_schedule_start)
+  const diffDays = Math.ceil((startDate.getTime() - Date.now()) / (1000 * 3600 * 24))
+  if (diffDays >= 0 && diffDays <= 7) {
+    if (diffDays === 0) return 'Hoy'
+    if (diffDays === 1) return 'Mañana'
+    return `En ${diffDays} días`
+  }
+  return null
+})
 </script>
 
 <template>
@@ -142,6 +156,15 @@ async function toggleFavorite(e: Event) {
         <span class="tour-card__price">
           {{ formattedPrice }}
           <span class="tour-card__price-unit">/ persona</span>
+        </span>
+      </div>
+
+      <div v-if="(tour.available_spots !== undefined && tour.available_spots <= 3) || nextDateSignal" class="tour-card__signals">
+        <span v-if="tour.available_spots !== undefined && tour.available_spots <= 3" class="signal-badge signal-badge--urgent">
+          🔴 {{ tour.available_spots === 1 ? '¡Último lugar!' : `¡Solo ${tour.available_spots} lugares!` }}
+        </span>
+        <span v-if="nextDateSignal" class="signal-badge signal-badge--date">
+          🟡 Próximo: {{ nextDateSignal }}
         </span>
       </div>
     </div>
@@ -314,5 +337,33 @@ async function toggleFavorite(e: Event) {
   font-size: var(--font-size-xs);
   font-weight: var(--font-weight-normal);
   color: var(--color-text-light);
+}
+
+.tour-card__signals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: 0.25rem;
+}
+
+.signal-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.signal-badge--urgent {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+}
+
+.signal-badge--date {
+  background: #fefce8;
+  color: #ca8a04;
+  border: 1px solid #fef08a;
 }
 </style>

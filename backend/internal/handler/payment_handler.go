@@ -59,7 +59,7 @@ func (h *PaymentHandler) Confirm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := h.service.ConfirmPayment(r.Context(), id, userID)
+	resp, err := h.service.AuthorizePayment(r.Context(), id, userID)
 	if err != nil {
 		utils.SendError(w, http.StatusInternalServerError, "Error al confirmar el pago", err.Error())
 		return

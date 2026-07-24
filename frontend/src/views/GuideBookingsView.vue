@@ -2,11 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
 import { ArrowLeft, Check, X, Calendar } from '@lucide/vue'
 import EmptyState from '../components/EmptyState.vue'
 
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
 
 const bookings = ref<any[]>([])
 const loading = ref(true)
@@ -19,10 +21,11 @@ onMounted(async () => {
 async function fetchBookings() {
   loading.value = true
   try {
-    const res = await api.get('/bookings')
+    const res = await api.get('/guide/bookings')
     bookings.value = res.data || []
   } catch (e) {
     console.error(e)
+    toast.error('Error al cargar reservas')
   } finally {
     loading.value = false
   }
@@ -36,30 +39,33 @@ const filteredBookings = computed(() => {
 async function confirmBooking(id: number) {
   try {
     await api.patch(`/bookings/${id}/confirm`)
+    toast.success('Reserva confirmada exitosamente')
     await fetchBookings()
   } catch (e) {
     console.error(e)
-    alert('Error al confirmar reserva')
+    toast.error('Error al confirmar reserva')
   }
 }
 
 async function rejectBooking(id: number) {
   try {
     await api.patch(`/bookings/${id}/reject`)
+    toast.info('Reserva rechazada')
     await fetchBookings()
   } catch (e) {
     console.error(e)
-    alert('Error al rechazar reserva')
+    toast.error('Error al rechazar reserva')
   }
 }
 
 async function completeBooking(id: number) {
   try {
     await api.patch(`/bookings/${id}/complete`)
+    toast.success('Reserva marcada como completada')
     await fetchBookings()
   } catch (e) {
     console.error(e)
-    alert('Error al marcar como completada')
+    toast.error('Error al marcar como completada')
   }
 }
 

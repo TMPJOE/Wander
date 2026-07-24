@@ -32,7 +32,7 @@ onMounted(async () => {
     stats.value.active_tours = data.published_tours || 0
     stats.value.average_rating = data.avg_rating || 0
 
-    const bookingsRes = await api.get('/bookings')
+    const bookingsRes = await api.get('/guide/bookings')
     recentBookings.value = (bookingsRes.data || []).slice(0, 5)
   } catch (e) {
     console.error(e)
