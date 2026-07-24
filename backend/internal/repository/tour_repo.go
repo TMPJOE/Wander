@@ -255,7 +255,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 		       c.name as category_name, c.slug as category_slug,
 		       EXISTS(SELECT 1 FROM favorites f WHERE f.tour_id = t.id AND f.user_id = $1) as is_favorited,
 		       (SELECT MIN(start_time) FROM tour_schedules WHERE tour_id = t.id AND start_time > NOW() AND is_active = true) as next_schedule_start,
-		       (SELECT MIN(available_spots) FROM tour_schedules WHERE tour_id = t.id AND start_time > NOW() AND is_active = true) as available_spots
+		       (SELECT available_spots FROM tour_schedules WHERE tour_id = t.id AND start_time > NOW() AND is_active = true ORDER BY start_time ASC LIMIT 1) as available_spots
 		FROM tours t
 		JOIN users u ON t.guide_id = u.id
 		JOIN categories c ON t.category_id = c.id

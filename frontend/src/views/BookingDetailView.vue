@@ -123,7 +123,7 @@ function formatTime(dateStr: string) {
       Cargando detalle...
     </div>
 
-    <div v-else-if="booking" class="container py-6">
+    <div v-else-if="booking" class="container py-6 pb-20">
       <!-- Tour Hero Image Card -->
       <div class="card hero-card overflow-hidden mb-6">
         <div class="hero-image-wrap">
@@ -253,6 +253,10 @@ function formatTime(dateStr: string) {
 </template>
 
 <style scoped>
+.pb-20 {
+  padding-bottom: 5rem;
+}
+
 .container {
   padding: 0 var(--content-padding, 1rem);
   max-width: 600px;

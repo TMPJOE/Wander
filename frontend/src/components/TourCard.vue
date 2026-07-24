@@ -41,7 +41,8 @@ const justLiked = ref(false)
 
 const imageUrl = computed(() => {
   return (
-    props.tour.images?.[0] || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop'
+    props.tour.images?.[0] ||
+    'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=600&fit=crop'
   )
 })
 
@@ -97,8 +98,16 @@ async function toggleFavorite(e: Event) {
   }
 }
 
+// Both badges require the next schedule to have at least 1 spot available.
+// If the nearest date is sold out we show nothing — no false urgency.
+const nextScheduleHasSpots = computed(() => {
+  const spots = props.tour.available_spots
+  return spots !== undefined && spots !== null && spots > 0
+})
+
 const nextDateSignal = computed(() => {
   if (!props.tour.next_schedule_start) return null
+  if (!nextScheduleHasSpots.value) return null
   const startDate = new Date(props.tour.next_schedule_start)
   const diffDays = Math.ceil((startDate.getTime() - Date.now()) / (1000 * 3600 * 24))
   if (diffDays >= 0 && diffDays <= 7) {
@@ -107,6 +116,15 @@ const nextDateSignal = computed(() => {
     return `En ${diffDays} días`
   }
   return null
+})
+
+// Scarcity badge: only 1–3 spots left on the nearest date.
+const scarcityLabel = computed(() => {
+  const spots = props.tour.available_spots
+  if (!nextScheduleHasSpots.value) return null
+  if (spots === undefined || spots === null || spots > 3) return null
+  if (spots === 1) return '¡Último lugar!'
+  return `¡Solo ${spots} lugares!`
 })
 </script>
 
@@ -159,12 +177,15 @@ const nextDateSignal = computed(() => {
         </span>
       </div>
 
-      <div v-if="(tour.available_spots !== undefined && tour.available_spots <= 3) || nextDateSignal" class="tour-card__signals">
-        <span v-if="tour.available_spots !== undefined && tour.available_spots <= 3" class="signal-badge signal-badge--urgent">
-          🔴 {{ tour.available_spots === 1 ? '¡Último lugar!' : `¡Solo ${tour.available_spots} lugares!` }}
+      <div
+        v-if="scarcityLabel || nextDateSignal"
+        class="tour-card__signals"
+      >
+        <span v-if="scarcityLabel" class="signal-badge signal-badge--urgent">
+          {{ scarcityLabel }}
         </span>
         <span v-if="nextDateSignal" class="signal-badge signal-badge--date">
-          🟡 Próximo: {{ nextDateSignal }}
+          Próximo: {{ nextDateSignal }}
         </span>
       </div>
     </div>

@@ -62,7 +62,7 @@ const statusClass: Record<string, string> = {
 </script>
 
 <template>
-  <div class="booking-card card">
+  <div class="booking-card card" @click="goToDetail" style="cursor: pointer;">
     <div class="booking-card__header">
       <span class="badge" :class="statusClass[booking.status] || 'badge-secondary'">
         {{ statusLabel[booking.status] || booking.status }}
@@ -100,7 +100,7 @@ const statusClass: Record<string, string> = {
       class="booking-card__footer"
       v-if="booking.status === 'pending' || booking.status === 'confirmed'"
     >
-      <button class="btn btn-outline btn-md" @click="$emit('cancel', booking.id)">
+      <button class="btn btn-outline btn-md" @click.stop="$emit('cancel', booking.id)">
         Cancelar reserva
       </button>
     </div>

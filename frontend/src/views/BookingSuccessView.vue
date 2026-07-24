@@ -95,7 +95,7 @@ function formatTime(dateStr: string) {
       </div>
 
       <div class="actions">
-        <button class="btn btn-success-solid btn-block mb-4" @click="router.push('/bookings')">
+        <button class="btn btn-success-solid btn-block mb-4" @click="router.push(`/bookings/${bookingId}`)">
           Ver Detalles de Reserva
         </button>
         <button class="btn btn-ghost btn-block btn-back" @click="router.push('/')">
