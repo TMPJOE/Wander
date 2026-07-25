@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
@@ -9,13 +9,6 @@ const authState = useAuthState()
 const router = useRouter()
 const api = useApi()
 
-const period = ref<'week' | 'month' | 'year' | 'all'>('all')
-const periods = [
-  { key: 'week', label: 'Semana' },
-  { key: 'month', label: 'Mes' },
-  { key: 'year', label: 'Año' },
-  { key: 'all', label: 'Todo' },
-] as const
 
 const stats = ref({
   total_bookings: 0,
@@ -33,8 +26,7 @@ const recentBookings = ref<any[]>([])
 async function fetchStats() {
   statsLoading.value = true
   try {
-    const q = period.value !== 'all' ? `?period=${period.value}` : ''
-    const statsRes = await api.get(`/guide/stats${q}`)
+    const statsRes = await api.get('/guide/stats?period=year')
     const data = statsRes.data || {}
     stats.value.total_bookings = data.total_bookings || 0
     stats.value.total_revenue = data.total_revenue || 0
@@ -49,8 +41,7 @@ async function fetchStats() {
 
 async function fetchEarnings() {
   try {
-    const q = period.value !== 'all' ? `?period=${period.value}` : ''
-    const res = await api.get(`/guide/earnings${q}`)
+    const res = await api.get('/guide/earnings?period=year')
     earnings.value.total_authorized = res.data?.total_authorized || 0
     earnings.value.total_paid = res.data?.total_paid || 0
   } catch (e) {
@@ -75,10 +66,7 @@ onMounted(async () => {
   }
 })
 
-watch(period, () => {
-  fetchStats()
-  fetchEarnings()
-})
+
 </script>
 
 <template>
@@ -89,18 +77,6 @@ watch(period, () => {
     </header>
 
     <div class="px-content py-4">
-      <!-- Period Filter -->
-      <div class="period-tabs mb-4">
-        <button
-          v-for="p in periods"
-          :key="p.key"
-          class="period-tab"
-          :class="{ 'period-tab--active': period === p.key }"
-          @click="period = p.key"
-        >
-          {{ p.label }}
-        </button>
-      </div>
 
       <!-- Stats Grid -->
       <div class="stats-grid mb-6">
@@ -112,7 +88,7 @@ watch(period, () => {
           <div class="stat-icon bg-primary-light text-primary"><DollarSign :size="20" /></div>
           <div class="stat-info">
             <span class="stat-value">${{ stats.total_revenue.toLocaleString('es-MX') }}</span>
-            <span class="stat-label">Ingresos <TrendingUp :size="11" class="inline-icon" /></span>
+            <span class="stat-label">Ingresos anuales <TrendingUp :size="11" class="inline-icon" /></span>
             <div class="earnings-split">
               <span class="earnings-split__item">
                 <span class="dot dot--authorized"></span>
@@ -400,36 +376,6 @@ watch(period, () => {
   overflow: hidden;
 }
 
-/* ─── Period tabs ─── */
-.period-tabs {
-  display: flex;
-  gap: var(--spacing-1);
-  background: var(--color-background);
-  border-radius: var(--radius-full);
-  padding: 3px;
-  width: fit-content;
-}
-
-.period-tab {
-  padding: var(--spacing-1) var(--spacing-3);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-  cursor: pointer;
-}
-
-.period-tab--active {
-  background: var(--color-surface);
-  color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: var(--shadow-xs);
-}
-
-.period-tab:not(.period-tab--active):hover {
-  color: var(--color-text);
-}
 
 /* loading shimmer on stat cards */
 .stat-loading {

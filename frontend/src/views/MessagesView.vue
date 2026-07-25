@@ -105,13 +105,6 @@ onUnmounted(() => {
   letter-spacing: var(--letter-spacing-tight);
 }
 
-.container-fluid {
-  width: 100%;
-}
-.px-0 {
-  padding-left: 0;
-  padding-right: 0;
-}
 .py-8 {
   padding-top: var(--spacing-8);
   padding-bottom: var(--spacing-8);

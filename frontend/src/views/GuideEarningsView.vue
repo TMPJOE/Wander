@@ -54,7 +54,8 @@ onMounted(async () => {
 
 watch(period, fetchEarnings)
 
-const fmtMoney = (n: number) => `$${(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+const fmtMoney = (n: number) =>
+  `$${(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 const statusLabel = (s: string) => (s === 'paid' ? 'Pagado' : 'Autorizado')
 </script>
 
@@ -71,12 +72,12 @@ const statusLabel = (s: string) => (s === 'paid' ? 'Pagado' : 'Autorizado')
 
     <div class="container py-4">
       <!-- Period Filter -->
-      <div class="period-tabs mb-4">
+      <div class="filters mb-4">
         <button
           v-for="p in periods"
           :key="p.key"
-          class="period-tab"
-          :class="{ 'period-tab--active': period === p.key }"
+          class="filter-pill"
+          :class="{ active: period === p.key }"
           @click="period = p.key"
         >
           {{ p.label }}
@@ -190,32 +191,42 @@ const statusLabel = (s: string) => (s === 'paid' ? 'Pagado' : 'Autorizado')
   padding-bottom: var(--spacing-4);
 }
 
-/* Period tabs */
-.period-tabs {
+.filters {
   display: flex;
-  gap: var(--spacing-1);
-  background: var(--color-background);
-  border-radius: var(--radius-full);
-  padding: 3px;
-  width: fit-content;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-4);
+  overflow-x: auto;
+  padding-bottom: var(--spacing-2);
 }
-.period-tab {
-  padding: var(--spacing-1) var(--spacing-3);
-  border-radius: var(--radius-full);
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-secondary);
-  transition: all var(--transition-fast);
-  cursor: pointer;
+
+.filters::-webkit-scrollbar {
+  display: none;
 }
-.period-tab--active {
-  background: var(--color-surface);
+.filters {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+.filter-pill {
+  padding: 8px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  background: var(--color-primary-50);
   color: var(--color-primary);
-  font-weight: var(--font-weight-semibold);
-  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
 }
-.period-tab:not(.period-tab--active):hover {
-  color: var(--color-text);
+
+.filter-pill:hover {
+  background: var(--color-primary-100);
+}
+
+.filter-pill.active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 /* Summary cards */
@@ -344,9 +355,6 @@ const statusLabel = (s: string) => (s === 'paid' ? 'Pagado' : 'Autorizado')
 }
 .flex-col {
   flex-direction: column;
-}
-.gap-4 {
-  gap: var(--spacing-4);
 }
 .text-secondary {
   color: var(--color-text-secondary);

@@ -853,11 +853,6 @@ const handleSettingsClick = () => {
   gap: var(--spacing-4);
 }
 
-.btn-review-submit {
-  margin-top: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
-}
-
 .adv-card {
   display: flex;
   flex-direction: column;

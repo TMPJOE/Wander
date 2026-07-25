@@ -174,13 +174,6 @@ function getImageUrl(images: any) {
   flex-direction: column;
 }
 
-.line-clamp-1 {
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
 .flex {
   display: flex;
 }
@@ -211,9 +204,6 @@ function getImageUrl(images: any) {
 }
 .font-semibold {
   font-weight: var(--font-weight-semibold);
-}
-.text-sm {
-  font-size: var(--font-size-sm);
 }
 .text-xs {
   font-size: var(--font-size-xs);

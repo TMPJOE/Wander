@@ -548,26 +548,6 @@ function messageGuide() {
   border: 1.5px solid var(--color-border-light);
 }
 
-.map-placeholder {
-  width: 100%;
-  height: 100%;
-  background-color: #e5e9ea;
-  background-image: 
-    linear-gradient(white 2px, transparent 2px),
-    linear-gradient(90deg, white 2px, transparent 2px),
-    linear-gradient(rgba(255,255,255,.3) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,.3) 1px, transparent 1px);
-  background-size: 100px 100px, 100px 100px, 20px 20px, 20px 20px;
-  background-position: -2px -2px, -2px -2px, -1px -1px, -1px -1px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.map-pin {
-  filter: drop-shadow(0 4px 6px rgba(160, 62, 28, 0.3));
-}
-
 .schedule-preview {
   display: flex;
   flex-direction: column;
@@ -657,42 +637,6 @@ function messageGuide() {
 
 .timeline-item:last-child {
   padding-bottom: 0;
-}
-
-.timeline-marker-icon {
-  position: absolute;
-  left: 0;
-  top: -2px;
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  background: #0b6b47; /* Dark green */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-}
-
-.timeline-heading {
-  font-size: var(--font-size-sm);
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.timeline-time {
-  color: #1e293b;
-  font-weight: 800;
-}
-
-.timeline-title {
-  color: #0b6b47;
-  font-weight: 700;
-}
-
-.timeline-desc {
-  font-size: var(--font-size-sm);
-  color: #5c626a;
-  line-height: var(--line-height-relaxed);
 }
 
 .reviews-list {

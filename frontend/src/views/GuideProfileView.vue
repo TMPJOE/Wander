@@ -2,11 +2,13 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
 import { Search, Map, Star, Languages, Calendar, Users, MapPin } from '@lucide/vue'
 
 const route = useRoute()
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
 
 const guideId = route.params.id as string
 const guide = ref<any>(null)
@@ -26,6 +28,7 @@ onMounted(async () => {
     tours.value = toursRes.data || []
   } catch (e) {
     console.error(e)
+    toast.error('No se pudo cargar el perfil del guía.')
   } finally {
     loading.value = false
   }

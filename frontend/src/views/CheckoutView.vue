@@ -9,10 +9,12 @@ import {
   type StripeCardElement,
 } from '@stripe/stripe-js'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
 
 const bookingId = computed(() => route.params.bookingId as string)
 
@@ -36,6 +38,7 @@ onMounted(async () => {
   } catch (e: any) {
     console.error('Failed to load booking', e)
     errorMsg.value = e?.response?.data?.message || 'No se pudo cargar la reserva.'
+    toast.error(errorMsg.value)
     loading.value = false
     return
   }
@@ -55,6 +58,7 @@ onMounted(async () => {
     stripe = await loadStripe(publishableKey)
     if (!stripe) {
       errorMsg.value = 'No se pudo inicializar el procesador de pagos.'
+      toast.error(errorMsg.value)
       return
     }
 
@@ -74,6 +78,7 @@ onMounted(async () => {
     await nextTick()
     if (!document.getElementById('card-element')) {
       errorMsg.value = 'No se pudo mostrar el formulario de pago.'
+      toast.error(errorMsg.value)
       return
     }
     cardElement.mount('#card-element')
@@ -86,6 +91,7 @@ onMounted(async () => {
     const backendError = e?.response?.data?.error
     const backendMessage = e?.response?.data?.message
     errorMsg.value = backendError ? `${backendMessage}: ${backendError}` : (backendMessage || 'No se pudo iniciar el pago. Intenta de nuevo.')
+    toast.error(errorMsg.value)
   }
 })
 
@@ -124,6 +130,7 @@ async function handlePay() {
   } catch (e: any) {
     // Stripe errors have a plain .message; axios errors have .response.data.message
     errorMsg.value = e?.response?.data?.message || e?.message || 'Ocurrió un error al procesar el pago.'
+    toast.error(errorMsg.value)
   } finally {
     processing.value = false
   }

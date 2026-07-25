@@ -244,10 +244,6 @@ function formatTime(dateStr: string) {
 .min-h-screen {
   min-height: 100vh;
 }
-.py-4 {
-  padding-top: var(--spacing-4);
-  padding-bottom: var(--spacing-4);
-}
 .py-2 {
   padding-top: var(--spacing-2);
   padding-bottom: var(--spacing-2);
@@ -323,10 +319,6 @@ function formatTime(dateStr: string) {
 .text-sm {
   font-size: var(--font-size-sm);
 }
-.text-lg {
-  font-size: var(--font-size-lg);
-}
-
 .text-primary {
   color: var(--color-primary);
 }
@@ -363,14 +355,4 @@ function formatTime(dateStr: string) {
   border-top: 1px solid var(--color-border-light);
 }
 
-.btn-error {
-  background: var(--color-error);
-  color: white;
-  border-color: var(--color-error);
-}
-.btn-success {
-  background: var(--color-success);
-  color: white;
-  border-color: var(--color-success);
-}
 </style>
