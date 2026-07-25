@@ -202,7 +202,8 @@ func (h *TourHandler) GetStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stats, err := h.service.GetStats(r.Context(), guideID)
+	period := r.URL.Query().Get("period")
+	stats, err := h.service.GetStats(r.Context(), guideID, period)
 	if err != nil {
 		utils.SendError(w, http.StatusInternalServerError, "Error al calcular estadísticas", err.Error())
 		return

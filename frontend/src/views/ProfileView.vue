@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'vue-router'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
 import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import EmptyState from '../components/EmptyState.vue'
@@ -29,6 +30,7 @@ import {
 const authState = useAuthState()
 const api = useApi()
 const router = useRouter()
+const toast = useToast()
 
 const activeTab = ref('favorites')
 const favorites = ref<any[]>([])
@@ -62,7 +64,7 @@ async function uploadAvatar(e: Event) {
     const res = await api.post('/uploads', formData)
     profileForm.value.avatar_url = res.data.url
   } catch {
-    alert('Error al subir la imagen')
+    toast.error('Error al subir la imagen')
   }
 }
 
@@ -109,9 +111,9 @@ async function saveCard() {
   })
 
   if (error) {
-    alert(error.message)
+    toast.error(error.message)
   } else {
-    alert('Tarjeta añadida con éxito (Simulado)')
+    toast.success('Tarjeta añadida con éxito (Simulado)')
     isAddingCard.value = false
     if (card) {
       card.clear()
@@ -206,7 +208,7 @@ watch(activeTab, async (tab) => {
 async function submitReviewForBooking(booking: any) {
   const form = bookingReviewForm.value[booking.id]
   if (!form || !form.rating || !form.comment.trim()) {
-    alert('Calificación y comentario son obligatorios.')
+    toast.error('Calificación y comentario son obligatorios.')
     return
   }
 
@@ -229,7 +231,7 @@ async function submitReviewForBooking(booking: any) {
     activeBookingForm.value = null
   } catch (e) {
     console.error('Failed to submit review from profile', e)
-    alert('Error al enviar reseña.')
+    toast.error('Error al enviar reseña.')
   }
 }
 
@@ -285,9 +287,10 @@ async function saveProfile() {
     const res = await api.put('/users/me', profileForm.value)
     authState.user.value = res.data
     isEditing.value = false
+    toast.success('Perfil guardado exitosamente')
   } catch (e) {
     console.error(e)
-    alert('Error al guardar el perfil')
+    toast.error('Error al guardar el perfil')
   } finally {
     saving.value = false
   }

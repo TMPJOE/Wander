@@ -102,6 +102,7 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *chi.Mux {
 
 		// Booking confirmations / lifecycle
 		r.Get("/api/v1/guide/bookings", h.BookingHandler.GetGuideBookings)
+		r.Get("/api/v1/guide/earnings", h.BookingHandler.GetEarnings)
 		r.Patch("/api/v1/bookings/{id}/confirm", h.BookingHandler.Confirm)
 		r.Patch("/api/v1/bookings/{id}/complete", h.BookingHandler.Complete)
 		r.Patch("/api/v1/bookings/{id}/reject", h.BookingHandler.Reject)

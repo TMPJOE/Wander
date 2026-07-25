@@ -57,6 +57,6 @@ func (s *TourService) List(ctx context.Context, filter models.TourFilter) ([]mod
 	return s.repo.List(ctx, filter)
 }
 
-func (s *TourService) GetStats(ctx context.Context, guideID int) (*models.GuideStats, error) {
-	return s.repo.GetStats(ctx, guideID)
+func (s *TourService) GetStats(ctx context.Context, guideID int, period string) (*models.GuideStats, error) {
+	return s.repo.GetStats(ctx, guideID, period)
 }

@@ -108,10 +108,21 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresGuide: true },
     },
     {
+      path: '/guide/earnings',
+      name: 'guide-earnings',
+      component: () => import('../views/GuideEarningsView.vue'),
+      meta: { requiresAuth: true, requiresGuide: true },
+    },
+    {
       path: '/guide/bookings',
       name: 'guide-bookings',
       component: () => import('../views/GuideBookingsView.vue'),
       meta: { requiresAuth: true, requiresGuide: true },
+    },
+    {
+      path: '/preview/tour',
+      name: 'tour-preview-new',
+      component: () => import('../views/TourDetailView.vue'),
     },
     {
       path: '/category/:slug',

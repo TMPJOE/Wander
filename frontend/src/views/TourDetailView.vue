@@ -34,6 +34,20 @@ const schedules = ref<any[]>([])
 const tourId = computed(() => route.params.id as string)
 const selectedScheduleId = ref<number | null>(null)
 
+// Preview mode: set when guide uses "Preview as Traveler" from TourFormView
+const isPreview = computed(() => route.query.preview === '1')
+const previewReturnPath = computed(() => sessionStorage.getItem('wander_preview_return') || '/guide/tours')
+
+// For new-tour preview (route /preview/tour with no id), hydrate from session storage.
+const previewDraft = computed<any>(() => {
+  if (!isPreview.value || tourId.value) return null
+  try {
+    return JSON.parse(sessionStorage.getItem('wander_tour_preview') || 'null')
+  } catch {
+    return null
+  }
+})
+
 function toggleSchedule(id: number) {
   selectedScheduleId.value = selectedScheduleId.value === id ? null : id
 }
@@ -68,6 +82,28 @@ const difficultyLabels: Record<string, { label: string; class: string }> = {
 }
 
 onMounted(async () => {
+  // New-tour preview: hydrate from session storage instead of fetching a non-existent tour.
+  if (previewDraft.value) {
+    const d = previewDraft.value
+    tour.value = {
+      id: 0,
+      title: d.title || 'Título del tour',
+      description: d.description || '',
+      location: d.location || '',
+      category_name: '',
+      price_per_person: d.price_per_person || 0,
+      duration_minutes: d.duration_minutes || 0,
+      avg_rating: 0,
+      review_count: 0,
+      what_included: d.what_included || [],
+      meeting_point: d.meeting_point || '',
+      images: d.images || [],
+      guide_id: null,
+    }
+    loading.value = false
+    return
+  }
+
   loading.value = true
   try {
     const res = await api.get(`/tours/${tourId.value}`)
@@ -120,6 +156,14 @@ function messageGuide() {
 
 <template>
   <div class="page tour-detail" v-if="tour">
+    <!-- Preview mode banner -->
+    <div v-if="isPreview" class="preview-banner">
+      <span class="preview-banner__label">👁 Modo previsualización — así lo verá el viajero</span>
+      <button class="preview-banner__back" @click="router.push(previewReturnPath)">
+        ← Volver al formulario
+      </button>
+    </div>
+
     <div class="layered-card">
       <!-- Gallery -->
       <div class="tour-detail__gallery">
@@ -294,8 +338,8 @@ function messageGuide() {
       </div>
     </div>
 
-    <!-- Sticky Book Bar -->
-    <div class="book-bar">
+    <!-- Sticky Book Bar (hidden in preview mode) -->
+    <div v-if="!isPreview" class="book-bar">
       <div class="book-bar__price">
         <span class="book-bar__amount">${{ tour.price_per_person.toLocaleString('es-MX') }}</span>
         <span class="book-bar__unit">/ persona</span>

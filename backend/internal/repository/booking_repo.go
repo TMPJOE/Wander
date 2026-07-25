@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"wander/backend/internal/models"
 
@@ -16,6 +17,7 @@ type BookingRepository interface {
 	ListByGuideID(ctx context.Context, guideID int) ([]models.Booking, error)
 	UpdateStatus(ctx context.Context, id int, status string) error
 	UpdatePayment(ctx context.Context, id int, intentID string, status string) error
+	GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error)
 }
 
 type PgBookingRepository struct {
@@ -167,4 +169,72 @@ func (r *PgBookingRepository) UpdatePayment(ctx context.Context, id int, intentI
 		return fmt.Errorf("update booking payment: %w", err)
 	}
 	return nil
+}
+
+func (r *PgBookingRepository) GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error) {
+	var since time.Time
+	var filterTime bool
+
+	switch period {
+	case "week":
+		since = time.Now().AddDate(0, 0, -7)
+		filterTime = true
+	case "month":
+		since = time.Now().AddDate(0, -1, 0)
+		filterTime = true
+	case "year":
+		since = time.Now().AddDate(-1, 0, 0)
+		filterTime = true
+	}
+
+	// 1. Calculate totals
+	totalsQuery := `
+		SELECT
+			COALESCE(SUM(b.total_price) FILTER (WHERE b.payment_status = 'authorized'), 0.00) as total_authorized,
+			COALESCE(SUM(b.total_price) FILTER (WHERE b.payment_status = 'paid'), 0.00) as total_paid
+		FROM bookings b
+		JOIN tours t ON b.tour_id = t.id
+		WHERE t.guide_id = $1
+		  AND ($2 = false OR b.created_at >= $3)
+	`
+	earnings := &models.GuideEarnings{ByTour: []models.TourEarning{}}
+	err := r.pool.QueryRow(ctx, totalsQuery, guideID, filterTime, since).Scan(
+		&earnings.TotalAuthorized, &earnings.TotalPaid,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("calculate earnings totals: %w", err)
+	}
+
+	// 2. Calculate by-tour breakdown
+	breakdownQuery := `
+		SELECT 
+			t.id as tour_id,
+			t.title as tour_title,
+			COUNT(b.id) as bookings,
+			COALESCE(SUM(b.total_price), 0.00) as revenue,
+			b.payment_status as status
+		FROM bookings b
+		JOIN tours t ON b.tour_id = t.id
+		WHERE t.guide_id = $1
+		  AND b.payment_status IN ('authorized', 'paid')
+		  AND ($2 = false OR b.created_at >= $3)
+		GROUP BY t.id, t.title, b.payment_status
+		ORDER BY revenue DESC
+	`
+	rows, err := r.pool.Query(ctx, breakdownQuery, guideID, filterTime, since)
+	if err != nil {
+		return nil, fmt.Errorf("query earnings breakdown: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var te models.TourEarning
+		err := rows.Scan(&te.TourID, &te.TourTitle, &te.Bookings, &te.Revenue, &te.Status)
+		if err != nil {
+			return nil, fmt.Errorf("scan tour earning: %w", err)
+		}
+		earnings.ByTour = append(earnings.ByTour, te)
+	}
+
+	return earnings, nil
 }

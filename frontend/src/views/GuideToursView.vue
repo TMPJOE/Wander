@@ -2,16 +2,19 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import { ArrowLeft, Plus, Edit2, Calendar, Trash2 } from '@lucide/vue'
 
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
+const { confirm } = useConfirm()
 const tours = ref<any[]>([])
 const loading = ref(true)
 
 onMounted(async () => {
   fetchTours()
-
 })
 
 async function fetchTours() {
@@ -27,14 +30,21 @@ async function fetchTours() {
 }
 
 async function deleteTour(id: number) {
-  if (confirm('¿Estás seguro que deseas eliminar este tour y todos los datos relacionados? Esta acción no se puede deshacer.')) {
-    try {
-      await api.delete(`/tours/${id}`)
-      await fetchTours()
-    } catch (e) {
-      console.error(e)
-      alert('Error al eliminar el tour.')
-    }
+  const approved = await confirm({
+    title: 'Eliminar tour',
+    body: '¿Estás seguro que deseas eliminar este tour y todos los datos relacionados? Esta acción no se puede deshacer.',
+    confirmLabel: 'Sí, eliminar',
+    confirmVariant: 'danger',
+  })
+  if (!approved) return
+
+  try {
+    await api.delete(`/tours/${id}`)
+    toast.success('Tour eliminado exitosamente')
+    await fetchTours()
+  } catch (e) {
+    console.error(e)
+    toast.error('Error al eliminar el tour.')
   }
 }
 

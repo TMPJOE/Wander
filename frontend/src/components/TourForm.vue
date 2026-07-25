@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
 
@@ -11,6 +11,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   submit: [data: any]
   cancel: []
+  change: [data: any]
 }>()
 
 const authState = useAuthState()
@@ -69,6 +70,13 @@ onMounted(async () => {
     }
   }
 })
+
+// Live-emit form state so parents (e.g. TourFormView preview) can capture it.
+watch(
+  form,
+  (val) => emit('change', { ...val, what_included: [...val.what_included], languages: [...val.languages], images: [...val.images] }),
+  { deep: true, immediate: true }
+)
 
 function addIncluded() {
   if (newIncluded.value.trim()) {

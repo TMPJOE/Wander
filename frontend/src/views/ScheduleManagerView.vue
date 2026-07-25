@@ -2,12 +2,16 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
+import { useConfirm } from '../composables/useConfirm'
 import { ArrowLeft } from '@lucide/vue'
 import ScheduleCalendar from '../components/ScheduleCalendar.vue'
 
 const route = useRoute()
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
+const { confirm } = useConfirm()
 
 const tourId = computed(() => route.params.id as string)
 const tour = ref<any>(null)
@@ -40,24 +44,33 @@ async function addSchedule(start: string, end: string, spots: number) {
       end_time: end,
       available_spots: spots,
     })
+    toast.success('Horario añadido exitosamente')
     await fetchData()
   } catch (e) {
     console.error(e)
-    alert('Error al añadir horario')
+    toast.error('Error al añadir horario')
   } finally {
     loading.value = false
   }
 }
 
 async function deleteSchedule(id: number) {
-  if (!confirm('¿Seguro que deseas eliminar este horario?')) return
+  const approved = await confirm({
+    title: 'Eliminar horario',
+    body: '¿Seguro que deseas eliminar este horario?',
+    confirmLabel: 'Sí, eliminar',
+    confirmVariant: 'danger',
+  })
+  if (!approved) return
+
   loading.value = true
   try {
     await api.delete(`/schedules/${id}`)
+    toast.success('Horario eliminado exitosamente')
     await fetchData()
   } catch (e) {
     console.error(e)
-    alert('Error al eliminar horario. ¿Quizás tiene reservas?')
+    toast.error('Error al eliminar horario. ¿Quizás tiene reservas?')
   } finally {
     loading.value = false
   }
@@ -67,10 +80,11 @@ async function toggleActive(id: number, isActive: boolean) {
   loading.value = true
   try {
     await api.put(`/schedules/${id}`, { is_active: isActive })
+    toast.success(`Horario ${isActive ? 'activado' : 'desactivado'}`)
     await fetchData()
   } catch (e) {
     console.error(e)
-    alert('Error al cambiar el estado del horario')
+    toast.error('Error al cambiar el estado del horario')
   } finally {
     loading.value = false
   }

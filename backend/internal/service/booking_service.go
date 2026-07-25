@@ -237,3 +237,7 @@ func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error 
 	return s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
 }
 
+func (s *BookingService) GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error) {
+	return s.repo.GetEarnings(ctx, guideID, period)
+}
+

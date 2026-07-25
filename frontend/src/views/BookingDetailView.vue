@@ -65,7 +65,7 @@ async function handleCancel() {
   const isFull = isEligibleForFullRefund.value
   const refundText = isFull
     ? 'Recibirás un reembolso completo (100%).'
-    : `Se aplicará la política de cancelación tardía (<48h). Recibirás un reembolso del 50% ($${(booking.value.total_price * 0.5).toFixed(2)} USD).`
+    : `Se aplicará la política de cancelación tardía (<48h). Recibirás un reembolso del 50% ($${(booking.value.total_price * 0.5).toFixed(2)} PAB).`
 
   const approved = await confirm({
     title: '¿Cancelar reserva?',
@@ -197,7 +197,7 @@ function formatTime(dateStr: string) {
             </div>
             <div class="info-text">
               <span class="info-label">Total Pagado</span>
-              <span class="info-value font-bold text-primary">${{ booking.total_price.toFixed(2) }} USD</span>
+              <span class="info-value font-bold text-primary">${{ booking.total_price.toFixed(2) }} PAB</span>
             </div>
           </div>
         </div>
@@ -223,7 +223,7 @@ function formatTime(dateStr: string) {
 
       <!-- Add to Calendar Action -->
       <div>
-        <button class="btn btn-outline btn-block btn-lg" @click="handleAddToCalendar">
+        <button class="btn btn-info btn-block btn-lg" @click="handleAddToCalendar">
           <Calendar :size="18" />
           Añadir a mi Calendario (.ics)
         </button>

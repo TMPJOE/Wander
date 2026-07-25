@@ -3,10 +3,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft, Calendar, Users, Info } from '@lucide/vue'
 import { useApi } from '../composables/useApi'
+import { useToast } from '../composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const api = useApi()
+const toast = useToast()
 
 const tourId = computed(() => route.params.id as string)
 const tour = ref<any>(null)
@@ -71,7 +73,7 @@ async function handleBook() {
     router.push(`/checkout/${response.data.id}`)
   } catch (e) {
     console.error('Failed to book', e)
-    alert('Ocurrió un error al procesar tu reserva.')
+    toast.error('Ocurrió un error al procesar tu reserva.')
   } finally {
     loading.value = false
   }

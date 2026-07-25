@@ -2,17 +2,22 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useApi } from '../composables/useApi';
-import { ArrowLeft } from '@lucide/vue';
+import { useToast } from '../composables/useToast';
+import { ArrowLeft, Eye } from '@lucide/vue';
 import TourForm from '../components/TourForm.vue';
 
 const route = useRoute();
 const router = useRouter();
 const api = useApi();
+const toast = useToast();
 
 const tourId = computed(() => route.params.id as string);
 const isEdit = computed(() => !!tourId.value);
 const loading = ref(false);
 const initialData = ref<any>(null);
+
+// Holds the latest form state emitted by TourForm so we can preview it
+const latestFormData = ref<any>(null);
 
 onMounted(async () => {
   if (isEdit.value) {
@@ -20,9 +25,10 @@ onMounted(async () => {
     try {
       const res = await api.get(`/tours/${tourId.value}`);
       initialData.value = res.data;
+      latestFormData.value = res.data;
     } catch (e) {
       console.error(e);
-      alert('Error cargando tour');
+      toast.error('Error cargando tour');
       router.back();
     } finally {
       loading.value = false;
@@ -30,20 +36,44 @@ onMounted(async () => {
   }
 });
 
+function handleChange(data: any) {
+  latestFormData.value = data;
+}
+
 async function handleSubmit(data: any) {
   loading.value = true;
   try {
     if (isEdit.value) {
       await api.put(`/tours/${tourId.value}`, data);
+      toast.success('Tour actualizado exitosamente');
     } else {
       await api.post('/tours', data);
+      toast.success('Tour creado exitosamente');
     }
     router.push('/guide/tours');
   } catch (e) {
     console.error(e);
-    alert('Error al guardar el tour');
+    toast.error('Error al guardar el tour');
   } finally {
     loading.value = false;
+  }
+}
+
+function handlePreview() {
+  if (!latestFormData.value) {
+    toast.info('Completa el formulario antes de previsualizar');
+    return;
+  }
+  sessionStorage.setItem('wander_tour_preview', JSON.stringify(latestFormData.value));
+  const returnPath = isEdit.value
+    ? `/guide/tours/${tourId.value}/edit`
+    : '/guide/tours/new';
+  sessionStorage.setItem('wander_preview_return', returnPath);
+  // Navigate to preview of existing tour or a synthetic one
+  if (isEdit.value) {
+    router.push(`/tours/${tourId.value}?preview=1`);
+  } else {
+    router.push(`/preview/tour?preview=1`);
   }
 }
 </script>
@@ -55,7 +85,10 @@ async function handleSubmit(data: any) {
         <ArrowLeft :size="20" />
       </button>
       <h1 class="title">{{ isEdit ? 'Editar Tour' : 'Crear Tour' }}</h1>
-      <div style="width: 36px"></div>
+      <button class="preview-btn" @click="handlePreview" title="Vista previa como viajero">
+        <Eye :size="18" />
+        <span>Previsualizar</span>
+      </button>
     </header>
 
     <div class="container py-4">
@@ -68,6 +101,7 @@ async function handleSubmit(data: any) {
         :loading="loading" 
         @submit="handleSubmit" 
         @cancel="router.back()" 
+        @change="handleChange"
       />
     </div>
   </div>
@@ -94,6 +128,27 @@ async function handleSubmit(data: any) {
   justify-content: center;
   border-radius: var(--radius-full);
   background: var(--color-background);
+}
+
+.preview-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-2) var(--spacing-3);
+  border-radius: var(--radius-full);
+  background: var(--color-secondary-50);
+  color: var(--color-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  border: 1px solid var(--color-secondary-100);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.preview-btn:hover {
+  background: var(--color-secondary-100);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .title {

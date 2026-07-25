@@ -206,6 +206,22 @@ button {
   box-shadow: var(--shadow-md);
 }
 
+.btn-info{
+  background-color: var(--color-info-light);
+  color: var(--color-info-dark);
+}
+
+.btn-info:hover:not(:disabled) {
+  background-color: var(--color-info);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+  color: var(--color-text-inverse);
+}
+
+.btn-info:active:not(:disabled) {
+  transform: translateY(0);
+}
+
 .btn-danger {
   background-color: var(--color-error);
   color: var(--color-text-inverse);

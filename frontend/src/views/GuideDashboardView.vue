@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
-import { Map, Calendar, DollarSign, Star, ChevronRight } from '@lucide/vue'
+import { Map, Calendar, DollarSign, Star, ChevronRight, TrendingUp } from '@lucide/vue'
 
 const authState = useAuthState()
 const router = useRouter()
 const api = useApi()
+
+const period = ref<'week' | 'month' | 'year' | 'all'>('all')
+const periods = [
+  { key: 'week', label: 'Semana' },
+  { key: 'month', label: 'Mes' },
+  { key: 'year', label: 'Año' },
+  { key: 'all', label: 'Todo' },
+] as const
 
 const stats = ref({
   total_bookings: 0,
@@ -15,8 +23,40 @@ const stats = ref({
   active_tours: 0,
   average_rating: 0,
 })
+const statsLoading = ref(false)
+
+// Earnings split: authorized (pending confirmation) vs paid (already captured)
+const earnings = ref({ total_authorized: 0, total_paid: 0 })
 
 const recentBookings = ref<any[]>([])
+
+async function fetchStats() {
+  statsLoading.value = true
+  try {
+    const q = period.value !== 'all' ? `?period=${period.value}` : ''
+    const statsRes = await api.get(`/guide/stats${q}`)
+    const data = statsRes.data || {}
+    stats.value.total_bookings = data.total_bookings || 0
+    stats.value.total_revenue = data.total_revenue || 0
+    stats.value.active_tours = data.published_tours || 0
+    stats.value.average_rating = data.avg_rating || 0
+  } catch (e) {
+    console.error(e)
+  } finally {
+    statsLoading.value = false
+  }
+}
+
+async function fetchEarnings() {
+  try {
+    const q = period.value !== 'all' ? `?period=${period.value}` : ''
+    const res = await api.get(`/guide/earnings${q}`)
+    earnings.value.total_authorized = res.data?.total_authorized || 0
+    earnings.value.total_paid = res.data?.total_paid || 0
+  } catch (e) {
+    console.error(e)
+  }
+}
 
 onMounted(async () => {
   if (authState.user.value?.role !== 'guide') {
@@ -24,19 +64,20 @@ onMounted(async () => {
     return
   }
 
-  try {
-    const statsRes = await api.get('/guide/stats')
-    const data = statsRes.data || {}
-    stats.value.total_bookings = data.total_bookings || 0
-    stats.value.total_revenue = data.total_revenue || 0
-    stats.value.active_tours = data.published_tours || 0
-    stats.value.average_rating = data.avg_rating || 0
+  fetchStats()
+  fetchEarnings()
 
+  try {
     const bookingsRes = await api.get('/guide/bookings')
     recentBookings.value = (bookingsRes.data || []).slice(0, 5)
   } catch (e) {
     console.error(e)
   }
+})
+
+watch(period, () => {
+  fetchStats()
+  fetchEarnings()
 })
 </script>
 
@@ -48,23 +89,50 @@ onMounted(async () => {
     </header>
 
     <div class="px-content py-4">
+      <!-- Period Filter -->
+      <div class="period-tabs mb-4">
+        <button
+          v-for="p in periods"
+          :key="p.key"
+          class="period-tab"
+          :class="{ 'period-tab--active': period === p.key }"
+          @click="period = p.key"
+        >
+          {{ p.label }}
+        </button>
+      </div>
+
       <!-- Stats Grid -->
       <div class="stats-grid mb-6">
-        <div class="stat-card">
+        <div
+          class="stat-card clickable-card"
+          @click="router.push('/guide/earnings')"
+          :class="{ 'stat-loading': statsLoading }"
+        >
           <div class="stat-icon bg-primary-light text-primary"><DollarSign :size="20" /></div>
           <div class="stat-info">
             <span class="stat-value">${{ stats.total_revenue.toLocaleString('es-MX') }}</span>
-            <span class="stat-label">Ingresos</span>
+            <span class="stat-label">Ingresos <TrendingUp :size="11" class="inline-icon" /></span>
+            <div class="earnings-split">
+              <span class="earnings-split__item">
+                <span class="dot dot--authorized"></span>
+                ${{ earnings.total_authorized.toLocaleString('es-MX') }} auth.
+              </span>
+              <span class="earnings-split__item">
+                <span class="dot dot--paid"></span>
+                ${{ earnings.total_paid.toLocaleString('es-MX') }} cobrado
+              </span>
+            </div>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" :class="{ 'stat-loading': statsLoading }">
           <div class="stat-icon bg-success-light text-success"><Calendar :size="20" /></div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.total_bookings }}</span>
             <span class="stat-label">Reservas</span>
           </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card" :class="{ 'stat-loading': statsLoading }">
           <div class="stat-icon bg-warning-light text-warning"><Star :size="20" /></div>
           <div class="stat-info">
             <span class="stat-value">{{ stats.average_rating.toPrecision(2) }}</span>
@@ -330,5 +398,76 @@ onMounted(async () => {
 }
 .overflow-hidden {
   overflow: hidden;
+}
+
+/* ─── Period tabs ─── */
+.period-tabs {
+  display: flex;
+  gap: var(--spacing-1);
+  background: var(--color-background);
+  border-radius: var(--radius-full);
+  padding: 3px;
+  width: fit-content;
+}
+
+.period-tab {
+  padding: var(--spacing-1) var(--spacing-3);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  transition: all var(--transition-fast);
+  cursor: pointer;
+}
+
+.period-tab--active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-xs);
+}
+
+.period-tab:not(.period-tab--active):hover {
+  color: var(--color-text);
+}
+
+/* loading shimmer on stat cards */
+.stat-loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.inline-icon {
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 2px;
+  opacity: 0.7;
+}
+
+.earnings-split {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: var(--spacing-1);
+}
+.earnings-split__item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--color-text-light);
+  font-weight: var(--font-weight-medium);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot--authorized {
+  background: #f59e0b;
+}
+.dot--paid {
+  background: #10b981;
 }
 </style>

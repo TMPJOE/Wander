@@ -12,5 +12,5 @@ type TourRepository interface {
 	Update(ctx context.Context, id int, req models.TourUpdateRequest) (*models.Tour, error)
 	Delete(ctx context.Context, id int) error
 	List(ctx context.Context, filter models.TourFilter) ([]models.Tour, error)
-	GetStats(ctx context.Context, guideID int) (*models.GuideStats, error)
+	GetStats(ctx context.Context, guideID int, period string) (*models.GuideStats, error)
 }

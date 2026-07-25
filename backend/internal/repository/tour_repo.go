@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"wander/backend/internal/models"
@@ -372,7 +373,22 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 	return tours, nil
 }
 
-func (r *PgTourRepository) GetStats(ctx context.Context, guideID int) (*models.GuideStats, error) {
+func (r *PgTourRepository) GetStats(ctx context.Context, guideID int, period string) (*models.GuideStats, error) {
+	var since time.Time
+	var filterTime bool
+
+	switch period {
+	case "week":
+		since = time.Now().AddDate(0, 0, -7)
+		filterTime = true
+	case "month":
+		since = time.Now().AddDate(0, -1, 0)
+		filterTime = true
+	case "year":
+		since = time.Now().AddDate(-1, 0, 0)
+		filterTime = true
+	}
+
 	query := `
 		SELECT 
 			COALESCE(COUNT(DISTINCT t.id), 0) as total_tours,
@@ -383,11 +399,11 @@ func (r *PgTourRepository) GetStats(ctx context.Context, guideID int) (*models.G
 			COALESCE(AVG(t.avg_rating), 0.00) as avg_rating,
 			COALESCE(SUM(t.review_count), 0) as total_reviews
 		FROM tours t
-		LEFT JOIN bookings b ON t.id = b.tour_id
+		LEFT JOIN bookings b ON t.id = b.tour_id AND ($2 = false OR b.created_at >= $3)
 		WHERE t.guide_id = $1
 	`
 	stats := &models.GuideStats{}
-	err := r.pool.QueryRow(ctx, query, guideID).Scan(
+	err := r.pool.QueryRow(ctx, query, guideID, filterTime, since).Scan(
 		&stats.TotalTours, &stats.PublishedTours, &stats.TotalBookings, &stats.PendingBookings,
 		&stats.TotalRevenue, &stats.AvgRating, &stats.TotalReviews,
 	)
