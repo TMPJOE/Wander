@@ -1,11 +1,10 @@
 /// <reference types="vite/client" />
+/// <reference types="google.maps" />
 
 // Google Maps TypeScript declarations
 declare global {
   interface Window {
-    google?: {
-      maps: typeof google.maps
-    }
+    google?: typeof google
   }
 }
 

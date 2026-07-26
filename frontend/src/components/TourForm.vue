@@ -19,7 +19,7 @@ const emit = defineEmits<{
 
 const authState = useAuthState()
 const api = useApi()
-const confirm = useConfirm()
+const { confirm } = useConfirm()
 
 const categories = ref<any[]>([])
 const form = ref({
@@ -100,8 +100,14 @@ onMounted(async () => {
 // Live-emit form state so parents (e.g. TourFormView preview) can capture it.
 watch(
   form,
-  (val) => emit('change', { ...val, what_included: [...val.what_included], languages: [...val.languages], images: [...val.images] }),
-  { deep: true, immediate: true }
+  (val) =>
+    emit('change', {
+      ...val,
+      what_included: [...val.what_included],
+      languages: [...val.languages],
+      images: [...val.images],
+    }),
+  { deep: true, immediate: true },
 )
 
 function addIncluded() {
@@ -176,7 +182,7 @@ function removeLanguage(index: number) {
 
 function handleSubmit() {
   // Prepare itinerary for submission (remove local IDs)
-  const itineraryPayload = form.value.itinerary.map(item => ({
+  const itineraryPayload = form.value.itinerary.map((item) => ({
     id: item.id,
     sort_order: item.sort_order,
     title: item.title,
@@ -186,7 +192,7 @@ function handleSubmit() {
     latitude: item.latitude,
     longitude: item.longitude,
   }))
-  
+
   emit('submit', {
     ...form.value,
     what_included: [...form.value.what_included],
@@ -198,7 +204,7 @@ function handleSubmit() {
 
 function addItineraryStep() {
   if (form.value.itinerary.length >= 20) return
-  
+
   const newStep = {
     _localId: `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     sort_order: form.value.itinerary.length,
@@ -209,22 +215,23 @@ function addItineraryStep() {
     latitude: null,
     longitude: null,
   }
-  
+
   form.value.itinerary.push(newStep)
 }
 
 async function removeStep(index: number) {
   const confirmed = await confirm({
     title: 'Eliminar paso del itinerario',
-    message: '¿Estás seguro de que deseas eliminar este paso? Esta acción no se puede deshacer.',
-    confirmText: 'Eliminar',
-    cancelText: 'Cancelar',
+    body: '¿Estás seguro de que deseas eliminar este paso? Esta acción no se puede deshacer.',
+    confirmLabel: 'Eliminar',
+    cancelLabel: 'Cancelar',
+    confirmVariant: 'danger',
   })
-  
+
   if (!confirmed) return
-  
+
   form.value.itinerary.splice(index, 1)
-  
+
   // Re-index sort_order
   form.value.itinerary.forEach((step, idx) => {
     step.sort_order = idx
@@ -233,14 +240,14 @@ async function removeStep(index: number) {
 
 function moveStep(index: number, direction: -1 | 1) {
   const newIndex = index + direction
-  
+
   if (newIndex < 0 || newIndex >= form.value.itinerary.length) return
-  
+
   // Swap items
   const temp = form.value.itinerary[index]
-  form.value.itinerary[index] = form.value.itinerary[newIndex]
-  form.value.itinerary[newIndex] = temp
-  
+  form.value.itinerary[index] = form.value.itinerary[newIndex]!
+  form.value.itinerary[newIndex] = temp!
+
   // Update sort_order
   form.value.itinerary.forEach((step, idx) => {
     step.sort_order = idx
@@ -384,7 +391,8 @@ function moveStep(index: number, direction: -1 | 1) {
     <div class="form-group">
       <label class="form-label">Ubicación exacta en el mapa</label>
       <p class="text-sm mb-2" style="color: var(--color-text-muted)">
-        Seleccione el punto de encuentro exacto en el mapa. Esto ayudará a los viajeros a encontrar el lugar fácilmente.
+        Seleccione el punto de encuentro exacto en el mapa. Esto ayudará a los viajeros a encontrar
+        el lugar fácilmente.
       </p>
       <LocationPickerMap
         v-model:label="form.meeting_point"
@@ -402,7 +410,7 @@ function moveStep(index: number, direction: -1 | 1) {
         </h3>
         <button
           type="button"
-          class="btn btn-primary btn-sm"
+          class="btn btn-primary btn-md"
           @click="addItineraryStep"
           :disabled="form.itinerary.length >= 20"
         >
@@ -412,7 +420,8 @@ function moveStep(index: number, direction: -1 | 1) {
       </div>
 
       <p class="text-sm mb-3" style="color: var(--color-text-muted)">
-        Describe la secuencia ordenada de paradas durante el tour. Esto es diferente de "Qué incluye": aquí detallas la ruta y actividades en orden.
+        Describe la secuencia ordenada de paradas durante el tour. Esto es diferente de "Qué
+        incluye": aquí detallas la ruta y actividades en orden.
       </p>
 
       <div v-if="form.itinerary.length === 0" class="itinerary-empty-state">
@@ -422,11 +431,7 @@ function moveStep(index: number, direction: -1 | 1) {
         </p>
       </div>
 
-      <div
-        v-for="(step, index) in form.itinerary"
-        :key="step._localId"
-        class="itinerary-step card"
-      >
+      <div v-for="(step, index) in form.itinerary" :key="step._localId" class="itinerary-step card">
         <div class="itinerary-step-header">
           <span class="itinerary-step-number">Paso {{ index + 1 }}</span>
           <div class="itinerary-step-actions">
@@ -674,14 +679,6 @@ function moveStep(index: number, direction: -1 | 1) {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
-}
-
-.btn-sm {
-  padding: var(--spacing-1) var(--spacing-2);
-  font-size: var(--font-size-sm);
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-1);
 }
 
 .itinerary-empty-state {

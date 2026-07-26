@@ -1,100 +1,3 @@
-<template>
-  <div class="location-picker-map">
-    <!-- Search input for Places Autocomplete -->
-    <div v-if="isMapsAvailable" class="location-picker-map__search">
-      <label :for="searchInputId" class="location-picker-map__label">
-        Buscar lugar
-      </label>
-      <div class="location-picker-map__input-wrapper">
-        <input
-          :id="searchInputId"
-          ref="searchInput"
-          type="text"
-          class="location-picker-map__input"
-          placeholder="Ingrese dirección o lugar..."
-          :value="searchQuery"
-          @input="onSearchInput"
-        />
-        <button
-          v-if="searchQuery"
-          type="button"
-          class="location-picker-map__clear"
-          @click="clearLocation"
-          aria-label="Limpiar ubicación seleccionada"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Notice when Maps is unavailable -->
-    <div v-else class="location-picker-map__notice">
-      <p>
-        Google Maps no está disponible. Puede ingresar la ubicación manualmente en los campos de texto.
-      </p>
-    </div>
-
-    <!-- Map container -->
-    <div
-      ref="mapContainer"
-      class="location-picker-map__container"
-      :class="{ 'location-picker-map__container--disabled': !isMapsAvailable }"
-      @click="onMapClick"
-    >
-      <div v-if="!hasLocation && isMapsAvailable" class="location-picker-map__placeholder">
-        <p>Haga clic en el mapa para seleccionar una ubicación</p>
-        <p class="location-picker-map__placeholder--small">
-          O use el buscador arriba
-        </p>
-      </div>
-    </div>
-
-    <!-- Selected location info -->
-    <div v-if="hasLocation" class="location-picker-map__info">
-      <div class="location-picker-map__coords">
-        <span class="location-picker-map__coords-label">Coordenadas:</span>
-        <span class="location-picker-map__coords-value">
-          {{ formattedLatitude }}, {{ formattedLongitude }}
-        </span>
-      </div>
-      <button
-        v-if="isMapsAvailable"
-        type="button"
-        class="location-picker-map__clear-btn"
-        @click="clearLocation"
-      >
-        Limpiar ubicación
-      </button>
-    </div>
-
-    <!-- Manual entry fields (always available as fallback) -->
-    <div class="location-picker-map__manual">
-      <p class="location-picker-map__manual-title">Entrada manual</p>
-      <div class="location-picker-map__manual-fields">
-        <slot name="manual-fields">
-          <!-- Parent can provide custom manual fields or use default -->
-          <p class="location-picker-map__manual-hint">
-            Los campos de ubicación y punto de encuentro pueden editarse directamente en el formulario.
-          </p>
-        </slot>
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
 
@@ -108,7 +11,7 @@ const props = withDefaults(
     label: null,
     latitude: null,
     longitude: null,
-  }
+  },
 )
 
 const emit = defineEmits<{
@@ -203,6 +106,14 @@ async function initMap() {
       })
     }
 
+    // Handle map click to select location
+    mapInstance.addListener('click', (event: google.maps.MapMouseEvent) => {
+      if (isDragging) return
+      if (event.latLng) {
+        updateLocation(event.latLng.lat(), event.latLng.lng())
+      }
+    })
+
     // Update marker position if coordinates change externally
     watch(
       () => [props.latitude, props.longitude, props.label],
@@ -216,32 +127,10 @@ async function initMap() {
           mapInstance?.setZoom(15)
         }
       },
-      { immediate: true }
+      { immediate: true },
     )
   } catch (e) {
     console.error('Failed to initialize map:', e)
-  }
-}
-
-// Handle map click to select location
-function onMapClick(event: MouseEvent) {
-  if (!isMapsAvailable.value || !mapInstance || isDragging) return
-
-  // Only process direct map clicks, not marker drags
-  const rect = mapContainer.value?.getBoundingClientRect()
-  if (!rect) return
-
-  // Get click position relative to map
-  const x = event.clientX - rect.left
-  const y = event.clientY - rect.top
-
-  // Use projection to convert pixel to lat/lng
-  const projection = mapInstance.getProjection()
-  if (!projection) return
-
-  const point = projection.fromContainerPixelToLatLng({ x, y })
-  if (point) {
-    updateLocation(point.lat(), point.lng())
   }
 }
 
@@ -278,13 +167,106 @@ watch(
       searchQuery.value = newLabel
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 onMounted(() => {
   initMap()
 })
 </script>
+<template>
+  <div class="location-picker-map">
+    <!-- Search input for Places Autocomplete -->
+    <div v-if="isMapsAvailable" class="location-picker-map__search">
+      <label :for="searchInputId" class="location-picker-map__label"> Buscar lugar </label>
+      <div class="location-picker-map__input-wrapper">
+        <input
+          :id="searchInputId"
+          ref="searchInput"
+          type="text"
+          class="location-picker-map__input"
+          placeholder="Ingrese dirección o lugar..."
+          :value="searchQuery"
+          @input="onSearchInput"
+        />
+        <button
+          v-if="searchQuery"
+          type="button"
+          class="location-picker-map__clear"
+          @click="clearLocation"
+          aria-label="Limpiar ubicación seleccionada"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Notice when Maps is unavailable -->
+    <div v-else class="location-picker-map__notice">
+      <p>
+        Google Maps no está disponible. Puede ingresar la ubicación manualmente en los campos de
+        texto.
+      </p>
+    </div>
+
+    <!-- Map container -->
+    <div
+      ref="mapContainer"
+      class="location-picker-map__container"
+      :class="{ 'location-picker-map__container--disabled': !isMapsAvailable }"
+    >
+      <div v-if="!hasLocation && isMapsAvailable" class="location-picker-map__placeholder">
+        <p>Haga clic en el mapa para seleccionar una ubicación</p>
+        <p class="location-picker-map__placeholder--small">O use el buscador arriba</p>
+      </div>
+    </div>
+
+    <!-- Selected location info -->
+    <div v-if="hasLocation" class="location-picker-map__info">
+      <div class="location-picker-map__coords">
+        <span class="location-picker-map__coords-label">Coordenadas:</span>
+        <span class="location-picker-map__coords-value">
+          {{ formattedLatitude }}, {{ formattedLongitude }}
+        </span>
+      </div>
+      <button
+        v-if="isMapsAvailable"
+        type="button"
+        class="location-picker-map__clear-btn"
+        @click="clearLocation"
+      >
+        Limpiar ubicación
+      </button>
+    </div>
+
+    <!-- Manual entry fields (always available as fallback) -->
+    <div class="location-picker-map__manual">
+      <p class="location-picker-map__manual-title">Entrada manual</p>
+      <div class="location-picker-map__manual-fields">
+        <slot name="manual-fields">
+          <!-- Parent can provide custom manual fields or use default -->
+          <p class="location-picker-map__manual-hint">
+            Los campos de ubicación y punto de encuentro pueden editarse directamente en el
+            formulario.
+          </p>
+        </slot>
+      </div>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 .location-picker-map {
@@ -315,7 +297,9 @@ onMounted(() => {
   border: 1px solid #d1d5db;
   border-radius: 6px;
   font-size: 14px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 }
 
 .location-picker-map__input:focus {
@@ -337,7 +321,9 @@ onMounted(() => {
   border-radius: 50%;
   cursor: pointer;
   color: #6b7280;
-  transition: background-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .location-picker-map__clear:hover {
@@ -422,7 +408,9 @@ onMounted(() => {
   font-size: 13px;
   color: #374151;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s;
 }
 
 .location-picker-map__clear-btn:hover {
