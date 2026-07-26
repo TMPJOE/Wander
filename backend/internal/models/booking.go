@@ -16,13 +16,16 @@ type Booking struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 
 	// Payment tracking (Stripe).
-	PaymentStatus         string `json:"payment_status,omitempty"`
-	StripePaymentIntentID string `json:"stripe_payment_intent_id,omitempty"`
+	PaymentStatus         string  `json:"payment_status,omitempty"`
+	StripePaymentIntentID string  `json:"stripe_payment_intent_id,omitempty"`
 
 	// Joined fields.
 	TourTitle     string    `json:"tour_title,omitempty"`
 	TourImage     string    `json:"tour_image,omitempty"`
 	TourLocation  string    `json:"tour_location,omitempty"`
+	MeetingPoint  string    `json:"meeting_point,omitempty"`
+	TourLatitude  *float64  `json:"tour_latitude,omitempty"`
+	TourLongitude *float64  `json:"tour_longitude,omitempty"`
 	GuideName     string    `json:"guide_name,omitempty"`
 	GuideAvatar   string    `json:"guide_avatar,omitempty"`
 	UserName      string    `json:"user_name,omitempty"`

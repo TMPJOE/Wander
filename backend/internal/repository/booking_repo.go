@@ -48,7 +48,7 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 	query := `
 		SELECT b.id, b.user_id, b.schedule_id, b.tour_id, b.guest_count, b.total_price, b.status, b.notes, b.created_at, b.updated_at,
 		       b.payment_status, b.stripe_payment_intent_id,
-		       t.title as tour_title, t.location as tour_location,
+		       t.title as tour_title, t.location as tour_location, t.meeting_point, t.latitude as tour_latitude, t.longitude as tour_longitude,
 		       (SELECT url FROM tour_images WHERE tour_id = t.id ORDER BY position ASC LIMIT 1) as tour_image,
 		       u.first_name || ' ' || u.last_name as guide_name, u.avatar_url as guide_avatar,
 		       tu.first_name || ' ' || tu.last_name as user_name,
@@ -65,7 +65,7 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 	err := r.pool.QueryRow(ctx, query, id).Scan(
 		&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
 		&b.PaymentStatus, &b.StripePaymentIntentID,
-		&b.TourTitle, &b.TourLocation, &tourImage, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
+		&b.TourTitle, &b.TourLocation, &b.MeetingPoint, &b.TourLatitude, &b.TourLongitude, &tourImage, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
 	)
 	if err != nil {
 		return nil, models.ErrNotFound

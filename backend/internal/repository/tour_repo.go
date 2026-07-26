@@ -55,6 +55,20 @@ func (r *PgTourRepository) Create(ctx context.Context, guideID int, req models.T
 	}
 	t.Images = req.Images
 
+	// Insert itinerary items if provided
+	if len(req.Itinerary) > 0 {
+		for i, item := range req.Itinerary {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO tour_itinerary_items (tour_id, sort_order, title, description, duration_minutes, location_label, latitude, longitude)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			`, t.ID, i, item.Title, item.Description, item.DurationMinutes, item.LocationLabel, item.Latitude, item.Longitude)
+			if err != nil {
+				return nil, fmt.Errorf("insert itinerary item %d: %w", i, err)
+			}
+		}
+		t.Itinerary = req.Itinerary
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit create tx: %w", err)
 	}
@@ -100,6 +114,30 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 		var url string
 		if err := rows.Scan(&url); err == nil {
 			t.Images = append(t.Images, url)
+		}
+	}
+
+	// Fetch itinerary items
+	itineraryRows, err := r.pool.Query(ctx, `
+		SELECT id, sort_order, title, description, duration_minutes, location_label, latitude, longitude, created_at, updated_at
+		FROM tour_itinerary_items
+		WHERE tour_id = $1
+		ORDER BY sort_order ASC
+	`, id)
+	if err != nil {
+		return nil, fmt.Errorf("fetch itinerary items: %w", err)
+	}
+	defer itineraryRows.Close()
+
+	t.Itinerary = []models.ItineraryItem{}
+	for itineraryRows.Next() {
+		var item models.ItineraryItem
+		err := itineraryRows.Scan(
+			&item.ID, &item.SortOrder, &item.Title, &item.Description, &item.DurationMinutes,
+			&item.LocationLabel, &item.Latitude, &item.Longitude, &item.CreatedAt, &item.UpdatedAt,
+		)
+		if err == nil {
+			t.Itinerary = append(t.Itinerary, item)
 		}
 	}
 
@@ -216,6 +254,23 @@ func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUp
 		}
 	}
 
+	// If itinerary is provided in the update, replace it atomically
+	if req.Itinerary != nil {
+		_, err = tx.Exec(ctx, "DELETE FROM tour_itinerary_items WHERE tour_id = $1", id)
+		if err != nil {
+			return nil, fmt.Errorf("clear tour itinerary: %w", err)
+		}
+		for i, item := range req.Itinerary {
+			_, err = tx.Exec(ctx, `
+				INSERT INTO tour_itinerary_items (tour_id, sort_order, title, description, duration_minutes, location_label, latitude, longitude)
+				VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			`, id, i, item.Title, item.Description, item.DurationMinutes, item.LocationLabel, item.Latitude, item.Longitude)
+			if err != nil {
+				return nil, fmt.Errorf("insert updated itinerary item %d: %w", i, err)
+			}
+		}
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		return nil, fmt.Errorf("commit update tx: %w", err)
 	}
@@ -234,6 +289,12 @@ func (r *PgTourRepository) Delete(ctx context.Context, id int) error {
 	_, err = tx.Exec(ctx, "DELETE FROM bookings WHERE tour_id = $1", id)
 	if err != nil {
 		return fmt.Errorf("delete related bookings: %w", err)
+	}
+
+	// Itinerary items have ON DELETE CASCADE, but explicit deletion is cleaner
+	_, err = tx.Exec(ctx, "DELETE FROM tour_itinerary_items WHERE tour_id = $1", id)
+	if err != nil {
+		return fmt.Errorf("delete itinerary items: %w", err)
 	}
 
 	_, err = tx.Exec(ctx, "DELETE FROM tours WHERE id = $1", id)
