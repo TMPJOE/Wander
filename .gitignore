@@ -42,5 +42,4 @@ frontend/*.local
 *.tmp
 *.temp
 
-implementation_plan.md
 
