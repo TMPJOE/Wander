@@ -29,7 +29,7 @@ backend/*.exe
 backend/*.test
 backend/*.out
 backend/coverage.html
-backend/uploads/
+backend/uploads
 
 # Frontend (Node/Vue)
 frontend/node_modules/
@@ -41,4 +41,6 @@ frontend/*.local
 # OS generated files
 *.tmp
 *.temp
+
 implementation_plan.md
+

@@ -2,6 +2,9 @@
 import { ref, onMounted, watch } from 'vue'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
+import { useConfirm } from '../composables/useConfirm'
+import LocationPickerMap from './LocationPickerMap.vue'
+import { MapPin, Plus, Trash2, ArrowUp, ArrowDown } from '@lucide/vue'
 
 const props = defineProps<{
   initialData?: any
@@ -16,6 +19,7 @@ const emit = defineEmits<{
 
 const authState = useAuthState()
 const api = useApi()
+const { confirm } = useConfirm()
 
 const categories = ref<any[]>([])
 const form = ref({
@@ -34,6 +38,17 @@ const form = ref({
   meeting_point: '',
   images: [] as string[],
   is_published: true,
+  itinerary: [] as Array<{
+    id?: number
+    _localId: string
+    sort_order: number
+    title: string
+    description: string
+    duration_minutes: number | null
+    location_label: string
+    latitude: number | null
+    longitude: number | null
+  }>,
 })
 
 const newIncluded = ref('')
@@ -67,6 +82,17 @@ onMounted(async () => {
       meeting_point: d.meeting_point || '',
       images: d.images || [],
       is_published: d.is_published !== undefined ? d.is_published : true,
+      itinerary: (d.itinerary || []).map((item: any, idx: number) => ({
+        id: item.id,
+        _localId: item.id?.toString() || `local-${Date.now()}-${idx}`,
+        sort_order: item.sort_order ?? idx,
+        title: item.title || '',
+        description: item.description || '',
+        duration_minutes: item.duration_minutes ?? null,
+        location_label: item.location_label || '',
+        latitude: item.latitude ?? null,
+        longitude: item.longitude ?? null,
+      })),
     }
   }
 })
@@ -74,8 +100,14 @@ onMounted(async () => {
 // Live-emit form state so parents (e.g. TourFormView preview) can capture it.
 watch(
   form,
-  (val) => emit('change', { ...val, what_included: [...val.what_included], languages: [...val.languages], images: [...val.images] }),
-  { deep: true, immediate: true }
+  (val) =>
+    emit('change', {
+      ...val,
+      what_included: [...val.what_included],
+      languages: [...val.languages],
+      images: [...val.images],
+    }),
+  { deep: true, immediate: true },
 )
 
 function addIncluded() {
@@ -149,7 +181,77 @@ function removeLanguage(index: number) {
 }
 
 function handleSubmit() {
-  emit('submit', form.value)
+  // Prepare itinerary for submission (remove local IDs)
+  const itineraryPayload = form.value.itinerary.map((item) => ({
+    id: item.id,
+    sort_order: item.sort_order,
+    title: item.title,
+    description: item.description,
+    duration_minutes: item.duration_minutes,
+    location_label: item.location_label,
+    latitude: item.latitude,
+    longitude: item.longitude,
+  }))
+
+  emit('submit', {
+    ...form.value,
+    what_included: [...form.value.what_included],
+    languages: [...form.value.languages],
+    images: [...form.value.images],
+    itinerary: itineraryPayload,
+  })
+}
+
+function addItineraryStep() {
+  if (form.value.itinerary.length >= 20) return
+
+  const newStep = {
+    _localId: `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    sort_order: form.value.itinerary.length,
+    title: '',
+    description: '',
+    duration_minutes: null,
+    location_label: '',
+    latitude: null,
+    longitude: null,
+  }
+
+  form.value.itinerary.push(newStep)
+}
+
+async function removeStep(index: number) {
+  const confirmed = await confirm({
+    title: 'Eliminar paso del itinerario',
+    body: '¿Estás seguro de que deseas eliminar este paso? Esta acción no se puede deshacer.',
+    confirmLabel: 'Eliminar',
+    cancelLabel: 'Cancelar',
+    confirmVariant: 'danger',
+  })
+
+  if (!confirmed) return
+
+  form.value.itinerary.splice(index, 1)
+
+  // Re-index sort_order
+  form.value.itinerary.forEach((step, idx) => {
+    step.sort_order = idx
+  })
+}
+
+function moveStep(index: number, direction: -1 | 1) {
+  const newIndex = index + direction
+
+  if (newIndex < 0 || newIndex >= form.value.itinerary.length) return
+
+  // Swap items
+  const temp = form.value.itinerary[index]
+  form.value.itinerary[index] = form.value.itinerary[newIndex]!
+  form.value.itinerary[newIndex] = temp!
+
+  // Update sort_order
+  form.value.itinerary.forEach((step, idx) => {
+    step.sort_order = idx
+  })
 }
 </script>
 
@@ -285,6 +387,151 @@ function handleSubmit() {
       </div>
     </div>
 
+    <!-- Location Picker Map -->
+    <div class="form-group">
+      <label class="form-label">Ubicación exacta en el mapa</label>
+      <p class="text-sm mb-2" style="color: var(--color-text-muted)">
+        Seleccione el punto de encuentro exacto en el mapa. Esto ayudará a los viajeros a encontrar
+        el lugar fácilmente.
+      </p>
+      <LocationPickerMap
+        v-model:label="form.meeting_point"
+        v-model:latitude="form.latitude"
+        v-model:longitude="form.longitude"
+      />
+    </div>
+
+    <!-- Itinerary Section -->
+    <div class="form-group itinerary-section">
+      <div class="itinerary-header">
+        <h3 class="itinerary-title">
+          <MapPin :size="20" />
+          Itinerario del Tour
+        </h3>
+        <button
+          type="button"
+          class="btn btn-primary btn-md"
+          @click="addItineraryStep"
+          :disabled="form.itinerary.length >= 20"
+        >
+          <Plus :size="16" />
+          Agregar paso
+        </button>
+      </div>
+
+      <p class="text-sm mb-3" style="color: var(--color-text-muted)">
+        Describe la secuencia ordenada de paradas durante el tour. Esto es diferente de "Qué
+        incluye": aquí detallas la ruta y actividades en orden.
+      </p>
+
+      <div v-if="form.itinerary.length === 0" class="itinerary-empty-state">
+        <p>No hay pasos en el itinerario aún.</p>
+        <p class="text-sm" style="color: var(--color-text-muted)">
+          Haz clic en "Agregar paso" para comenzar a crear el itinerario.
+        </p>
+      </div>
+
+      <div v-for="(step, index) in form.itinerary" :key="step._localId" class="itinerary-step card">
+        <div class="itinerary-step-header">
+          <span class="itinerary-step-number">Paso {{ index + 1 }}</span>
+          <div class="itinerary-step-actions">
+            <button
+              type="button"
+              class="btn-icon"
+              @click="moveStep(index, -1)"
+              :disabled="index === 0"
+              title="Mover arriba"
+            >
+              <ArrowUp :size="16" />
+            </button>
+            <button
+              type="button"
+              class="btn-icon"
+              @click="moveStep(index, 1)"
+              :disabled="index === form.itinerary.length - 1"
+              title="Mover abajo"
+            >
+              <ArrowDown :size="16" />
+            </button>
+            <button
+              type="button"
+              class="btn-icon btn-icon-danger"
+              @click="removeStep(index)"
+              title="Eliminar paso"
+            >
+              <Trash2 :size="16" />
+            </button>
+          </div>
+        </div>
+
+        <div class="grid-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">Título del paso</label>
+            <input
+              v-model="step.title"
+              type="text"
+              class="form-input"
+              placeholder="Ej: Visita al centro histórico"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Duración (minutos, opcional)</label>
+            <input
+              v-model.number="step.duration_minutes"
+              type="number"
+              class="form-input"
+              placeholder="Ej: 45"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Descripción (opcional)</label>
+          <textarea
+            v-model="step.description"
+            class="form-input form-textarea"
+            placeholder="Describe qué sucede en esta parada..."
+            rows="2"
+          ></textarea>
+        </div>
+
+        <div class="grid-2 gap-4">
+          <div class="form-group">
+            <label class="form-label">Etiqueta de ubicación (opcional)</label>
+            <input
+              v-model="step.location_label"
+              type="text"
+              class="form-input"
+              placeholder="Ej: Plaza Mayor"
+            />
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Coordenadas (opcional)</label>
+            <div class="coords-inputs">
+              <input
+                v-model.number="step.latitude"
+                type="number"
+                class="form-input"
+                placeholder="Latitud"
+                step="any"
+              />
+              <input
+                v-model.number="step.longitude"
+                type="number"
+                class="form-input"
+                placeholder="Longitud"
+                step="any"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="form-group flex items-center gap-2 mt-4">
       <input type="checkbox" id="is_published" v-model="form.is_published" />
       <label for="is_published" class="form-label mb-0" style="margin-bottom: 0"
@@ -407,5 +654,130 @@ function handleSubmit() {
 }
 .pl-5 {
   padding-left: 1.25rem;
+}
+
+/* Itinerary section styles */
+.itinerary-section {
+  margin-top: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: var(--color-background);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+}
+
+.itinerary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-3);
+}
+
+.itinerary-title {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.itinerary-empty-state {
+  padding: var(--spacing-6);
+  text-align: center;
+  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-border);
+}
+
+.itinerary-step {
+  margin-bottom: var(--spacing-4);
+  padding: var(--spacing-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.itinerary-step:last-child {
+  margin-bottom: 0;
+}
+
+.itinerary-step-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-3);
+  padding-bottom: var(--spacing-2);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.itinerary-step-number {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-secondary);
+}
+
+.itinerary-step-actions {
+  display: flex;
+  gap: var(--spacing-1);
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-icon:hover:not(:disabled) {
+  background: var(--color-background);
+  border-color: var(--color-secondary);
+}
+
+.btn-icon:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-icon-danger:hover:not(:disabled) {
+  background: var(--color-error);
+  border-color: var(--color-error);
+  color: white;
+}
+
+.coords-inputs {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.coords-inputs .form-input {
+  flex: 1;
+}
+
+.mb-3 {
+  margin-bottom: var(--spacing-3);
+}
+
+@media (max-width: 600px) {
+  .itinerary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-2);
+  }
+
+  .itinerary-step-header {
+    flex-wrap: wrap;
+    gap: var(--spacing-2);
+  }
+
+  .coords-inputs {
+    flex-direction: column;
+  }
 }
 </style>
