@@ -338,28 +338,28 @@ function formatDuration(minutes: number): string {
         <!-- Itinerary Section -->
         <div v-if="tour.itinerary && tour.itinerary.length" class="tour-detail__section">
           <h2 class="tour-detail__section-title">Itinerario del Tour</h2>
-          <div class="itinerary-list">
+          <div class="timeline itinerary-timeline">
             <div
               v-for="(step, index) in tour.itinerary"
               :key="step.id || index"
-              class="itinerary-step"
+              class="timeline-item itinerary-step"
             >
-              <div class="itinerary-step__header">
-                <span class="itinerary-step__number">{{ Number(index) + 1 }}</span>
-                <div class="itinerary-step__content">
+              <span class="itinerary-step__marker">{{ Number(index) + 1 }}</span>
+              <div class="itinerary-step__content">
+                <div class="itinerary-step__header">
                   <h3 class="itinerary-step__title">{{ step.title }}</h3>
                   <div v-if="step.duration_minutes" class="itinerary-step__duration">
                     <Timer :size="14" :stroke-width="2" />
                     <span>{{ formatDuration(step.duration_minutes) }}</span>
                   </div>
                 </div>
-              </div>
-              <p v-if="step.description" class="itinerary-step__description">
-                {{ step.description }}
-              </p>
-              <div v-if="step.location_label" class="itinerary-step__location">
-                <MapIcon :size="14" :stroke-width="2" />
-                <span>{{ step.location_label }}</span>
+                <p v-if="step.description" class="itinerary-step__description">
+                  {{ step.description }}
+                </p>
+                <div v-if="step.location_label" class="itinerary-step__location">
+                  <MapIcon :size="14" :stroke-width="2" />
+                  <span>{{ step.location_label }}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -734,9 +734,7 @@ function formatDuration(minutes: number): string {
   position: absolute;
   top: 16px;
   bottom: 16px;
-  left: 15px;
   width: 2px;
-  background: #a9dbbc; /* Lighter green line */
 }
 
 .timeline-item {
@@ -795,30 +793,30 @@ function formatDuration(minutes: number): string {
   color: var(--color-text-light);
 }
 
-.itinerary-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-4);
+.itinerary-timeline::before {
+  left: 17px;
+  background: var(--color-secondary-100);
 }
 
-.itinerary-step {
-  padding: var(--spacing-4);
-  background: var(--color-background);
-  border-radius: var(--radius-lg);
-  border-left: 3px solid var(--color-primary);
+.itinerary-step.itinerary-step {
+  padding: 0 0 var(--spacing-6) 48px;
+  background: transparent;
+  border-radius: 0;
+  border-left: none;
+  gap: 0;
 }
 
-.itinerary-step__header {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-3);
-  margin-bottom: var(--spacing-2);
+.itinerary-step:last-child {
+  padding-bottom: 0;
 }
 
-.itinerary-step__number {
+.itinerary-step__marker {
+  position: absolute;
+  left: 0;
+  top: 0;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: var(--radius-full);
   background: var(--color-primary);
   color: white;
@@ -827,18 +825,22 @@ function formatDuration(minutes: number): string {
   justify-content: center;
   font-size: var(--font-size-sm);
   font-weight: var(--font-weight-bold);
+  border: 3px solid var(--color-surface);
+  z-index: 1;
 }
 
-.itinerary-step__content {
-  flex: 1;
-  min-width: 0;
+.itinerary-step__header {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-1);
 }
 
 .itinerary-step__title {
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text);
-  margin-bottom: 4px;
   line-height: var(--line-height-tight);
 }
 

@@ -279,7 +279,8 @@ function formatTime(dateStr: string) {
         <h3 class="cancel-title"><AlertTriangle :size="18" /> Política de Cancelación</h3>
         <p class="cancel-desc">
           Cancela con más de 48h de anticipación para un <strong>reembolso del 100%</strong>.
-          Cancelaciones entre 48h y 0h reciben un <strong>reembolso del 50%</strong>.
+          Cancelaciones a menos de 48h del tour solo recibirán un
+          <strong>reembolso del 50%</strong>.
         </p>
 
         <div
