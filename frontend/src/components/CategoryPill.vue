@@ -113,7 +113,7 @@ function getCategoryImage(slug: string): string {
 
 .category-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .category-card:hover .category-card__background {
