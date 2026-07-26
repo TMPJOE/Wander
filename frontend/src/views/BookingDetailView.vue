@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowLeft, Calendar, Clock, MapPin, Users, DollarSign, UserCheck, AlertTriangle } from '@lucide/vue'
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  MapPin,
+  Users,
+  DollarSign,
+  UserCheck,
+  AlertTriangle,
+} from '@lucide/vue'
 import { useApi } from '../composables/useApi'
 import { useToast } from '../composables/useToast'
 import { useConfirm } from '../composables/useConfirm'
 import { useCalendar } from '../composables/useCalendar'
+import LocationMap from '../components/LocationMap.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -103,7 +113,11 @@ function formatDate(dateStr: string) {
 
 function formatTime(dateStr: string) {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true })
+  return new Date(dateStr).toLocaleTimeString('es-MX', {
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true,
+  })
 }
 </script>
 
@@ -127,7 +141,10 @@ function formatTime(dateStr: string) {
       <div class="card hero-card">
         <div class="hero-image-wrap">
           <img
-            :src="booking.tour_image || 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop'"
+            :src="
+              booking.tour_image ||
+              'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800&h=400&fit=crop'
+            "
             :alt="booking.tour_title"
             class="hero-image"
           />
@@ -187,7 +204,9 @@ function formatTime(dateStr: string) {
             </div>
             <div class="info-text">
               <span class="info-label">Asistentes</span>
-              <span class="info-value">{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span>
+              <span class="info-value"
+                >{{ booking.guest_count }} persona{{ booking.guest_count > 1 ? 's' : '' }}</span
+              >
             </div>
           </div>
 
@@ -197,7 +216,9 @@ function formatTime(dateStr: string) {
             </div>
             <div class="info-text">
               <span class="info-label">Total Pagado</span>
-              <span class="info-value font-bold text-primary">${{ booking.total_price.toFixed(2) }} PAB</span>
+              <span class="info-value font-bold text-primary"
+                >${{ booking.total_price.toFixed(2) }} PAB</span
+              >
             </div>
           </div>
         </div>
@@ -208,7 +229,10 @@ function formatTime(dateStr: string) {
         <h3 class="card-section-title">Tu Guía Local</h3>
         <div class="guide-profile">
           <img
-            :src="booking.guide_avatar || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'"
+            :src="
+              booking.guide_avatar ||
+              'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80'
+            "
             alt="Guide"
             class="guide-avatar"
           />
@@ -221,6 +245,24 @@ function formatTime(dateStr: string) {
         </div>
       </div>
 
+      <!-- Meeting Point Map Card -->
+      <div v-if="booking.meeting_point || booking.tour_latitude" class="card detail-card">
+        <h3 class="card-section-title">Punto de Encuentro</h3>
+        <p
+          class="text-muted"
+          style="font-size: var(--font-size-sm); margin-bottom: var(--spacing-3)"
+        >
+          {{ booking.meeting_point || booking.tour_location }}
+        </p>
+        <LocationMap
+          :label="booking.meeting_point || booking.tour_location"
+          :latitude="booking.tour_latitude"
+          :longitude="booking.tour_longitude"
+          height="250px"
+          :show-directions="true"
+        />
+      </div>
+
       <!-- Add to Calendar Action -->
       <div>
         <button class="btn btn-info btn-block btn-lg" @click="handleAddToCalendar">
@@ -230,17 +272,26 @@ function formatTime(dateStr: string) {
       </div>
 
       <!-- Cancellation Section -->
-      <div v-if="booking.status !== 'cancelled' && booking.status !== 'completed'" class="card cancel-card">
-        <h3 class="cancel-title">
-          <AlertTriangle :size="18" /> Política de Cancelación
-        </h3>
+      <div
+        v-if="booking.status !== 'cancelled' && booking.status !== 'completed'"
+        class="card cancel-card"
+      >
+        <h3 class="cancel-title"><AlertTriangle :size="18" /> Política de Cancelación</h3>
         <p class="cancel-desc">
-          Cancela con más de 48h de anticipación para un <strong>reembolso del 100%</strong>. Cancelaciones entre 48h y 0h reciben un <strong>reembolso del 50%</strong>.
+          Cancela con más de 48h de anticipación para un <strong>reembolso del 100%</strong>.
+          Cancelaciones entre 48h y 0h reciben un <strong>reembolso del 50%</strong>.
         </p>
 
-        <div class="policy-status" :class="isEligibleForFullRefund ? 'policy-status--success' : 'policy-status--warning'">
+        <div
+          class="policy-status"
+          :class="isEligibleForFullRefund ? 'policy-status--success' : 'policy-status--warning'"
+        >
           <span class="policy-status-text">
-            {{ isEligibleForFullRefund ? '✓ Cancelación gratuita disponible (Reembolso 100%)' : '⚠️ Cancelación tardía (<48h) — Reembolso del 50%' }}
+            {{
+              isEligibleForFullRefund
+                ? '✓ Cancelación gratuita disponible (Reembolso 100%)'
+                : '⚠️ Cancelación tardía (<48h) — Reembolso del 50%'
+            }}
           </span>
         </div>
 

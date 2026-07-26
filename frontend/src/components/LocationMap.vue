@@ -60,7 +60,9 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
-import { toMapsUrl, toMapsViewUrl } from '../composables/useGoogleMaps'
+import { useGoogleMaps, toMapsUrl } from '../composables/useGoogleMaps'
+
+const { load: loadMaps } = useGoogleMaps()
 
 const props = withDefaults(
   defineProps<{
@@ -114,12 +116,23 @@ const directionsLabel = computed(() => {
 async function initMap() {
   if (!hasCoordinates.value || !mapContainer.value) return
 
-  // Check if Google Maps is available
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  if (!apiKey) {
+    // No API key: rely on iframe fallback (handled in template).
+    return
+  }
+
+  // Load the Google Maps script if not already loaded.
+  try {
+    await loadMaps()
+  } catch (e) {
+    mapsError.value = 'Failed to load Google Maps'
+    console.error('Google Maps load error:', e)
+    return
+  }
+
   if (typeof window === 'undefined' || !(window as any).google?.maps) {
-    // Try to use iframe fallback if we have an API key
-    if (import.meta.env.VITE_GOOGLE_MAPS_API_KEY) {
-      mapsError.value = 'Interactive map not available'
-    }
+    mapsError.value = 'Interactive map not available'
     return
   }
 

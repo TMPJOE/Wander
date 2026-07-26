@@ -15,21 +15,36 @@ const state = ref<GoogleMapsState>({
 let loadPromise: Promise<void> | null = null
 
 /**
- * Load the Google Maps JavaScript API script once.
+ * Load the Google Maps JavaScript API script once using the official async loader pattern.
  * Returns loading/error state for components to react to.
+ * @see https://goo.gle/js-api-loading
  */
 export function useGoogleMaps() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
 
-  onMounted(() => {
+  const load = (): Promise<void> => {
+    if (state.value.isLoaded) return Promise.resolve()
+    if (loadPromise) return loadPromise
+
     if (!apiKey) {
       state.value.error = new Error('Google Maps API key not configured')
+      return Promise.reject(state.value.error)
+    }
+
+    loadPromise = loadScript(apiKey)
+    return loadPromise
+  }
+
+  // Auto-trigger loading when a component using this composable mounts.
+  onMounted(() => {
+    if (!apiKey) {
+      if (!state.value.error) {
+        state.value.error = new Error('Google Maps API key not configured')
+      }
       return
     }
 
-    if (state.value.isLoaded || state.value.isLoading) {
-      return
-    }
+    if (state.value.isLoaded || state.value.isLoading || loadPromise) return
 
     // Check if already loaded globally
     if (typeof window !== 'undefined' && (window as any).google?.maps) {
@@ -44,12 +59,14 @@ export function useGoogleMaps() {
     isLoaded: () => state.value.isLoaded,
     isLoading: () => state.value.isLoading,
     error: () => state.value.error,
+    load,
     toMapsUrl,
   }
 }
 
 /**
- * Load the Google Maps script dynamically (only once).
+ * Load the Google Maps script dynamically using the recommended async pattern.
+ * This prevents suboptimal performance from direct script injection.
  */
 async function loadScript(apiKey: string): Promise<void> {
   if (state.value.isLoading || state.value.isLoaded) {
@@ -67,12 +84,12 @@ async function loadScript(apiKey: string): Promise<void> {
       return
     }
 
+    // Use the official async loader pattern with callback parameter
     const script = document.createElement('script')
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&callback=__googleMapsCallback__`
     script.async = true
     script.defer = true
-
-    script.onload = () => {
+    ;(window as any).__googleMapsCallback__ = () => {
       state.value.isLoaded = true
       state.value.isLoading = false
       resolve()
@@ -106,7 +123,6 @@ export function toMapsUrl({
 }): string {
   if (latitude != null && longitude != null) {
     const dest = `${latitude},${longitude}`
-    const query = label ? encodeURIComponent(label) : dest
     return `https://www.google.com/maps/dir/?api=1&destination=${dest}&destination_place_id=&travelmode=driving&dir_action=navigate`
   }
 

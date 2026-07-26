@@ -46,8 +46,6 @@ const form = ref({
     description: string
     duration_minutes: number | null
     location_label: string
-    latitude: number | null
-    longitude: number | null
   }>,
 })
 
@@ -90,8 +88,6 @@ onMounted(async () => {
         description: item.description || '',
         duration_minutes: item.duration_minutes ?? null,
         location_label: item.location_label || '',
-        latitude: item.latitude ?? null,
-        longitude: item.longitude ?? null,
       })),
     }
   }
@@ -189,8 +185,6 @@ function handleSubmit() {
     description: item.description,
     duration_minutes: item.duration_minutes,
     location_label: item.location_label,
-    latitude: item.latitude,
-    longitude: item.longitude,
   }))
 
   emit('submit', {
@@ -507,26 +501,6 @@ function moveStep(index: number, direction: -1 | 1) {
               class="form-input"
               placeholder="Ej: Plaza Mayor"
             />
-          </div>
-
-          <div class="form-group">
-            <label class="form-label">Coordenadas (opcional)</label>
-            <div class="coords-inputs">
-              <input
-                v-model.number="step.latitude"
-                type="number"
-                class="form-input"
-                placeholder="Latitud"
-                step="any"
-              />
-              <input
-                v-model.number="step.longitude"
-                type="number"
-                class="form-input"
-                placeholder="Longitud"
-                step="any"
-              />
-            </div>
           </div>
         </div>
       </div>

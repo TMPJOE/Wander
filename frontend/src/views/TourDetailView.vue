@@ -12,13 +12,14 @@ import {
   ChevronRight,
   CheckCircle2,
   Languages,
-  Footprints,
-  Landmark,
-  Utensils
+  Map as MapIcon,
+  List,
+  Timer,
 } from '@lucide/vue'
 import ImageGallery from '../components/ImageGallery.vue'
 import ReviewCard from '../components/ReviewCard.vue'
 import GuideCard from '../components/GuideCard.vue'
+import LocationMap from '../components/LocationMap.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -36,7 +37,9 @@ const selectedScheduleId = ref<number | null>(null)
 
 // Preview mode: set when guide uses "Preview as Traveler" from TourFormView
 const isPreview = computed(() => route.query.preview === '1')
-const previewReturnPath = computed(() => sessionStorage.getItem('wander_preview_return') || '/guide/tours')
+const previewReturnPath = computed(
+  () => sessionStorage.getItem('wander_preview_return') || '/guide/tours',
+)
 
 // For new-tour preview (route /preview/tour with no id), hydrate from session storage.
 const previewDraft = computed<any>(() => {
@@ -52,7 +55,8 @@ function toggleSchedule(id: number) {
   selectedScheduleId.value = selectedScheduleId.value === id ? null : id
 }
 
-const meetingNote = "Tu guía confirmará los detalles exactos del punto de encuentro después de reservar."
+const meetingNote =
+  'Tu guía confirmará los detalles exactos del punto de encuentro después de reservar.'
 
 const images = computed<string[]>(() => {
   if (!tour.value) return []
@@ -97,6 +101,9 @@ onMounted(async () => {
       review_count: 0,
       what_included: d.what_included || [],
       meeting_point: d.meeting_point || '',
+      latitude: d.latitude || null,
+      longitude: d.longitude || null,
+      itinerary: d.itinerary || [],
       images: d.images || [],
       guide_id: null,
     }
@@ -151,6 +158,13 @@ function goBook() {
 function messageGuide() {
   if (!authState.isAuthenticated.value || !tour.value) return
   router.push(`/messages/${tour.value.guide_id}`)
+}
+
+function formatDuration(minutes: number): string {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  if (h === 0) return `${m} min`
+  return m ? `${h}h ${m}m` : `${h} hora${h > 1 ? 's' : ''}`
 }
 </script>
 
@@ -245,8 +259,6 @@ function messageGuide() {
           </ul>
         </div>
 
-
-
         <!-- Guide -->
         <div class="tour-detail__section">
           <h2 class="tour-detail__section-title">Tu guía</h2>
@@ -267,7 +279,11 @@ function messageGuide() {
           <h2 class="tour-detail__section-title">Fechas disponibles</h2>
           <div class="schedule-preview">
             <div v-for="s in schedules.slice(0, 3)" :key="s.id" class="schedule-item-wrap">
-              <button class="schedule-chip" :class="{ 'schedule-chip--active': selectedScheduleId === s.id }" @click="toggleSchedule(s.id)">
+              <button
+                class="schedule-chip"
+                :class="{ 'schedule-chip--active': selectedScheduleId === s.id }"
+                @click="toggleSchedule(s.id)"
+              >
                 <span class="schedule-chip__date">
                   {{
                     new Date(s.start_time).toLocaleDateString('es-MX', {
@@ -298,22 +314,53 @@ function messageGuide() {
         </div>
 
         <!-- Meeting Point -->
-        <div v-if="tour.meeting_point" class="tour-detail__section">
+        <div v-if="tour.meeting_point || tour.latitude" class="tour-detail__section">
           <div class="itinerary-card meeting-point-card">
             <h3 class="itinerary-card__title meeting-point-card__title">
               <MapPin :size="20" :stroke-width="2" class="meeting-point__icon" />
               Punto de encuentro
             </h3>
-            <p class="meeting-point__desc">{{ tour.meeting_point || tour.location }}. {{ meetingNote }}</p>
+            <p class="meeting-point__desc">
+              {{ tour.meeting_point || tour.location }}. {{ meetingNote }}
+            </p>
             <div class="meeting-point__map">
-              <iframe 
-                width="100%" 
-                height="100%" 
-                style="border:0;" 
-                loading="lazy" 
-                allowfullscreen 
-                :src="`https://maps.google.com/maps?q=${encodeURIComponent(tour.meeting_point + ', ' + tour.location)}&t=&z=15&ie=UTF8&iwloc=&output=embed`">
-              </iframe>
+              <LocationMap
+                :label="tour.meeting_point || tour.location"
+                :latitude="tour.latitude"
+                :longitude="tour.longitude"
+                height="300px"
+                :show-directions="true"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Itinerary Section -->
+        <div v-if="tour.itinerary && tour.itinerary.length" class="tour-detail__section">
+          <h2 class="tour-detail__section-title">Itinerario del Tour</h2>
+          <div class="itinerary-list">
+            <div
+              v-for="(step, index) in tour.itinerary"
+              :key="step.id || index"
+              class="itinerary-step"
+            >
+              <div class="itinerary-step__header">
+                <span class="itinerary-step__number">{{ Number(index) + 1 }}</span>
+                <div class="itinerary-step__content">
+                  <h3 class="itinerary-step__title">{{ step.title }}</h3>
+                  <div v-if="step.duration_minutes" class="itinerary-step__duration">
+                    <Timer :size="14" :stroke-width="2" />
+                    <span>{{ formatDuration(step.duration_minutes) }}</span>
+                  </div>
+                </div>
+              </div>
+              <p v-if="step.description" class="itinerary-step__description">
+                {{ step.description }}
+              </p>
+              <div v-if="step.location_label" class="itinerary-step__location">
+                <MapIcon :size="14" :stroke-width="2" />
+                <span>{{ step.location_label }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -352,19 +399,81 @@ function messageGuide() {
   </div>
 
   <!-- Loading Skeleton State -->
-  <div v-else class="page container" style="padding-top: var(--spacing-4); max-width: var(--max-width); margin: 0 auto;">
-    <div class="skeleton" style="aspect-ratio: 16/9; border-radius: var(--radius-xl); margin-bottom: var(--spacing-6)"></div>
-    <div class="skeleton" style="height: 20px; width: 25%; margin-bottom: var(--spacing-3); border-radius: var(--radius-sm)"></div>
-    <div class="skeleton" style="height: 36px; width: 85%; margin-bottom: var(--spacing-4); border-radius: var(--radius-md)"></div>
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-3); margin-bottom: var(--spacing-6)">
+  <div
+    v-else
+    class="page container"
+    style="padding-top: var(--spacing-4); max-width: var(--max-width); margin: 0 auto"
+  >
+    <div
+      class="skeleton"
+      style="aspect-ratio: 16/9; border-radius: var(--radius-xl); margin-bottom: var(--spacing-6)"
+    ></div>
+    <div
+      class="skeleton"
+      style="
+        height: 20px;
+        width: 25%;
+        margin-bottom: var(--spacing-3);
+        border-radius: var(--radius-sm);
+      "
+    ></div>
+    <div
+      class="skeleton"
+      style="
+        height: 36px;
+        width: 85%;
+        margin-bottom: var(--spacing-4);
+        border-radius: var(--radius-md);
+      "
+    ></div>
+    <div
+      style="
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--spacing-3);
+        margin-bottom: var(--spacing-6);
+      "
+    >
       <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
       <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
       <div class="skeleton" style="height: 56px; border-radius: var(--radius-lg)"></div>
     </div>
-    <div class="skeleton" style="height: 18px; width: 40%; margin-bottom: var(--spacing-3); border-radius: var(--radius-sm)"></div>
-    <div class="skeleton" style="height: 14px; width: 100%; margin-bottom: var(--spacing-2); border-radius: var(--radius-xs)"></div>
-    <div class="skeleton" style="height: 14px; width: 95%; margin-bottom: var(--spacing-2); border-radius: var(--radius-xs)"></div>
-    <div class="skeleton" style="height: 14px; width: 70%; margin-bottom: var(--spacing-6); border-radius: var(--radius-xs)"></div>
+    <div
+      class="skeleton"
+      style="
+        height: 18px;
+        width: 40%;
+        margin-bottom: var(--spacing-3);
+        border-radius: var(--radius-sm);
+      "
+    ></div>
+    <div
+      class="skeleton"
+      style="
+        height: 14px;
+        width: 100%;
+        margin-bottom: var(--spacing-2);
+        border-radius: var(--radius-xs);
+      "
+    ></div>
+    <div
+      class="skeleton"
+      style="
+        height: 14px;
+        width: 95%;
+        margin-bottom: var(--spacing-2);
+        border-radius: var(--radius-xs);
+      "
+    ></div>
+    <div
+      class="skeleton"
+      style="
+        height: 14px;
+        width: 70%;
+        margin-bottom: var(--spacing-6);
+        border-radius: var(--radius-xs);
+      "
+    ></div>
   </div>
 </template>
 
@@ -574,7 +683,8 @@ function messageGuide() {
   text-align: left;
 }
 
-.schedule-chip:hover, .schedule-chip--active {
+.schedule-chip:hover,
+.schedule-chip--active {
   border-color: var(--color-primary-300);
   background: var(--color-primary-50);
 }
@@ -603,7 +713,7 @@ function messageGuide() {
   padding: var(--spacing-4) var(--spacing-5);
   margin-top: var(--spacing-2);
   margin-bottom: var(--spacing-3);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
 }
 
 .itinerary-card__title {
@@ -682,6 +792,76 @@ function messageGuide() {
 
 .book-bar__unit {
   font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+}
+
+.itinerary-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+}
+
+.itinerary-step {
+  padding: var(--spacing-4);
+  background: var(--color-background);
+  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--color-primary);
+}
+
+.itinerary-step__header {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-3);
+  margin-bottom: var(--spacing-2);
+}
+
+.itinerary-step__number {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-bold);
+}
+
+.itinerary-step__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.itinerary-step__title {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: 4px;
+  line-height: var(--line-height-tight);
+}
+
+.itinerary-step__duration {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.itinerary-step__description {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  line-height: var(--line-height-relaxed);
+  margin-bottom: var(--spacing-2);
+}
+
+.itinerary-step__location {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
   color: var(--color-text-light);
 }
 </style>

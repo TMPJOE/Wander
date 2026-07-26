@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useGoogleMaps } from '../composables/useGoogleMaps'
+
+const { load: loadMaps } = useGoogleMaps()
 
 const props = withDefaults(
   defineProps<{
@@ -30,9 +33,8 @@ let autocompleteInstance: google.maps.places.Autocomplete | null = null
 let isDragging = false
 
 const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string | undefined
-const isMapsAvailable = computed(() => {
-  return !!apiKey && typeof window !== 'undefined' && !!(window as any).google?.maps
-})
+const mapsReady = ref(false)
+const isMapsAvailable = computed(() => !!apiKey && mapsReady.value)
 
 const hasLocation = computed(() => {
   return props.latitude != null && props.longitude != null
@@ -50,7 +52,16 @@ const searchInputId = `location-search-${Math.random().toString(36).slice(2, 9)}
 
 // Initialize map and autocomplete
 async function initMap() {
-  if (!isMapsAvailable.value || !mapContainer.value) return
+  if (!mapContainer.value || !apiKey) return
+
+  try {
+    // Ensure the Google Maps script is loaded before constructing anything.
+    await loadMaps()
+    mapsReady.value = true
+  } catch (e) {
+    console.error('Failed to load Google Maps:', e)
+    return
+  }
 
   try {
     const center = hasLocation.value
