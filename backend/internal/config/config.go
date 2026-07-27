@@ -26,6 +26,31 @@ type Config struct {
 	AllowedOrigins       []string
 	StripeSecretKey      string
 	StripePublishableKey string
+	Storage              StorageConfig
+}
+
+// StorageConfig selects and configures the file storage provider.
+//
+// Two providers are supported:
+//
+//   - "local" (default): writes files to a directory on disk and serves them
+//     via the Go server's /uploads/* route. Matches the original behavior.
+//
+//   - "s3": streams file bytes into any S3-protocol-compatible bucket
+//     (AWS S3, Cloudflare R2, MinIO, Supabase Storage, Backblaze B2, ...).
+//     Returned image URLs are absolute object URLs served directly by the
+//     bucket/CDN, so the Go server stops serving /uploads/* in this mode.
+type StorageConfig struct {
+	Driver          string // "local" | "s3"
+	UploadsDir      string // local mode: directory under cwd
+	PublicBaseURL   string // local mode: optional override of /uploads prefix
+	S3Bucket        string // s3 mode: bucket name
+	S3Region        string // s3 mode: region ("auto" works for R2/MinIO)
+	S3Endpoint      string // s3 mode: custom endpoint URL (R2, MinIO, etc.)
+	S3AccessKey     string // s3 mode: access key id
+	S3SecretKey     string // s3 mode: secret access key
+	S3ForcePathStyle bool  // s3 mode: use path-style addressing (MinIO)
+	S3PublicBaseURL string // s3 mode: public origin for returned URLs (CDN/bucket)
 }
 
 // Load reads environment variables and returns a Config.
@@ -55,6 +80,18 @@ func Load() (*Config, error) {
 		AllowedOrigins:       strings.Split(allowedOrigins, ","),
 		StripeSecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
 		StripePublishableKey: getEnv("STRIPE_PUBLISHABLE_KEY", ""),
+		Storage: StorageConfig{
+			Driver:           getEnv("STORAGE_DRIVER", "local"),
+			UploadsDir:       getEnv("STORAGE_LOCAL_DIR", "uploads"),
+			PublicBaseURL:    getEnv("STORAGE_PUBLIC_BASE_URL", "/uploads"),
+			S3Bucket:         getEnv("S3_BUCKET", ""),
+			S3Region:         getEnv("S3_REGION", "auto"),
+			S3Endpoint:       getEnv("S3_ENDPOINT", ""),
+			S3AccessKey:      getEnv("S3_ACCESS_KEY", ""),
+			S3SecretKey:      getEnv("S3_SECRET_KEY", ""),
+			S3ForcePathStyle: getEnvBool("S3_FORCE_PATH_STYLE", false),
+			S3PublicBaseURL:  getEnv("S3_PUBLIC_BASE_URL", ""),
+		},
 	}, nil
 }
 
@@ -74,6 +111,18 @@ func (c *Config) DatabaseURL() string {
 func getEnv(key, fallback string) string {
 	if v := os.Getenv(key); v != "" {
 		return v
+	}
+	return fallback
+}
+
+func getEnvBool(key string, fallback bool) bool {
+	if v := os.Getenv(key); v != "" {
+		switch strings.ToLower(v) {
+		case "1", "true", "yes", "on":
+			return true
+		case "0", "false", "no", "off":
+			return false
+		}
 	}
 	return fallback
 }

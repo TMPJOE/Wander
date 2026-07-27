@@ -1,22 +1,17 @@
 package handler
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"io"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
+	"log/slog"
 
 	"wander/backend/internal/middleware"
+	"wander/backend/internal/storage"
 	"wander/backend/internal/utils"
 )
 
-const (
-	maxUploadBytes = 10 << 20 // 10 MB
-	uploadsSubdir  = "uploads"
-)
+const maxUploadBytes = 10 << 20 // 10 MB
 
 var allowedImageTypes = map[string]string{
 	"image/jpeg": ".jpg",
@@ -25,12 +20,18 @@ var allowedImageTypes = map[string]string{
 	"image/gif":  ".gif",
 }
 
+// UploadHandler accepts authenticated image uploads and hands the bytes to
+// a storage.Provider (local disk or S3-compatible). It does not know or
+// care where the file ends up — the returned URL comes straight from the
+// provider, so URLs are absolute bucket URLs in S3 mode and server-relative
+// ("/uploads/...") in local mode.
 type UploadHandler struct {
-	uploadsDir string
+	provider storage.Provider
 }
 
-func NewUploadHandler(uploadsDir string) *UploadHandler {
-	return &UploadHandler{uploadsDir: uploadsDir}
+// NewUploadHandler wires the handler to a storage.Provider.
+func NewUploadHandler(provider storage.Provider) *UploadHandler {
+	return &UploadHandler{provider: provider}
 }
 
 func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
@@ -51,12 +52,16 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 	}
 	defer file.Close()
 
+	// Sniff the first 512 bytes to detect the true MIME type. We read into
+	// a buffer and then prepend it to the stream we pass to the provider so
+	// the provider sees the full file, not from byte 513 onward.
 	buf := make([]byte, 512)
-	if _, err := file.ReadAt(buf, 0); err != nil {
+	n, err := file.Read(buf)
+	if err != nil && err != io.EOF {
 		utils.SendError(w, http.StatusBadRequest, "No se pudo leer el archivo", err.Error())
 		return
 	}
-	mimeType := http.DetectContentType(buf)
+	mimeType := http.DetectContentType(buf[:n])
 
 	ext, ok := allowedImageTypes[mimeType]
 	if !ok {
@@ -64,39 +69,20 @@ func (h *UploadHandler) UploadImage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := os.MkdirAll(h.uploadsDir, 0o755); err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Error al crear directorio", err.Error())
-		return
-	}
+	// Reassemble: prepend the bytes we already consumed so the provider sees
+	// a complete stream starting at byte 0.
+	body := io.MultiReader(strings.NewReader(string(buf[:n])), file)
 
-	randBytes := make([]byte, 8)
-	if _, err := rand.Read(randBytes); err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Error al generar nombre", err.Error())
-		return
-	}
-	filename := hex.EncodeToString(randBytes) + ext
-	dstPath := filepath.Join(h.uploadsDir, filename)
-
-	dst, err := os.Create(dstPath)
+	result, err := h.provider.Save(r.Context(), body, mimeType, ext)
 	if err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Error al guardar archivo", err.Error())
-		return
-	}
-	defer dst.Close()
-
-	if _, err := file.Seek(0, 0); err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Error al leer archivo", err.Error())
-		return
-	}
-	if _, err := io.Copy(dst, file); err != nil {
-		utils.SendError(w, http.StatusInternalServerError, "Error al escribir archivo", err.Error())
+		slog.Error("upload failed", "error", err)
+		utils.SendError(w, http.StatusInternalServerError, "Error al guardar el archivo", err.Error())
 		return
 	}
 
-	url := "/uploads/" + filename
 	utils.SendSuccess(w, http.StatusCreated, "Imagen subida", map[string]string{
-		"url":      url,
-		"filename": filename,
+		"url":      result.URL,
+		"filename": result.Key,
 		"original": sanitizeName(header.Filename),
 	})
 }

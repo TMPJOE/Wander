@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -13,6 +14,7 @@ import (
 	"wander/backend/internal/middleware"
 	"wander/backend/internal/repository"
 	"wander/backend/internal/service"
+	"wander/backend/internal/storage"
 	"wander/backend/migrations"
 )
 
@@ -85,21 +87,65 @@ func main() {
 		paymentService,
 	)
 
-	// Wire upload handler (saved under backend/uploads, served at /uploads).
-	var uploadsDir string
-	if _, err := os.Stat(filepath.Join(cwd, "backend")); err == nil {
-		uploadsDir = filepath.Join(cwd, "backend", "uploads")
-	} else {
-		uploadsDir = filepath.Join(cwd, "uploads") // fallback if running from backend/
+	// Wire upload handler.
+	//
+	// Two storage backends are selectable via STORAGE_DRIVER:
+	//   - "local" (default): files land on disk and are served at /uploads/*.
+	//   - "s3": files stream into an S3-compatible bucket; returned URLs are
+	//     absolute, so the Go server no longer serves /uploads/* in this mode.
+	var (
+		uploadsDir string
+	)
+
+	switch cfg.Storage.Driver {
+	case "s3":
+		provider, err := storage.NewS3Provider(context.Background(), storage.S3Options{
+			Bucket:         cfg.Storage.S3Bucket,
+			Region:         cfg.Storage.S3Region,
+			Endpoint:       cfg.Storage.S3Endpoint,
+			AccessKey:      cfg.Storage.S3AccessKey,
+			SecretKey:      cfg.Storage.S3SecretKey,
+			ForcePathStyle: cfg.Storage.S3ForcePathStyle,
+			PublicBaseURL:  cfg.Storage.S3PublicBaseURL,
+		})
+		if err != nil {
+			slog.Error("failed to init S3 storage provider", "error", err)
+			os.Exit(1)
+		}
+		h.UploadHandler = handler.NewUploadHandler(provider)
+		slog.Info("storage provider", "driver", "s3", "bucket", cfg.Storage.S3Bucket)
+		// In S3 mode we do NOT register the /uploads/* static route below.
+
+	case "local", "":
+		locallyRelative := cfg.Storage.UploadsDir
+		if _, err := os.Stat(filepath.Join(cwd, "backend")); err == nil {
+			uploadsDir = filepath.Join(cwd, "backend", locallyRelative)
+		} else {
+			uploadsDir = filepath.Join(cwd, locallyRelative) // fallback if running from backend/
+		}
+		provider, err := storage.NewLocalProvider(uploadsDir, cfg.Storage.PublicBaseURL)
+		if err != nil {
+			slog.Error("failed to init local storage provider", "error", err)
+			os.Exit(1)
+		}
+		h.UploadHandler = handler.NewUploadHandler(provider)
+		slog.Info("storage provider", "driver", "local", "dir", uploadsDir, "base", cfg.Storage.PublicBaseURL)
+
+	default:
+		slog.Error("unknown STORAGE_DRIVER", "driver", cfg.Storage.Driver)
+		os.Exit(1)
 	}
-	h.UploadHandler = handler.NewUploadHandler(uploadsDir)
 
 	// Setup routes (chi router returned as http.Handler).
 	r := api.SetupRoutes(h, cfg.JWTSecret)
 
-	// Serve uploaded images at /uploads/.
-	if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
-		slog.Error("failed to create uploads dir", "error", err)
+	// In local storage mode ensure the uploads directory exists and serve
+	// it at /uploads/*. In S3 mode uploadsDir is empty and we skip this so
+	// bucket URLs are served by the bucket/CDN, not the Go server.
+	if uploadsDir != "" {
+		if err := os.MkdirAll(uploadsDir, 0o755); err != nil {
+			slog.Error("failed to create uploads dir", "error", err)
+		}
 	}
 
 	// Serve frontend static files (production build).
@@ -116,7 +162,8 @@ func main() {
 		distDir = "" // signals SetupStaticRoutes to skip the SPA handler
 	}
 
-	// Register static (uploads + SPA fallback) routes onto the same chi router.
+	// Register static routes. Pass an empty uploadsDir in S3 mode so
+	// SetupStaticRoutes skips the /uploads/* FileServer mount.
 	api.SetupStaticRoutes(r, uploadsDir, distDir)
 
 	// Apply middleware.

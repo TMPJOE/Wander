@@ -114,9 +114,13 @@ func SetupRoutes(h *handler.Handler, jwtSecret string) *chi.Mux {
 // SetupStaticRoutes registers uploaded-image serving and the SPA static-file
 // fallback onto the same chi router used by the API endpoints.
 func SetupStaticRoutes(r chi.Router, uploadsDir, distDir string) {
-	// Serve uploaded images at /uploads/.
-	if err := os.MkdirAll(uploadsDir, 0o755); err == nil {
-		r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
+	// Serve uploaded images at /uploads/. Only mounted in local storage
+	// mode (uploadsDir == "" in S3 mode, where objects are served directly
+	// by the bucket/CDN at an absolute URL).
+	if uploadsDir != "" {
+		if err := os.MkdirAll(uploadsDir, 0o755); err == nil {
+			r.Handle("/uploads/*", http.StripPrefix("/uploads/", http.FileServer(http.Dir(uploadsDir))))
+		}
 	}
 
 	// Serve frontend static files (production build) with SPA fallback.
