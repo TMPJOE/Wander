@@ -18,7 +18,7 @@ import nightlifeImg from '../assets/categories/nightlife.png'
 import natureImg from '../assets/categories/nature.png'
 import hikingImg from '../assets/categories/hiking.png'
 import waterImg from '../assets/categories/water.png'
-import photogImg from '../assets/categories/photography.png'
+import photogImg from '../assets/categories/Photography.png'
 
 const SLUG_TO_IMAGE: Record<string, string> = {
   gastronomia: foodImg,
