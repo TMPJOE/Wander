@@ -14,6 +14,14 @@ RUN corepack enable && corepack prepare pnpm@latest --activate \
 
 # Build the SPA.
 COPY frontend/ ./
+
+# Build args
+ARG VITE_API_BASE_URL
+ARG VITE_APP_NAME
+ARG VITE_APP_ENV
+ARG VITE_STRIPE_PUBLISHABLE_KEY
+ARG VITE_GOOGLE_MAPS_API_KEY
+
 RUN pnpm build
 
 # ============================================================
@@ -31,6 +39,35 @@ RUN go mod download
 # //go:embed *.sql, so the binary bakes them in at compile time — no
 # need to carry migrations/ into the runtime image.
 COPY backend/ ./
+
+# Backend build args (for embedding into the binary).
+
+ARG APP_NAME
+ARG APP_ENV
+ARG APP_PORT
+ARG APP_HOST
+ARG DB_HOST
+ARG DB_PORT
+ARG DB_USER
+ARG DB_PASSWORD
+ARG DB_NAME
+ARG DB_SSLMODE
+ARG DB_SSLROOTCERT
+ARG STORAGE_DRIVER
+ARG STORAGE_LOCAL_DIR
+ARG STORAGE_PUBLIC_BASE_URL
+ARG S3_BUCKET
+ARG S3_REGION
+ARG S3_ENDPOINT
+ARG S3_ACCESS_KEY
+ARG S3_SECRET_KEY
+ARG S3_FORCE_PATH_STYLE
+ARG S3_PUBLIC_BASE_URL
+ARG JWT_SECRET
+ARG JWT_EXPIRATION_HOURS
+ARG STRIPE_SECRET_KEY
+ARG STRIPE_PUBLISHABLE_KEY
+ARG ALLOWED_ORIGINS
 
 # Build the server binary as a static-ish binary suitable for Alpine.
 ENV CGO_ENABLED=0 GOOS=linux
