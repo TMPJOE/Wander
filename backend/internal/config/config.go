@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -21,6 +22,7 @@ type Config struct {
 	DBPassword           string
 	DBName               string
 	DBSSLMode            string
+	DBSSLRootCert        string // optional path to a PEM-encoded root CA for verify-full DB connections
 	JWTSecret            string
 	JWTExpiration        int
 	AllowedOrigins       []string
@@ -75,6 +77,7 @@ func Load() (*Config, error) {
 		DBPassword:           getEnv("DB_PASSWORD", "wander_pass"),
 		DBName:               getEnv("DB_NAME", "wander_db"),
 		DBSSLMode:            getEnv("DB_SSLMODE", "disable"),
+		DBSSLRootCert:        getEnv("DB_SSLROOTCERT", ""),
 		JWTSecret:            getEnv("JWT_SECRET", "default-secret"),
 		JWTExpiration:        jwtExp,
 		AllowedOrigins:       strings.Split(allowedOrigins, ","),
@@ -96,16 +99,25 @@ func Load() (*Config, error) {
 }
 
 func (c *Config) DSN() string {
-	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		c.DBHost, c.DBPort, c.DBUser, c.DBPassword, c.DBName, c.DBSSLMode,
 	)
+	if c.DBSSLRootCert != "" {
+		dsn += fmt.Sprintf(" sslrootcert=%s", c.DBSSLRootCert)
+	}
+	return dsn
 }
 
 // DatabaseURL returns a pgx-compatible connection string.
 func (c *Config) DatabaseURL() string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
-		c.DBUser, c.DBPassword, c.DBHost, c.DBPort, c.DBName, c.DBSSLMode,
+	u := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=%s",
+		url.QueryEscape(c.DBUser), url.QueryEscape(c.DBPassword),
+		c.DBHost, c.DBPort, c.DBName, c.DBSSLMode,
 	)
+	if c.DBSSLRootCert != "" {
+		u += fmt.Sprintf("&sslrootcert=%s", url.QueryEscape(c.DBSSLRootCert))
+	}
+	return u
 }
 
 func getEnv(key, fallback string) string {
