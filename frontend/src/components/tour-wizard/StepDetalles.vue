@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import WizardActions from './WizardActions.vue'
 
 const props = defineProps<{
   form: {
@@ -66,10 +67,6 @@ function removeLanguage(index: number) {
   const updated = [...props.form.languages]
   updated.splice(index, 1)
   emit('update:form', { ...props.form, languages: updated })
-}
-
-function handleNext() {
-  emit('next')
 }
 </script>
 
@@ -228,9 +225,7 @@ function handleNext() {
       </ul>
     </div>
 
-    <div class="flex justify-end mt-6">
-      <button type="button" class="btn btn-primary" @click="handleNext">Siguiente</button>
-    </div>
+    <WizardActions step="first" @next="emit('next')" />
   </div>
 </template>
 
@@ -270,24 +265,12 @@ function handleNext() {
   margin-bottom: var(--spacing-2);
 }
 
-.mt-6 {
-  margin-top: var(--spacing-6);
-}
-
 .flex {
   display: flex;
 }
 
 .flex-wrap {
   flex-wrap: wrap;
-}
-
-.justify-between {
-  justify-content: space-between;
-}
-
-.justify-end {
-  justify-content: flex-end;
 }
 
 .text-sm {

@@ -493,10 +493,7 @@ function formatDuration(minutes: number): string {
   width: 100%;
   max-width: var(--max-width);
   padding: var(--spacing-3) var(--spacing-4);
-  background: linear-gradient(90deg, var(--color-secondary-50), var(--color-primary-50));
-  border: 1px solid var(--color-secondary-100);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
+  background: var(--color-secondary-100);
 }
 
 .preview-banner__label {
@@ -524,9 +521,9 @@ function formatDuration(minutes: number): string {
 }
 
 .preview-banner__back:hover {
-  background: var(--color-primary);
+  background: var(--color-secondary);
   color: white;
-  border-color: var(--color-primary);
+  border-color: var(--color-secondary);
   transform: translateX(-2px);
 }
 

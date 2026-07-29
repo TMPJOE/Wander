@@ -38,53 +38,47 @@ function goToExplore(categorySlug?: string) {
   <div class="landing-page">
     <!-- Hero Section -->
     <header class="landing-hero">
-      <div class="container">
+      <div class="landing-hero__bg">
+        <img :src="adventureImg" alt="" />
+        <img :src="hikingImg" alt="" />
+        <img :src="waterImg" alt="" />
+        <img :src="culturalImg" alt="" />
+        <img :src="natureImg" alt="" />
+        <img :src="nightlifeImg" alt="" />
+      </div>
+      <div class="landing-hero__overlay"></div>
+
+      <div class="container landing-hero__content">
         <img :src="wanderLogo" alt="Wander Logo" class="landing-hero__logo" />
         <h1 class="landing-hero__title">Descubre y ofrece experiencias únicas</h1>
         <p class="landing-hero__subtitle">
-          Explora tours locales auténticos o conviértete en guía y comparte tu pasión con viajeros de todo el mundo.
+          Explora tours locales auténticos o conviértete en guía y comparte tu pasión con viajeros
+          de todo el mundo.
         </p>
         <div class="landing-hero__actions">
           <RouterLink to="/login" class="btn btn-primary btn-lg">Entrar</RouterLink>
-          <RouterLink to="/register" class="btn btn-outline btn-lg">Registrarse</RouterLink>
+          <RouterLink to="/register" class="btn btn-secondary btn-lg">Registrarse</RouterLink>
+        </div>
+
+        <div class="disclaimer-card">
+          <h3 class="disclaimer-card__title">⚠️ Proyecto Demo — No Production</h3>
+          <ul class="disclaimer-card__list">
+            <li>No se realiza ningún pago real. Stripe está en modo prueba.</li>
+            <li>Los tours mostrados son datos de demostración y pueden no estar disponibles.</li>
+            <li>Esta aplicación es un proyecto de portafolio con fines educativos.</li>
+          </ul>
         </div>
       </div>
     </header>
-
-    <!-- Category Gallery -->
-    <section class="landing-categories container">
-      <h2 class="landing-section-title">Explora por categoría</h2>
-      <div class="categories-grid">
-        <button
-          v-for="cat in categories"
-          :key="cat.slug"
-          class="category-card"
-          @click="goToExplore(cat.slug)"
-        >
-          <img :src="cat.image" :alt="cat.name" class="category-card__image" />
-          <span class="category-card__name">{{ cat.name }}</span>
-        </button>
-      </div>
-    </section>
-
-    <!-- Demo Disclaimer -->
-    <section class="landing-disclaimer container">
-      <div class="disclaimer-card">
-        <h3 class="disclaimer-card__title">⚠️ Proyecto Demo — No Production</h3>
-        <ul class="disclaimer-card__list">
-          <li>No se realiza ningún pago real. Stripe está en modo prueba.</li>
-          <li>Los tours mostrados son datos de demostración y pueden no estar disponibles.</li>
-          <li>Esta aplicación es un proyecto de portafolio con fines educativos.</li>
-        </ul>
-      </div>
-    </section>
 
     <!-- Footer -->
     <footer class="landing-footer">
       <div class="container">
         <div class="landing-footer__content">
           <img :src="wanderLogo" alt="Wander Logo" class="landing-footer__logo" />
-          <p class="landing-footer__text">&copy; {{ new Date().getFullYear() }} Wander. Todos los derechos reservados.</p>
+          <p class="landing-footer__text">
+            &copy; {{ new Date().getFullYear() }} Wander. Todos los derechos reservados.
+          </p>
           <p class="landing-footer__disclaimer">Proyecto demo — no production.</p>
         </div>
       </div>
@@ -107,14 +101,58 @@ function goToExplore(categorySlug?: string) {
 
 /* Hero Section */
 .landing-hero {
-  text-align: center;
+  position: relative;
+  overflow: hidden;
+  min-height: 640px;
+  display: flex;
+  align-items: center;
   padding: var(--spacing-12) 0 var(--spacing-8);
+}
+
+.landing-hero__bg {
+  position: absolute;
+  inset: -20px; /* un poco más grande que el contenedor, así el blur no deja bordes vacíos */
+  z-index: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.landing-hero__bg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  filter: blur(6px) brightness(0.75) saturate(1.1);
+  transform: scale(1.08); /* evita que se vean bordes nítidos por el blur */
+}
+
+/* mosaico tipo bento en vez de grid uniforme */
+.landing-hero__bg img:nth-child(1) {
+  grid-column: span 2;
+  grid-row: span 2;
+}
+.landing-hero__bg img:nth-child(5) {
+  grid-row: span 2;
+}
+
+.landing-hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
   background: linear-gradient(
-    160deg,
-    var(--color-primary-50) 0%,
-    var(--color-background) 40%,
-    var(--color-secondary-50) 100%
+    180deg,
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.35) 45%,
+    rgba(0, 0, 0, 0.65) 100%
   );
+}
+
+.landing-hero__content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
 }
 
 .landing-hero__logo {
@@ -122,19 +160,21 @@ function goToExplore(categorySlug?: string) {
   height: 96px;
   object-fit: contain;
   margin-bottom: var(--spacing-4);
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .landing-hero__title {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-extrabold);
-  color: var(--color-text);
+  color: #fff;
   margin-bottom: var(--spacing-3);
   letter-spacing: var(--letter-spacing-tight);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
 }
 
 .landing-hero__subtitle {
   font-size: var(--font-size-lg);
-  color: var(--color-text-light);
+  color: rgba(255, 255, 255, 0.9);
   max-width: 500px;
   margin: 0 auto var(--spacing-6);
   line-height: var(--line-height-relaxed);
@@ -144,19 +184,6 @@ function goToExplore(categorySlug?: string) {
   display: flex;
   gap: var(--spacing-3);
   justify-content: center;
-}
-
-/* Categories Section */
-.landing-categories {
-  padding: var(--spacing-10) var(--content-padding);
-}
-
-.landing-section-title {
-  font-size: var(--font-size-2xl);
-  font-weight: var(--font-weight-bold);
-  text-align: center;
-  margin-bottom: var(--spacing-6);
-  color: var(--color-text);
 }
 
 .categories-grid {
@@ -223,6 +250,7 @@ function goToExplore(categorySlug?: string) {
   color: var(--color-warning-dark);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
+  text-align: left;
 }
 
 .disclaimer-card__list li {
@@ -264,6 +292,22 @@ function goToExplore(categorySlug?: string) {
 
 /* Responsive */
 @media (max-width: 640px) {
+  .landing-hero {
+    min-height: 480px;
+  }
+
+  .landing-hero__bg {
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+  }
+
+  .landing-hero__bg img:nth-child(1) {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+  .landing-hero__bg img:nth-child(5) {
+    grid-row: span 1;
+  }
   .landing-hero__title {
     font-size: var(--font-size-2xl);
   }

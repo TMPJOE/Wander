@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import LocationPickerMap from '../LocationPickerMap.vue'
+import WizardActions from './WizardActions.vue'
 
 const props = defineProps<{
   form: any
@@ -13,14 +14,6 @@ const emit = defineEmits<{
 
 function updateField(field: string, value: any) {
   emit('update:form', { ...props.form, [field]: value })
-}
-
-function handleNext() {
-  emit('next')
-}
-
-function handlePrev() {
-  emit('prev')
 }
 </script>
 
@@ -66,10 +59,7 @@ function handlePrev() {
       />
     </div>
 
-    <div class="flex justify-between mt-6">
-      <button type="button" class="btn btn-ghost" @click="handlePrev">Atrás</button>
-      <button type="button" class="btn btn-primary" @click="handleNext">Siguiente</button>
-    </div>
+    <WizardActions step="middle" @prev="emit('prev')" @next="emit('next')" />
   </div>
 </template>
 
@@ -101,18 +91,6 @@ function handlePrev() {
 
 .mb-2 {
   margin-bottom: var(--spacing-2);
-}
-
-.mt-6 {
-  margin-top: var(--spacing-6);
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
 }
 
 .text-sm {

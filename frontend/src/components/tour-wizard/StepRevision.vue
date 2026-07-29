@@ -1,6 +1,6 @@
 <script setup lang="ts">
   import { computed } from 'vue'
-  import PreviewButton from './PreviewButton.vue'
+  import WizardActions from './WizardActions.vue'
 
   const props = defineProps<{
     form: {
@@ -75,10 +75,6 @@
       props.form.price_per_person >= 0
     )
   })
-
-  function handlePrev() {
-    emit('prev')
-  }
 
   function handleSubmit() {
     emit('submit', props.form)
@@ -214,27 +210,14 @@
     </div>
 
     <!-- Actions -->
-    <div class="step-actions">
-      <button type="button" class="btn btn-outline" @click="handlePrev">← Atrás</button>
-      <div class="step-actions__right">
-        <button
-          type="button"
-          class="btn btn-secondary"
-          :disabled="!hasRequiredFields"
-          @click="emit('preview')"
-         >
-          👁 Previsualizar como viajero
-        </button>
-        <button
-          type="button"
-          class="btn btn-primary"
-          :disabled="!hasRequiredFields"
-          @click="handleSubmit"
-        >
-          Guardar Tour
-        </button>
-      </div>
-    </div>
+    <WizardActions
+      step="last"
+      :show-preview="true"
+      :can-proceed="hasRequiredFields"
+      @prev="emit('prev')"
+      @preview="emit('preview')"
+      @submit="handleSubmit"
+    />
 
     <p v-if="!hasRequiredFields" class="validation-error">
       Completa los campos requeridos (título, descripción, categoría y precio) para continuar.
@@ -445,18 +428,6 @@
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-medium);
     color: var(--color-text);
-  }
-
-  .step-actions {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: var(--spacing-4);
-  }
-
-  .step-actions__right {
-    display: flex;
-    gap: var(--spacing-2);
   }
 
   .validation-error {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { MapPin, Plus, Trash2, ArrowUp, ArrowDown } from '@lucide/vue'
+import { Plus, Trash2, ArrowUp, ArrowDown } from '@lucide/vue'
+import WizardActions from './WizardActions.vue'
 
 const props = defineProps<{
   form: any
@@ -10,10 +11,6 @@ const emit = defineEmits<{
   next: []
   prev: []
 }>()
-
-function updateField(field: string, value: any) {
-  emit('update:form', { ...props.form, [field]: value })
-}
 
 function addItineraryStep() {
   if (props.form.itinerary.length >= 20) return
@@ -51,14 +48,6 @@ function moveStep(index: number, direction: -1 | 1) {
     step.sort_order = idx
   })
   emit('update:form', { ...props.form, itinerary: updated })
-}
-
-function handleNext() {
-  emit('next')
-}
-
-function handlePrev() {
-  emit('prev')
 }
 </script>
 
@@ -166,10 +155,7 @@ function handlePrev() {
       </div>
     </div>
 
-    <div class="flex justify-between mt-6">
-      <button type="button" class="btn btn-ghost" @click="handlePrev">Atrás</button>
-      <button type="button" class="btn btn-primary" @click="handleNext">Siguiente</button>
-    </div>
+    <WizardActions step="middle" @prev="emit('prev')" @next="emit('next')" />
   </div>
 </template>
 
@@ -188,20 +174,8 @@ function handlePrev() {
   margin-bottom: var(--spacing-3);
 }
 
-.mt-6 {
-  margin-top: var(--spacing-6);
-}
-
 .text-sm {
   font-size: var(--font-size-sm);
-}
-
-.flex {
-  display: flex;
-}
-
-.justify-between {
-  justify-content: space-between;
 }
 
 .grid-2 {

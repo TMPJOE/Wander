@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useConfirm } from '@/composables/useConfirm'
 import { useApi } from '@/composables/useApi'
 import { Upload, X, ImageIcon } from '@lucide/vue'
+import WizardActions from './WizardActions.vue'
 
 const props = defineProps<{
   form: {
@@ -61,14 +62,6 @@ async function removeImage(url: string) {
   const updatedImages = props.form.images.filter((img) => img !== url)
   emit('update:form', { ...props.form, images: updatedImages })
 }
-
-function handleNext() {
-  emit('next')
-}
-
-function handlePrev() {
-  emit('prev')
-}
 </script>
 
 <template>
@@ -119,10 +112,7 @@ function handlePrev() {
     </div>
 
     <!-- Navigation -->
-    <div class="step-actions">
-      <button type="button" class="btn btn-outline" @click="handlePrev">← Atrás</button>
-      <button type="button" class="btn btn-primary" @click="handleNext">Siguiente →</button>
-    </div>
+    <WizardActions step="middle" @prev="emit('prev')" @next="emit('next')" />
   </div>
 </template>
 
@@ -259,11 +249,5 @@ function handlePrev() {
   text-align: center;
   padding: var(--spacing-8);
   color: var(--color-text-secondary);
-}
-
-.step-actions {
-  display: flex;
-  justify-content: space-between;
-  margin-top: var(--spacing-4);
 }
 </style>
