@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref, watch, onBeforeUnmount } from 'vue'
+import { useRoute } from 'vue-router'
 import { Search, SlidersHorizontal } from '@lucide/vue'
 import wanderLogo from '../assets/wander-logo.svg'
 import { useApi } from '../composables/useApi'
@@ -9,6 +10,7 @@ import CategoryPill from '../components/CategoryPill.vue'
 import FilterDrawer from '../components/FilterDrawer.vue'
 import type { FilterValues } from '../components/FilterDrawer.vue'
 
+const route = useRoute()
 const api = useApi()
 
 const tours = ref<any[]>([])
@@ -55,6 +57,12 @@ function onMouseMove(e: MouseEvent) {
 }
 
 onMounted(async () => {
+  // Check for category in route query (from landing page)
+  const categoryQuery = route.query.category as string | undefined
+  if (categoryQuery) {
+    activeCategory.value = categoryQuery
+  }
+
   loading.value = true
   try {
     const [catsRes, toursRes] = await Promise.all([api.get('/categories'), api.get('/tours')])
@@ -72,6 +80,9 @@ onMounted(async () => {
   } catch {
     /* ignore */
   }
+
+  // Apply theme if category is set
+  applyTheme()
 })
 
 function selectCategory(slug: string) {

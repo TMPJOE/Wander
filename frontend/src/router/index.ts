@@ -6,6 +6,11 @@ const router = createRouter({
   routes: [
     {
       path: '/',
+      name: 'landing',
+      component: () => import('../views/LandingView.vue'),
+    },
+    {
+      path: '/explore',
       name: 'explore',
       component: () => import('../views/ExploreView.vue'),
     },
@@ -141,6 +146,11 @@ router.beforeEach(async (to, _from) => {
   if (isInitialLoad && authState.token.value && !authState.user.value) {
     isInitialLoad = false
     await authState.fetchMe()
+  }
+
+  // Redirect authenticated users from landing to explore
+  if (to.name === 'landing' && authState.isAuthenticated.value) {
+    return { name: 'explore' }
   }
 
   if (to.meta.requiresAuth && !authState.isAuthenticated.value) {

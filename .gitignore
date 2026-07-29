@@ -1,48 +1,82 @@
-# macOS / Windows / Linux
-.DS_Store
-Thumbs.db
-*.swp
-*.swo
-*~
+```
+# Dependencies
+node_modules/
+pnpm-lock.yaml
 
-# IDEs
-.idea/
-.vscode/
-*.iml
+# Build artifacts
+dist/
+build/
+*.js
+
+# Cache
+.cache/
+.node_modules/
 
 # Environment
 .env
-!.env.example
+.env.local
+*.env.*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
 
 # Logs
 *.log
+
+# Temp files
+*.tmp
+
+# Coverage
+coverage/
+htmlcov/
+.coverage
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage*
+.nox/
+.pytest_cache/
+.mypy_cache/
+
+# Node.js
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-
-# Backend (Go)
-backend/bin/
-backend/tmp/
-backend/vendor/
-backend/*.exe
-backend/*.test
-backend/*.out
-backend/coverage.html
-backend/uploads
-
-# Frontend (Node/Vue)
-frontend/node_modules/
-frontend/dist/
-frontend/.pnpm-store/
-frontend/coverage/
-frontend/*.local
-
-# OS generated files
-*.tmp
-*.temp
-
 node_modules/
-.pnpm-store/
+jspm_packages/
+web_modules/
 
+# Vue specific
+.vuepress/dist
+.vuepress/.cache
+
+# JavaScript build tools
+dist/
+build/
+*.min.js
+*.bundle.js
+webpack.config.js
+rollup.config.js
+vite.config.js
+
+# General
+.DS_Store
+Thumbs.db
+
+*.jpg
+*.png
 *.crt
+```
