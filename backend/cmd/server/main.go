@@ -16,6 +16,8 @@ import (
 	"wander/backend/internal/service"
 	"wander/backend/internal/storage"
 	"wander/backend/migrations"
+
+	"golang.org/x/time/rate"
 )
 
 func main() {
@@ -71,7 +73,6 @@ func main() {
 	reviewService := service.NewReviewService(reviewRepo, bookingRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo)
 	messageService := service.NewMessageService(messageRepo)
-
 
 	// Initialize handlers.
 	h := handler.NewHandler(
@@ -136,8 +137,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	l := middleware.NewIPRateLimiter(rate.Limit(cfg.RateReq), cfg.RateBurst)
+
 	// Setup routes (chi router returned as http.Handler).
-	r := api.SetupRoutes(h, cfg.JWTSecret)
+	r := api.SetupRoutes(h, cfg.JWTSecret, l)
 
 	// In local storage mode ensure the uploads directory exists and serve
 	// it at /uploads/*. In S3 mode uploadsDir is empty and we skip this so

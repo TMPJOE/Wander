@@ -29,6 +29,8 @@ type Config struct {
 	StripeSecretKey      string
 	StripePublishableKey string
 	Storage              StorageConfig
+	RateReq              float64
+	RateBurst            int
 }
 
 // StorageConfig selects and configures the file storage provider.
@@ -43,16 +45,16 @@ type Config struct {
 //     Returned image URLs are absolute object URLs served directly by the
 //     bucket/CDN, so the Go server stops serving /uploads/* in this mode.
 type StorageConfig struct {
-	Driver          string // "local" | "s3"
-	UploadsDir      string // local mode: directory under cwd
-	PublicBaseURL   string // local mode: optional override of /uploads prefix
-	S3Bucket        string // s3 mode: bucket name
-	S3Region        string // s3 mode: region ("auto" works for R2/MinIO)
-	S3Endpoint      string // s3 mode: custom endpoint URL (R2, MinIO, etc.)
-	S3AccessKey     string // s3 mode: access key id
-	S3SecretKey     string // s3 mode: secret access key
-	S3ForcePathStyle bool  // s3 mode: use path-style addressing (MinIO)
-	S3PublicBaseURL string // s3 mode: public origin for returned URLs (CDN/bucket)
+	Driver           string // "local" | "s3"
+	UploadsDir       string // local mode: directory under cwd
+	PublicBaseURL    string // local mode: optional override of /uploads prefix
+	S3Bucket         string // s3 mode: bucket name
+	S3Region         string // s3 mode: region ("auto" works for R2/MinIO)
+	S3Endpoint       string // s3 mode: custom endpoint URL (R2, MinIO, etc.)
+	S3AccessKey      string // s3 mode: access key id
+	S3SecretKey      string // s3 mode: secret access key
+	S3ForcePathStyle bool   // s3 mode: use path-style addressing (MinIO)
+	S3PublicBaseURL  string // s3 mode: public origin for returned URLs (CDN/bucket)
 }
 
 // Load reads environment variables and returns a Config.
