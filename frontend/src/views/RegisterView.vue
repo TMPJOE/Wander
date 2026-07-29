@@ -28,7 +28,7 @@ async function handleSubmit() {
     role: form.value.role,
   });
   if (success) {
-    router.push('/');
+    router.push('/explore');
   }
 }
 </script>
