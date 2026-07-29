@@ -67,8 +67,8 @@ function handlePrev() {
     <h2 class="step-title">Itinerario del Tour</h2>
 
     <p class="text-sm mb-3" style="color: var(--color-text-muted)">
-      Describe la secuencia ordenada de paradas durante el tour. Esto es diferente de "Qué
-      incluye": aquí detallas la ruta y actividades en orden.
+      Describe la secuencia ordenada de paradas durante el tour. Esto es diferente de "Qué incluye":
+      aquí detallas la ruta y actividades en orden.
     </p>
 
     <button
@@ -88,18 +88,14 @@ function handlePrev() {
       </p>
     </div>
 
-    <div
-      v-for="(step, index) in form.itinerary"
-      :key="step._localId"
-      class="itinerary-step"
-    >
+    <div v-for="(step, index) in form.itinerary" :key="step._localId" class="itinerary-step">
       <div class="itinerary-step-header">
-        <span class="itinerary-step-number">Paso {{ index + 1 }}</span>
+        <span class="itinerary-step-number">Paso {{ Number(index) + 1 }}</span>
         <div class="itinerary-step-actions">
           <button
             type="button"
             class="btn-icon"
-            @click="moveStep(index, -1)"
+            @click="moveStep(Number(index), -1)"
             :disabled="index === 0"
             title="Mover arriba"
           >
@@ -108,7 +104,7 @@ function handlePrev() {
           <button
             type="button"
             class="btn-icon"
-            @click="moveStep(index, 1)"
+            @click="moveStep(Number(index), 1)"
             :disabled="index === form.itinerary.length - 1"
             title="Mover abajo"
           >
@@ -117,7 +113,7 @@ function handlePrev() {
           <button
             type="button"
             class="btn-icon btn-icon-danger"
-            @click="removeStep(index)"
+            @click="removeStep(Number(index))"
             title="Eliminar paso"
           >
             <Trash2 :size="16" />

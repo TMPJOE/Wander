@@ -36,7 +36,7 @@ function handlePrev() {
           type="text"
           class="form-input"
           required
-          @update:model-value="(val) => updateField('location', val)"
+          @update:model-value="(val: string) => updateField('location', val)"
         />
       </div>
 
@@ -47,7 +47,7 @@ function handlePrev() {
           type="text"
           class="form-input"
           required
-          @update:model-value="(val) => updateField('meeting_point', val)"
+          @update:model-value="(val: string) => updateField('meeting_point', val)"
         />
       </div>
     </div>

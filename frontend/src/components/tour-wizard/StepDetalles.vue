@@ -66,7 +66,7 @@ function handleNext() {
         type="text"
         class="form-input"
         required
-        @update:model-value="(val) => updateField('title', val)"
+        @update:model-value="(val: string) => updateField('title', val)"
       />
     </div>
 
@@ -76,7 +76,7 @@ function handleNext() {
         v-model="form.description"
         class="form-input form-textarea"
         required
-        @update:model-value="(val) => updateField('description', val)"
+        @update:model-value="(val: string) => updateField('description', val)"
       ></textarea>
     </div>
 
@@ -175,7 +175,7 @@ function handleNext() {
           v-for="(lang, idx) in form.languages"
           :key="idx"
           class="badge badge-secondary cursor-pointer"
-          @click="removeLanguage(idx)"
+          @click="removeLanguage(Number(idx))"
         >
           {{ lang }} &times;
         </span>
@@ -197,9 +197,15 @@ function handleNext() {
         </button>
       </div>
       <ul class="list-disc pl-5">
-        <li v-for="(item, idx) in form.what_included" :key="idx" class="text-sm flex justify-between">
+        <li
+          v-for="(item, idx) in form.what_included"
+          :key="idx"
+          class="text-sm flex justify-between"
+        >
           {{ item }}
-          <button type="button" class="text-error" @click="removeIncluded(idx)">&times;</button>
+          <button type="button" class="text-error" @click="removeIncluded(Number(idx))">
+            &times;
+          </button>
         </li>
       </ul>
     </div>
