@@ -13,18 +13,6 @@ import waterImg from '../assets/categories/water.png'
 
 const router = useRouter()
 
-const categories = [
-  { name: 'Aventura', slug: 'adventure', image: adventureImg },
-  { name: 'Cultural', slug: 'cultural', image: culturalImg },
-  { name: 'Gastronomía', slug: 'food', image: foodImg },
-  { name: 'Senderismo', slug: 'hiking', image: hikingImg },
-  { name: 'Histórico', slug: 'historical', image: historicalImg },
-  { name: 'Naturaleza', slug: 'nature', image: natureImg },
-  { name: 'Vida nocturna', slug: 'nightlife', image: nightlifeImg },
-  { name: 'Fotografía', slug: 'Photography', image: photographyImg },
-  { name: 'Agua', slug: 'water', image: waterImg },
-]
-
 function goToExplore(categorySlug?: string) {
   if (categorySlug) {
     router.push(`/explore?category=${categorySlug}`)
@@ -45,6 +33,9 @@ function goToExplore(categorySlug?: string) {
         <img :src="culturalImg" alt="" />
         <img :src="natureImg" alt="" />
         <img :src="nightlifeImg" alt="" />
+        <img :src="foodImg" alt="" />
+        <img :src="historicalImg" alt="" />
+        <img :src="photographyImg" alt="" />
       </div>
       <div class="landing-hero__overlay"></div>
 
@@ -104,6 +95,7 @@ function goToExplore(categorySlug?: string) {
   position: relative;
   overflow: hidden;
   min-height: 640px;
+  flex: 1;
   display: flex;
   align-items: center;
   padding: var(--spacing-12) 0 var(--spacing-8);
@@ -156,17 +148,18 @@ function goToExplore(categorySlug?: string) {
 }
 
 .landing-hero__logo {
-  width: 96px;
-  height: 96px;
+  display: block;
+  width: 192px;
+  height: 192px;
   object-fit: contain;
-  margin-bottom: var(--spacing-4);
+  margin: 0 auto var(--spacing-4);
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4));
 }
 
 .landing-hero__title {
   font-size: var(--font-size-3xl);
   font-weight: var(--font-weight-extrabold);
-  color: #fff;
+  color: var(--color-text-inverse);
   margin-bottom: var(--spacing-3);
   letter-spacing: var(--letter-spacing-tight);
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
@@ -174,7 +167,7 @@ function goToExplore(categorySlug?: string) {
 
 .landing-hero__subtitle {
   font-size: var(--font-size-lg);
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-inverse);
   max-width: 500px;
   margin: 0 auto var(--spacing-6);
   line-height: var(--line-height-relaxed);
@@ -184,45 +177,7 @@ function goToExplore(categorySlug?: string) {
   display: flex;
   gap: var(--spacing-3);
   justify-content: center;
-}
-
-.categories-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: var(--spacing-4);
-}
-
-.category-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-3);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.category-card:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-
-.category-card__image {
-  width: 80px;
-  height: 80px;
-  object-fit: contain;
-  border-radius: var(--radius-md);
-}
-
-.category-card__name {
-  font-size: var(--font-size-sm);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text);
-  text-align: center;
+  margin-bottom: var(--spacing-8);
 }
 
 /* Disclaimer Section */
@@ -231,8 +186,8 @@ function goToExplore(categorySlug?: string) {
 }
 
 .disclaimer-card {
-  background: var(--color-warning-bg);
-  border: 1px solid var(--color-warning);
+  background: var(--color-overlay);
+  backdrop-filter: blur(10px);
   border-radius: var(--radius-lg);
   padding: var(--spacing-5);
 }
@@ -240,14 +195,14 @@ function goToExplore(categorySlug?: string) {
 .disclaimer-card__title {
   font-size: var(--font-size-lg);
   font-weight: var(--font-weight-semibold);
-  color: var(--color-warning-dark);
+  color: var(--color-text-inverse);
   margin-bottom: var(--spacing-3);
 }
 
 .disclaimer-card__list {
   list-style: disc;
   padding-left: var(--spacing-5);
-  color: var(--color-warning-dark);
+  color: var(--color-text-inverse);
   font-size: var(--font-size-sm);
   line-height: var(--line-height-relaxed);
   text-align: left;

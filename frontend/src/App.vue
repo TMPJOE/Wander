@@ -11,7 +11,7 @@ const authState = useAuthState()
 const api = useApi()
 const route = useRoute()
 
-const hideBottomNav = ['login', 'register']
+const hideBottomNav = ['landing', 'login', 'register']
 
 onMounted(async () => {
   if (authState.token.value && !authState.user.value) {
