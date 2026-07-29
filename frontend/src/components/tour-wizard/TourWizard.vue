@@ -4,7 +4,7 @@ import { useRoute } from 'vue-router'
 import StepDetalles from './StepDetalles.vue'
 import StepUbicacion from './StepUbicacion.vue'
 import StepItinerario from './StepItinerario.vue'
-import StepImagenes from './StepImagenes.vue'
+import StepImages from './StepImages.vue'
 import StepRevision from './StepRevision.vue'
 
 const props = defineProps<{
@@ -14,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   submit: [data: any]
   change: [data: any]
+  preview: []
 }>()
 
 const route = useRoute()
@@ -51,11 +52,11 @@ const steps = [
   { name: 'Detalles', component: StepDetalles },
   { name: 'Ubicación', component: StepUbicacion },
   { name: 'Itinerario', component: StepItinerario },
-  { name: 'Imágenes', component: StepImagenes },
+  { name: 'Imágenes', component: StepImages },
   { name: 'Revisión', component: StepRevision },
 ]
 
-const currentComponent = computed(() => steps[currentStep.value].component)
+const currentComponent = computed(() => steps[currentStep.value]?.component)
 
 const progress = computed(() => ((currentStep.value + 1) / steps.length) * 100)
 
@@ -148,6 +149,31 @@ function goToStep(index: number) {
   currentStep.value = index
 }
 
+// Drag-to-scroll the step rail (same UX as ExploreView category pills)
+const stepsScroll = ref<HTMLElement | null>(null)
+let isScrolling = false
+let scrollStartX = 0
+let scrollStartLeft = 0
+
+function onScrollMouseDown(e: MouseEvent) {
+  if (!stepsScroll.value) return
+  isScrolling = true
+  scrollStartX = e.pageX - stepsScroll.value.offsetLeft
+  scrollStartLeft = stepsScroll.value.scrollLeft
+}
+
+function onScrollMouseUp() {
+  isScrolling = false
+}
+
+function onScrollMouseMove(e: MouseEvent) {
+  if (!isScrolling || !stepsScroll.value) return
+  e.preventDefault()
+  const x = e.pageX - stepsScroll.value.offsetLeft
+  const walk = (x - scrollStartX) * 2
+  stepsScroll.value.scrollLeft = scrollStartLeft - walk
+}
+
 function handleSubmit() {
   const itineraryPayload = form.value.itinerary.map((item) => ({
     id: item.id,
@@ -184,9 +210,19 @@ defineExpose({
     <!-- Progress Header -->
     <header class="wizard-header">
       <div class="wizard-progress">
-        <div class="wizard-progress__bar" :style="{ width: `${progress}%` }"></div>
+        <div
+          class="wizard-progress__bar wizard-progress__bar--animated"
+          :style="{ width: `${progress}%` }"
+        ></div>
       </div>
-      <nav class="wizard-steps">
+        <nav
+          ref="stepsScroll"
+          class="wizard-steps hide-scrollbar"
+          @mousedown="onScrollMouseDown"
+          @mouseleave="onScrollMouseUp"
+          @mouseup="onScrollMouseUp"
+          @mousemove="onScrollMouseMove"
+        >
         <button
           v-for="(step, idx) in steps"
           :key="step.name"
@@ -195,6 +231,7 @@ defineExpose({
           :class="{
             'wizard-step--active': idx === currentStep,
             'wizard-step--completed': idx < currentStep,
+            'wizard-step--exit': idx > currentStep,
           }"
           @click="goToStep(idx)"
         >
@@ -209,10 +246,11 @@ defineExpose({
       <component
         :is="currentComponent"
         :form="form"
-        @update:form="(val: any) => (form.value = val)"
+        @update:form="(val: any) => Object.assign(form, val)"
         @next="nextStep"
         @prev="prevStep"
         @submit="handleSubmit"
+        @preview="emit('preview')"
       />
     </div>
   </div>
@@ -242,7 +280,23 @@ defineExpose({
 .wizard-progress__bar {
   height: 100%;
   background: var(--color-primary);
-  transition: width var(--transition-normal);
+  border-radius: var(--radius-full);
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.wizard-progress__bar--animated {
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: progress-shimmer 2s ease-in-out infinite;
+}
+
+@keyframes progress-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .wizard-steps {
@@ -250,6 +304,12 @@ defineExpose({
   gap: var(--spacing-2);
   overflow-x: auto;
   padding-bottom: var(--spacing-1);
+  cursor: grab;
+  user-select: none;
+}
+
+.wizard-steps:active {
+  cursor: grabbing;
 }
 
 .wizard-step {
@@ -268,6 +328,19 @@ defineExpose({
 .wizard-step--active {
   border-color: var(--color-primary);
   background: var(--color-primary-50);
+  animation: step-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes step-pop {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 .wizard-step--completed {
@@ -306,5 +379,9 @@ defineExpose({
 
 .wizard-content {
   padding: var(--spacing-4) 0;
+}
+
+.wizard-step--exit {
+  opacity: 0.65;
 }
 </style>

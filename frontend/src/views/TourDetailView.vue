@@ -15,6 +15,7 @@ import {
   Map as MapIcon,
   List,
   Timer,
+  Eye,
 } from '@lucide/vue'
 import ImageGallery from '../components/ImageGallery.vue'
 import ReviewCard from '../components/ReviewCard.vue'
@@ -172,9 +173,13 @@ function formatDuration(minutes: number): string {
   <div class="page tour-detail" v-if="tour">
     <!-- Preview mode banner -->
     <div v-if="isPreview" class="preview-banner">
-      <span class="preview-banner__label">👁 Modo previsualización — así lo verá el viajero</span>
+      <div class="preview-banner__label">
+        <Eye :size="18" />
+        <span>Modo previsualización — así lo verá el viajero</span>
+      </div>
       <button class="preview-banner__back" @click="router.push(previewReturnPath)">
-        ← Volver al formulario
+        <ArrowLeft :size="16" />
+        <span>Volver al formulario</span>
       </button>
     </div>
 
@@ -478,6 +483,53 @@ function formatDuration(minutes: number): string {
 </template>
 
 <style scoped>
+.preview-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-3);
+  flex-wrap: wrap;
+  margin: 0 auto;
+  width: 100%;
+  max-width: var(--max-width);
+  padding: var(--spacing-3) var(--spacing-4);
+  background: linear-gradient(90deg, var(--color-secondary-50), var(--color-primary-50));
+  border: 1px solid var(--color-secondary-100);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.preview-banner__label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+}
+
+.preview-banner__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.preview-banner__back:hover {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+  transform: translateX(-2px);
+}
+
 .tour-detail {
   display: flex;
   flex-direction: column;

@@ -1,8 +1,25 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps<{
-  form: any
+  form: {
+    title: string
+    description: string
+    category_id: number
+    location: string
+    latitude: number
+    longitude: number
+    duration_minutes: number
+    price_per_person: number
+    max_guests: number
+    difficulty: string
+    languages: string[]
+    what_included: string[]
+    meeting_point: string
+    images: string[]
+    is_published: boolean
+    itinerary: any[]
+  }
 }>()
 
 const emit = defineEmits<{
@@ -14,29 +31,30 @@ function updateField(field: string, value: any) {
   emit('update:form', { ...props.form, [field]: value })
 }
 
-const newIncluded = computed({
-  get: () => '',
-  set: (val: string) => {
-    if (val.trim()) {
-      emit('update:form', {
-        ...props.form,
-        what_included: [...props.form.what_included, val.trim()],
-      })
-    }
-  },
-})
+const newLanguage = ref('')
+const newIncluded = ref('')
 
-const newLanguage = computed({
-  get: () => '',
-  set: (val: string) => {
-    if (val.trim() && !props.form.languages.includes(val.trim())) {
-      emit('update:form', {
-        ...props.form,
-        languages: [...props.form.languages, val.trim()],
-      })
-    }
-  },
-})
+function addLanguage() {
+  const val = newLanguage.value.trim()
+  if (!val) return
+  if (!props.form.languages.includes(val)) {
+    emit('update:form', {
+      ...props.form,
+      languages: [...props.form.languages, val],
+    })
+  }
+  newLanguage.value = ''
+}
+
+function addIncluded() {
+  const val = newIncluded.value.trim()
+  if (!val) return
+  emit('update:form', {
+    ...props.form,
+    what_included: [...props.form.what_included, val],
+  })
+  newIncluded.value = ''
+}
 
 function removeIncluded(index: number) {
   const updated = [...props.form.what_included]
@@ -164,9 +182,9 @@ function handleNext() {
           type="text"
           class="form-input"
           placeholder="Ej: Inglés"
-          @keydown.enter.prevent="($event.target as HTMLInputElement).value = ''"
+          @keydown.enter.prevent="addLanguage"
         />
-        <button type="button" class="btn btn-outline" @click="newLanguage = 'dummy'">
+        <button type="button" class="btn btn-outline" @click="addLanguage">
           Agregar
         </button>
       </div>
@@ -190,9 +208,9 @@ function handleNext() {
           type="text"
           class="form-input"
           placeholder="Ej: Equipo de seguridad"
-          @keydown.enter.prevent="($event.target as HTMLInputElement).value = ''"
+          @keydown.enter.prevent="addIncluded"
         />
-        <button type="button" class="btn btn-outline" @click="newIncluded = 'dummy'">
+        <button type="button" class="btn btn-outline" @click="addIncluded">
           Agregar
         </button>
       </div>
