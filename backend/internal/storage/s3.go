@@ -7,7 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"net/url"
+	"log/slog"
+	neturl "net/url"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -27,14 +28,14 @@ type S3Provider struct {
 
 // S3Options configures NewS3Provider.
 type S3Options struct {
-	Bucket        string // required
-	Region        string // required, "auto" works for R2/MinIO
-	Endpoint      string // custom endpoint for R2/MinIO/Supabase; empty for AWS S3
-	AccessKey     string // required
-	SecretKey     string // required
-	ForcePathStyle bool  // true for MinIO; false for AWS/R2 virtual-hosted
-	PublicBaseURL string // optional CDN/bucket URL prefix returned to clients
-	KeyPrefix     string // optional prefix for stored keys, e.g. "uploads/"
+	Bucket         string // required
+	Region         string // required, "auto" works for R2/MinIO
+	Endpoint       string // custom endpoint for R2/MinIO/Supabase; empty for AWS S3
+	AccessKey      string // required
+	SecretKey      string // required
+	ForcePathStyle bool   // true for MinIO; false for AWS/R2 virtual-hosted
+	PublicBaseURL  string // optional CDN/bucket URL prefix returned to clients
+	KeyPrefix      string // optional prefix for stored keys, e.g. "uploads/"
 }
 
 // NewS3Provider builds an S3-compatible client and validates required opts.
@@ -119,6 +120,72 @@ func (p *S3Provider) Save(ctx context.Context, r io.Reader, contentType, ext str
 	return SaveResult{URL: p.objectURL(key), Key: key}, nil
 }
 
+// keyFromURL extracts the S3 object key from a public URL produced by Save.
+// It prefers stripping the configured publicBaseURL prefix (covering CDN and
+// custom-endpoint cases). For plain AWS S3 virtual-hosted URLs, it strips the
+// known host forms. URLs that do not resolve to this bucket are returned as
+// empty so Delete becomes a safe no-op.
+func (p *S3Provider) keyFromURL(rawURL string) string {
+	if rawURL == "" {
+		return ""
+	}
+	// Fast path: the URL starts with our configured public base.
+	if p.publicBaseURL != "" && strings.HasPrefix(rawURL, p.publicBaseURL+"/") {
+		return strings.TrimPrefix(rawURL, p.publicBaseURL+"/")
+	}
+	// AWS-hosted default form used when no public base was set:
+	//   https://<bucket>.s3.amazonaws.com/<key>
+	//   https://<bucket>.s3.<region>.amazonaws.com/<key>
+	//   https://s3.amazonaws.com/<bucket>/<key>
+	parsed, err := neturl.Parse(rawURL)
+	if err != nil || parsed.Host == "" {
+		return ""
+	}
+	key := strings.TrimPrefix(parsed.Path, "/")
+	// Strip a leading "<bucket>/" for the path-form host.
+	if keyPrefix := p.bucket + "/"; strings.HasPrefix(key, keyPrefix) {
+		key = strings.TrimPrefix(key, keyPrefix)
+	}
+	// The object key may be percent-escaped in the URL path; decode it so the
+	// DeleteObject Key matches what was stored. Unescape errors fall back to
+	// the raw segment, which is still correct for the common ASCII filenames.
+	if unescaped, err := neturl.PathUnescape(key); err == nil {
+		key = unescaped
+	}
+	return key
+}
+
+// Delete implements Provider. It removes the object for the given URL from the
+// bucket. A missing object is treated as success (S3 DeleteObject is already
+// idempotent, so we just propagate other errors).
+func (p *S3Provider) Delete(ctx context.Context, url string) error {
+	key := p.keyFromURL(url)
+	if key == "" {
+		return nil
+	}
+	if _, err := p.client.DeleteObject(ctx, &s3.DeleteObjectInput{
+		Bucket: aws.String(p.bucket),
+		Key:    aws.String(key),
+	}); err != nil {
+		return fmt.Errorf("storage: s3 delete: %w", err)
+	}
+	return nil
+}
+
+// DeleteMany implements Provider. It deletes each object independently; a
+// failure on one object is logged but does not abort the rest of the batch.
+func (p *S3Provider) DeleteMany(ctx context.Context, urls []string) error {
+	for _, url := range urls {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err := p.Delete(ctx, url); err != nil {
+			slog.Warn("s3 delete failed", "url", url, "error", err)
+		}
+	}
+	return nil
+}
+
 // objectURL builds the public URL for a stored object key.
 //
 // - If publicBaseURL is set (CDN or custom origin), it takes precedence.
@@ -132,6 +199,6 @@ func (p *S3Provider) objectURL(key string) string {
 	// name gave us a region; this is the common case and matches the SDK's
 	// default behavior. Custom endpoints were already handled above where we
 	// set publicBaseURL from opts.Endpoint.
-	escaped := url.PathEscape(key)
+	escaped := neturl.PathEscape(key)
 	return fmt.Sprintf("https://%s.s3.amazonaws.com/%s", p.bucket, escaped)
 }

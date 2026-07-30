@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"io"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"strings"
@@ -73,4 +74,57 @@ func (p *LocalProvider) Save(_ context.Context, r io.Reader, _, ext string) (Sav
 		URL: p.publicBaseURL + "/" + key,
 		Key: key,
 	}, nil
+}
+
+// keyFromURL extracts the provider key (filename) from a public URL produced
+// by Save. It tolerates both the server-relative form ("/uploads/abc.jpg")
+// and any absolute URL that happens to resolve to this provider's base. URLs
+// not rooted at the provider's base are assumed to be external and returned
+// as-is after stripping a leading slash, so Delete is a safe no-op for them.
+func (p *LocalProvider) keyFromURL(url string) string {
+	if url == "" {
+		return ""
+	}
+	// Strip scheme/host if an absolute URL was passed in by mistake.
+	if idx := strings.Index(url, "://"); idx >= 0 {
+		if rest := strings.IndexByte(url[idx+3:], '/'); rest >= 0 {
+			url = url[idx+3+rest:]
+		} else {
+			return ""
+		}
+	}
+	if strings.HasPrefix(url, p.publicBaseURL+"/") {
+		return strings.TrimPrefix(url, p.publicBaseURL+"/")
+	}
+	return strings.TrimPrefix(url, "/")
+}
+
+// Delete implements Provider. It removes the on-disk file for the given URL.
+// A missing file is treated as success so callers can clean up best-effort.
+func (p *LocalProvider) Delete(_ context.Context, url string) error {
+	key := p.keyFromURL(url)
+	if key == "" || strings.ContainsAny(key, `\/`) {
+		// Empty key or something that escaped the uploads dir — skip rather
+		// than risk touching an arbitrary path.
+		return nil
+	}
+	path := filepath.Join(p.uploadsDir, key)
+	if err := os.Remove(path); err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// DeleteMany implements Provider. Each URL is deleted independently; a failure
+// on one object is logged but does not abort the rest of the batch.
+func (p *LocalProvider) DeleteMany(ctx context.Context, urls []string) error {
+	for _, url := range urls {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if err := p.Delete(ctx, url); err != nil {
+			slog.Warn("local delete failed", "url", url, "error", err)
+		}
+	}
+	return nil
 }

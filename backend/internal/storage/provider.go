@@ -40,4 +40,16 @@ type Provider interface {
 	// with contentType. Returns the public URL and object key on success.
 	// The caller is responsible for closing r after Save returns.
 	Save(ctx context.Context, r io.Reader, contentType, ext string) (SaveResult, error)
+
+	// Delete removes a previously stored object identified by its public URL.
+	// It derives the internal provider key from the URL. A missing object is
+	// treated as success (idempotent) so callers can clean up best-effort
+	// without surfacing "not found" errors from the backend.
+	Delete(ctx context.Context, url string) error
+
+	// DeleteMany removes a batch of objects in one call. Each URL is resolved
+	// the same way as Delete. Errors for individual objects are logged but do
+	// not abort the rest of the batch; the returned error is nil unless the
+	// batch itself could not be initiated.
+	DeleteMany(ctx context.Context, urls []string) error
 }

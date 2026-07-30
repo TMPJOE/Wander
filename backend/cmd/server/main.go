@@ -62,11 +62,64 @@ func main() {
 	favoriteRepo := repository.NewPgFavoriteRepository(dbPool)
 	messageRepo := repository.NewPgMessageRepository(dbPool)
 
+	// Wire storage provider.
+	//
+	// Two storage backends are selectable via STORAGE_DRIVER:
+	//   - "local" (default): files land on disk and are served at /uploads/*.
+	//   - "s3": files stream into an S3-compatible bucket; returned URLs are
+	//     absolute, so the Go server no longer serves /uploads/* in this mode.
+	// The provider is created early because it is shared between the upload
+	// handler (persisting new uploads) and the tour service (cleaning up
+	// orphaned files when tours/images are deleted).
+	var (
+		uploadsDir string
+		provider   storage.Provider
+	)
+
+	switch cfg.Storage.Driver {
+	case "s3":
+		p, err := storage.NewS3Provider(context.Background(), storage.S3Options{
+			Bucket:         cfg.Storage.S3Bucket,
+			Region:         cfg.Storage.S3Region,
+			Endpoint:       cfg.Storage.S3Endpoint,
+			AccessKey:      cfg.Storage.S3AccessKey,
+			SecretKey:      cfg.Storage.S3SecretKey,
+			ForcePathStyle: cfg.Storage.S3ForcePathStyle,
+			PublicBaseURL:  cfg.Storage.S3PublicBaseURL,
+		})
+		if err != nil {
+			slog.Error("failed to init S3 storage provider", "error", err)
+			os.Exit(1)
+		}
+		provider = p
+		slog.Info("storage provider", "driver", "s3", "bucket", cfg.Storage.S3Bucket)
+		// In S3 mode we do NOT register the /uploads/* static route below.
+
+	case "local", "":
+		locallyRelative := cfg.Storage.UploadsDir
+		if _, err := os.Stat(filepath.Join(cwd, "backend")); err == nil {
+			uploadsDir = filepath.Join(cwd, "backend", locallyRelative)
+		} else {
+			uploadsDir = filepath.Join(cwd, locallyRelative) // fallback if running from backend/
+		}
+		p, err := storage.NewLocalProvider(uploadsDir, cfg.Storage.PublicBaseURL)
+		if err != nil {
+			slog.Error("failed to init local storage provider", "error", err)
+			os.Exit(1)
+		}
+		provider = p
+		slog.Info("storage provider", "driver", "local", "dir", uploadsDir, "base", cfg.Storage.PublicBaseURL)
+
+	default:
+		slog.Error("unknown STORAGE_DRIVER", "driver", cfg.Storage.Driver)
+		os.Exit(1)
+	}
+
 	// Initialize services.
 	authService := service.NewAuthService(userRepo, cfg.JWTSecret, cfg.JWTExpiration)
 	userService := service.NewUserService(userRepo)
 	categoryService := service.NewCategoryService(categoryRepo)
-	tourService := service.NewTourService(tourRepo)
+	tourService := service.NewTourService(tourRepo, provider)
 	scheduleService := service.NewTourScheduleService(scheduleRepo, tourRepo)
 	paymentService := service.NewPaymentService(bookingRepo, cfg.StripeSecretKey, cfg.StripePublishableKey)
 	bookingService := service.NewBookingService(bookingRepo, scheduleRepo, tourRepo, paymentService)
@@ -88,54 +141,8 @@ func main() {
 		paymentService,
 	)
 
-	// Wire upload handler.
-	//
-	// Two storage backends are selectable via STORAGE_DRIVER:
-	//   - "local" (default): files land on disk and are served at /uploads/*.
-	//   - "s3": files stream into an S3-compatible bucket; returned URLs are
-	//     absolute, so the Go server no longer serves /uploads/* in this mode.
-	var (
-		uploadsDir string
-	)
-
-	switch cfg.Storage.Driver {
-	case "s3":
-		provider, err := storage.NewS3Provider(context.Background(), storage.S3Options{
-			Bucket:         cfg.Storage.S3Bucket,
-			Region:         cfg.Storage.S3Region,
-			Endpoint:       cfg.Storage.S3Endpoint,
-			AccessKey:      cfg.Storage.S3AccessKey,
-			SecretKey:      cfg.Storage.S3SecretKey,
-			ForcePathStyle: cfg.Storage.S3ForcePathStyle,
-			PublicBaseURL:  cfg.Storage.S3PublicBaseURL,
-		})
-		if err != nil {
-			slog.Error("failed to init S3 storage provider", "error", err)
-			os.Exit(1)
-		}
-		h.UploadHandler = handler.NewUploadHandler(provider)
-		slog.Info("storage provider", "driver", "s3", "bucket", cfg.Storage.S3Bucket)
-		// In S3 mode we do NOT register the /uploads/* static route below.
-
-	case "local", "":
-		locallyRelative := cfg.Storage.UploadsDir
-		if _, err := os.Stat(filepath.Join(cwd, "backend")); err == nil {
-			uploadsDir = filepath.Join(cwd, "backend", locallyRelative)
-		} else {
-			uploadsDir = filepath.Join(cwd, locallyRelative) // fallback if running from backend/
-		}
-		provider, err := storage.NewLocalProvider(uploadsDir, cfg.Storage.PublicBaseURL)
-		if err != nil {
-			slog.Error("failed to init local storage provider", "error", err)
-			os.Exit(1)
-		}
-		h.UploadHandler = handler.NewUploadHandler(provider)
-		slog.Info("storage provider", "driver", "local", "dir", uploadsDir, "base", cfg.Storage.PublicBaseURL)
-
-	default:
-		slog.Error("unknown STORAGE_DRIVER", "driver", cfg.Storage.Driver)
-		os.Exit(1)
-	}
+	// Wire upload handler with the shared provider.
+	h.UploadHandler = handler.NewUploadHandler(provider)
 
 	l := middleware.NewIPRateLimiter(rate.Limit(cfg.RateReq), cfg.RateBurst)
 
