@@ -4,6 +4,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import { useRouter } from 'vue-router'
 import { useAuthState } from '../composables/useAuthState'
 import { useApi } from '../composables/useApi'
+import { useFavorites } from '../composables/useFavorites'
 import { useToast } from '../composables/useToast'
 import TourCard from '../components/TourCard.vue'
 import ReviewCard from '../components/ReviewCard.vue'
@@ -162,11 +163,24 @@ async function fetchFavorites() {
   try {
     const res = await api.get('/favorites')
     favorites.value = res.data || []
+    // Keep the shared favorites store in sync with this fetch so hearts on
+    // the Explore grid reflect these likes without an extra request.
+    const favSet = new Set<number>((res.data || []).map((t: any) => t.id))
+    const shared = useFavorites()
+    shared.favoritedIds.value = favSet as Set<number>
   } catch (e) {
     console.error('Failed to fetch favorites', e)
   } finally {
     favoritesLoading.value = false
   }
+}
+
+// Remove a favorited tour from the list when its heart is un-liked from inside
+// the Favorites tab, so the card disappears immediately (no full reload).
+function handleUnfavorited(tourId: number) {
+  favorites.value = favorites.value.filter((t) => t.id !== tourId)
+  const shared = useFavorites()
+  shared.remove(tourId)
 }
 
 async function fetchAdventures() {
@@ -375,6 +389,7 @@ const handleSettingsClick = () => {
           :key="fav.id"
           :tour="{ ...fav, is_favorited: true }"
           :allow-like="false"
+          @unfavorited="handleUnfavorited"
         />
       </div>
       <div v-else class="empty-favorites">

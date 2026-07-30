@@ -4,6 +4,7 @@ import { useRoute } from 'vue-router'
 import { Search, SlidersHorizontal } from '@lucide/vue'
 import wanderLogo from '../assets/wander-logo.svg'
 import { useApi } from '../composables/useApi'
+import { useFavorites } from '../composables/useFavorites'
 import { applyCategoryTheme, clearCategoryTheme } from '../utils/categoryColors'
 import TourCard from '../components/TourCard.vue'
 import CategoryPill from '../components/CategoryPill.vue'
@@ -12,10 +13,10 @@ import type { FilterValues } from '../components/FilterDrawer.vue'
 
 const route = useRoute()
 const api = useApi()
+const favorites = useFavorites()
 
 const tours = ref<any[]>([])
 const categories = ref<any[]>([])
-const favorites = ref<any[]>([])
 const loading = ref(false)
 
 const searchQuery = ref('')
@@ -74,12 +75,11 @@ onMounted(async () => {
     loading.value = false
   }
 
-  try {
-    const favsRes = await api.get('/favorites')
-    favorites.value = favsRes.data || []
-  } catch {
-    /* ignore */
-  }
+  // Populate the shared favorites set so every TourCard heart reflects truth,
+  // regardless of whether the backend /tours join set is_favorited (it does
+  // for authed users, but the store keeps hearts in sync across navigation and
+  // likes toggled on other views). TourCard also calls hydrate() defensively.
+  await favorites.hydrate()
 
   // Apply theme if category is set
   applyTheme()

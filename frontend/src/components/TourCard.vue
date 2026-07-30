@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Heart, MapPin, Clock, Star } from '@lucide/vue'
 import { useAuthState } from '../composables/useAuthState'
-import { useApi } from '../composables/useApi'
+import { useFavorites } from '../composables/useFavorites'
 
 const props = defineProps<{
   tour: {
@@ -25,13 +25,30 @@ const props = defineProps<{
   allowLike?: boolean
 }>()
 
+// Emit `unfavorited` whenever a heart toggles from liked -> unliked so list
+// views (e.g. the Profile Favorites tab) can drop the row from their own
+// fetched array without waiting on a reload. Views that only care about the
+// heart visual can ignore this; the shared favorites store already keeps
+// every other card in sync.
+const emit = defineEmits<{ (e: 'unfavorited', tourId: number): void }>()
+
 const router = useRouter()
 const authState = useAuthState()
-const api = useApi()
+const favorites = useFavorites()
 
-const localIsFavorited = ref<boolean>(!!props.tour.is_favorited)
+// Hydrate the shared favorites set on first use — idempotent and cheap once
+// loaded, so multiple TourCards calling it in parallel share one request.
+favorites.hydrate()
 
-const isFavorited = computed(() => localIsFavorited.value)
+// Prefer the shared favorites store (single source of truth across all cards
+// and views). Fall back to the server-provided prop when the store hasn't
+// hydrated yet so first paint isn't a sea of empty hearts.
+const isFavorited = computed(() => {
+  if (favorites.loaded.value) {
+    return favorites.isFavorited(props.tour.id)
+  }
+  return !!props.tour.is_favorited
+})
 
 const allowLike = computed(() => {
   return props.allowLike !== false
@@ -75,7 +92,7 @@ async function toggleFavorite(e: Event) {
     return
   }
 
-  const currentlyFavorited = localIsFavorited.value
+  const currentlyFavorited = isFavorited.value
 
   if (!allowLike.value && !currentlyFavorited) return
 
@@ -84,17 +101,15 @@ async function toggleFavorite(e: Event) {
     setTimeout(() => (justLiked.value = false), 700)
   }
 
-  try {
-    localIsFavorited.value = !currentlyFavorited
-    if (currentlyFavorited) {
-      await api.delete(`/favorites/${props.tour.id}`)
-    } else {
-      await api.post(`/favorites/${props.tour.id}`)
-    }
-  } catch (e) {
-    localIsFavorited.value = currentlyFavorited
-    console.error('Failed toggling favorite', e)
-    justLiked.value = false
+  // The store handles optimistic update + rollback + API call. It returns the
+  // new state (or null on auth failure). We only emit `unfavorited` when the
+  // user just removed a like, so list views can prune that row.
+  const result = await favorites.toggleFavorite(props.tour.id)
+  if (result === false) {
+    emit('unfavorited', props.tour.id)
+  } else if (result === null) {
+    // Not authenticated anymore: send to login to match the prior behavior.
+    router.push({ name: 'login' })
   }
 }
 
