@@ -99,7 +99,7 @@ function getImageUrl(images: any) {
               </button>
               <button
                 class="btn btn-outline btn-xs flex-1 text-error"
-                style="border-color: var(--color-error); color: var(--color-error);"
+                style="border-color: var(--color-error); color: var(--color-error)"
                 @click="deleteTour(tour.id)"
               >
                 <Trash2 :size="14" /> Eliminar
@@ -157,7 +157,7 @@ function getImageUrl(images: any) {
   padding-right: var(--content-padding);
   padding-top: var(--spacing-4);
   padding-bottom: var(--spacing-4);
-  margin: var(--spacing-4);
+  margin-inline: var(--spacing-4);
 }
 
 .tour-img {
