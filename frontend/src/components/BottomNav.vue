@@ -19,7 +19,7 @@ interface NavItem {
 
 const tabs = computed<NavItem[]>(() => {
   const items: NavItem[] = [
-    { name: 'explore', icon: Compass, route: '/', label: 'Explorar' },
+    { name: 'explore', icon: Compass, route: '/explore', label: 'Explorar' },
     {
       name: 'my-bookings',
       icon: CalendarDays,
@@ -51,8 +51,7 @@ const tabs = computed<NavItem[]>(() => {
 })
 
 function isActive(tab: NavItem): boolean {
-  if (tab.route === '/') return route.path === '/'
-  return route.path.startsWith(tab.route)
+  return route.path === tab.route || route.path.startsWith(tab.route + '/')
 }
 
 function navigate(tab: NavItem) {
