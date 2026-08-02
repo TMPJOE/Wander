@@ -29,8 +29,6 @@ type Config struct {
 	StripeSecretKey      string
 	StripePublishableKey string
 	Storage              StorageConfig
-	RateReq              float64
-	RateBurst            int
 }
 
 // StorageConfig selects and configures the file storage provider.
@@ -66,15 +64,6 @@ func Load() (*Config, error) {
 		jwtExp = 24
 	}
 
-	rateReq, err := strconv.Atoi(getEnv("RATE_LIMIT_REQUESTS", "3"))
-	if err != nil {
-		rateReq = 3
-	}
-	rateBurst, err := strconv.Atoi(getEnv("RATE_LIMIT_BURST", "5"))
-	if err != nil {
-		rateBurst = 5
-	}
-
 	allowedOrigins := getEnv("ALLOWED_ORIGINS", "http://localhost:5173")
 
 	return &Config{
@@ -94,8 +83,6 @@ func Load() (*Config, error) {
 		AllowedOrigins:       strings.Split(allowedOrigins, ","),
 		StripeSecretKey:      getEnv("STRIPE_SECRET_KEY", ""),
 		StripePublishableKey: getEnv("STRIPE_PUBLISHABLE_KEY", ""),
-		RateReq:              float64(rateReq),
-		RateBurst:            rateBurst,
 		Storage: StorageConfig{
 			Driver:           getEnv("STORAGE_DRIVER", "local"),
 			UploadsDir:       getEnv("STORAGE_LOCAL_DIR", "uploads"),

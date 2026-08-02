@@ -14,7 +14,7 @@ import (
 )
 
 // SetupRoutes configures all application routes using chi.
-func SetupRoutes(h *handler.Handler, jwtSecret string, l *middleware.IPRateLimiter) *chi.Mux {
+func SetupRoutes(h *handler.Handler, jwtSecret string) *chi.Mux {
 	r := chi.NewRouter()
 
 	// Global chi middleware: request id, recover from panics, normalize slashes,
@@ -22,10 +22,6 @@ func SetupRoutes(h *handler.Handler, jwtSecret string, l *middleware.IPRateLimit
 	r.Use(chimw.RequestID)
 	r.Use(chimw.Recoverer)
 	r.Use(chimw.StripSlashes)
-
-	// Apply global RateLimiter
-	rateMidleware := middleware.RateLimiter(l)
-	r.Use(rateMidleware)
 
 	// Public routes
 	r.Get("/api/v1/health", h.HealthCheck)
