@@ -93,8 +93,8 @@ func (p *LocalProvider) keyFromURL(url string) string {
 			return ""
 		}
 	}
-	if strings.HasPrefix(url, p.publicBaseURL+"/") {
-		return strings.TrimPrefix(url, p.publicBaseURL+"/")
+	if after, ok := strings.CutPrefix(url, p.publicBaseURL+"/"); ok {
+		return after
 	}
 	return strings.TrimPrefix(url, "/")
 }

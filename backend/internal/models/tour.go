@@ -6,42 +6,42 @@ import (
 
 // ItineraryItem represents a single stop in a tour's itinerary.
 type ItineraryItem struct {
-	ID              int        `json:"id,omitempty"`
-	TourID          int        `json:"tour_id,omitempty"`
-	SortOrder       int        `json:"sort_order"`
-	Title           string     `json:"title"`
-	Description     string     `json:"description,omitempty"`
-	DurationMinutes *int       `json:"duration_minutes,omitempty"`
-	LocationLabel   string     `json:"location_label,omitempty"`
-	Latitude        *float64   `json:"latitude,omitempty"`
-	Longitude       *float64   `json:"longitude,omitempty"`
-	CreatedAt       time.Time  `json:"created_at,omitempty"`
-	UpdatedAt       time.Time  `json:"updated_at,omitempty"`
+	ID              int       `json:"id,omitempty"`
+	TourID          int       `json:"tour_id,omitempty"`
+	SortOrder       int       `json:"sort_order"`
+	Title           string    `json:"title"`
+	Description     string    `json:"description,omitempty"`
+	DurationMinutes *int      `json:"duration_minutes,omitempty"`
+	LocationLabel   string    `json:"location_label,omitempty"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // Tour represents a guided tour.
 type Tour struct {
-	ID              int             `json:"id"`
-	GuideID         int             `json:"guide_id"`
-	CategoryID      int             `json:"category_id"`
-	Title           string          `json:"title"`
-	Description     string          `json:"description"`
-	Location        string          `json:"location"`
-	Latitude        *float64        `json:"latitude,omitempty"`
-	Longitude       *float64        `json:"longitude,omitempty"`
-	DurationMinutes int             `json:"duration_minutes"`
-	PricePerPerson  float64         `json:"price_per_person"`
-	MaxGuests       int             `json:"max_guests"`
-	Difficulty      string          `json:"difficulty"`
-	Languages       []string        `json:"languages"`
-	WhatIncluded    []string        `json:"what_included"`
-	MeetingPoint    string          `json:"meeting_point"`
-	Images          []string        `json:"images"`
-	IsPublished     bool            `json:"is_published"`
-	AvgRating       float64         `json:"avg_rating"`
-	ReviewCount     int             `json:"review_count"`
-	CreatedAt       time.Time       `json:"created_at"`
-	UpdatedAt       time.Time       `json:"updated_at"`
+	ID              int       `json:"id"`
+	GuideID         int       `json:"guide_id"`
+	CategoryID      int       `json:"category_id"`
+	Title           string    `json:"title"`
+	Description     string    `json:"description"`
+	Location        string    `json:"location"`
+	Latitude        *float64  `json:"latitude,omitempty"`
+	Longitude       *float64  `json:"longitude,omitempty"`
+	DurationMinutes int       `json:"duration_minutes"`
+	PricePerPerson  float64   `json:"price_per_person"`
+	MaxGuests       int       `json:"max_guests"`
+	Difficulty      string    `json:"difficulty"`
+	Languages       []string  `json:"languages"`
+	WhatIncluded    []string  `json:"what_included"`
+	MeetingPoint    string    `json:"meeting_point"`
+	Images          []string  `json:"images"`
+	IsPublished     bool      `json:"is_published"`
+	AvgRating       float64   `json:"avg_rating"`
+	ReviewCount     int       `json:"review_count"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 
 	// Joined fields (not always populated).
 	GuideName         string          `json:"guide_name,omitempty"`

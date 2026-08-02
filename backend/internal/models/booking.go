@@ -16,8 +16,8 @@ type Booking struct {
 	UpdatedAt  time.Time `json:"updated_at"`
 
 	// Payment tracking (Stripe).
-	PaymentStatus         string  `json:"payment_status,omitempty"`
-	StripePaymentIntentID string  `json:"stripe_payment_intent_id,omitempty"`
+	PaymentStatus         string `json:"payment_status,omitempty"`
+	StripePaymentIntentID string `json:"stripe_payment_intent_id,omitempty"`
 
 	// Joined fields.
 	TourTitle     string    `json:"tour_title,omitempty"`
@@ -29,8 +29,8 @@ type Booking struct {
 	GuideName     string    `json:"guide_name,omitempty"`
 	GuideAvatar   string    `json:"guide_avatar,omitempty"`
 	UserName      string    `json:"user_name,omitempty"`
-	ScheduleStart time.Time `json:"schedule_start,omitempty"`
-	ScheduleEnd   time.Time `json:"schedule_end,omitempty"`
+	ScheduleStart time.Time `json:"schedule_start"`
+	ScheduleEnd   time.Time `json:"schedule_end"`
 }
 
 // BookingCreateRequest is used to create a booking.
@@ -48,4 +48,3 @@ type CancellationResult struct {
 	RefundPct    int     `json:"refund_pct"`
 	Message      string  `json:"message"`
 }
-

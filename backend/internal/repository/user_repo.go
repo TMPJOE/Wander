@@ -78,7 +78,7 @@ func (r *PgUserRepository) GetByEmail(ctx context.Context, email string) (*model
 
 func (r *PgUserRepository) Update(ctx context.Context, id int, req models.UserUpdateRequest) (*models.User, error) {
 	query := "UPDATE users SET "
-	args := []interface{}{}
+	args := []any{}
 	argID := 1
 
 	if req.Email != "" {

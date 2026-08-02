@@ -70,7 +70,7 @@ func (r *PgTourScheduleRepository) ListByTourID(ctx context.Context, tourID int,
 
 func (r *PgTourScheduleRepository) Update(ctx context.Context, id int, req models.ScheduleUpdateRequest) (*models.TourSchedule, error) {
 	query := "UPDATE tour_schedules SET "
-	args := []interface{}{}
+	args := []any{}
 	argID := 1
 
 	if req.StartTime != nil {

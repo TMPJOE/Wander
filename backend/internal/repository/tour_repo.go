@@ -152,7 +152,7 @@ func (r *PgTourRepository) Update(ctx context.Context, id int, req models.TourUp
 	defer tx.Rollback(ctx)
 
 	query := "UPDATE tours SET "
-	args := []interface{}{}
+	args := []any{}
 	argID := 1
 
 	if req.CategoryID != nil {
@@ -323,7 +323,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 		JOIN categories c ON t.category_id = c.id
 		WHERE 1=1
 	`
-	args := []interface{}{filter.UserID}
+	args := []any{filter.UserID}
 	argID := 2
 
 	if filter.CategoryID > 0 {
@@ -373,10 +373,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 	if filter.Limit > 0 {
 		limit = filter.Limit
 	}
-	offset := 0
-	if filter.Offset > 0 {
-		offset = filter.Offset
-	}
+	offset := max(filter.Offset, 0)
 
 	query += fmt.Sprintf(" ORDER BY t.avg_rating DESC, t.id DESC LIMIT $%d OFFSET $%d", argID, argID+1)
 	args = append(args, limit, offset)
