@@ -19,12 +19,6 @@ func NewReviewHandler(service *service.ReviewService) *ReviewHandler {
 	return &ReviewHandler{service: service}
 }
 
-func (h *ReviewHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /tours/{tourId}/reviews", h.ListByTour)
-	mux.HandleFunc("POST /tours/{tourId}/reviews", h.Create)
-	mux.HandleFunc("PUT /reviews/{id}", h.Update)
-}
-
 func (h *ReviewHandler) ListByTour(w http.ResponseWriter, r *http.Request) {
 	tourIDStr := r.PathValue("tourId")
 	tourID, err := strconv.Atoi(tourIDStr)

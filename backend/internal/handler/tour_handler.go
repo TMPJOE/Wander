@@ -19,16 +19,6 @@ func NewTourHandler(service *service.TourService) *TourHandler {
 	return &TourHandler{service: service}
 }
 
-func (h *TourHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /tours", h.List)
-	mux.HandleFunc("GET /tours/{id}", h.GetByID)
-	mux.HandleFunc("POST /tours", h.Create)
-	mux.HandleFunc("PUT /tours/{id}", h.Update)
-	mux.HandleFunc("DELETE /tours/{id}", h.Delete)
-	mux.HandleFunc("GET /guide/tours", h.ListMyTours)
-	mux.HandleFunc("GET /guide/stats", h.GetStats)
-}
-
 func (h *TourHandler) List(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	filter := models.TourFilter{

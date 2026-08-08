@@ -15,10 +15,6 @@ func NewCategoryHandler(service *service.CategoryService) *CategoryHandler {
 	return &CategoryHandler{service: service}
 }
 
-func (h *CategoryHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /categories", h.List)
-}
-
 func (h *CategoryHandler) List(w http.ResponseWriter, r *http.Request) {
 	categories, err := h.service.List(r.Context())
 	if err != nil {

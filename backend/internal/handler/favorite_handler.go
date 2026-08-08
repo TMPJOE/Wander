@@ -17,12 +17,6 @@ func NewFavoriteHandler(service *service.FavoriteService) *FavoriteHandler {
 	return &FavoriteHandler{service: service}
 }
 
-func (h *FavoriteHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /favorites", h.List)
-	mux.HandleFunc("POST /favorites/{tourId}", h.Add)
-	mux.HandleFunc("DELETE /favorites/{tourId}", h.Remove)
-}
-
 func (h *FavoriteHandler) List(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {

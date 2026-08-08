@@ -21,13 +21,6 @@ func NewMessageHandler(service *service.MessageService) *MessageHandler {
 	return &MessageHandler{service: service}
 }
 
-func (h *MessageHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /messages/conversations", h.ListConversations)
-	mux.HandleFunc("GET /messages/{userId}", h.ListMessages)
-	mux.HandleFunc("POST /messages/{userId}", h.Create)
-	mux.HandleFunc("GET /messages/stream", h.StreamMessages)
-}
-
 func (h *MessageHandler) ListConversations(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {

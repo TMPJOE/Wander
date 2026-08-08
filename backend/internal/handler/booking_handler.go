@@ -19,18 +19,6 @@ func NewBookingHandler(service *service.BookingService) *BookingHandler {
 	return &BookingHandler{service: service}
 }
 
-func (h *BookingHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /bookings", h.Create)
-	mux.HandleFunc("GET /bookings", h.List)
-	mux.HandleFunc("GET /guide/bookings", h.GetGuideBookings)
-	mux.HandleFunc("GET /guide/earnings", h.GetEarnings)
-	mux.HandleFunc("GET /bookings/{id}", h.GetByID)
-	mux.HandleFunc("PATCH /bookings/{id}/cancel", h.Cancel)
-	mux.HandleFunc("PATCH /bookings/{id}/confirm", h.Confirm)
-	mux.HandleFunc("PATCH /bookings/{id}/complete", h.Complete)
-	mux.HandleFunc("PATCH /bookings/{id}/reject", h.Reject)
-}
-
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {
@@ -218,4 +206,3 @@ func (h *BookingHandler) GetEarnings(w http.ResponseWriter, r *http.Request) {
 
 	utils.SendSuccess(w, http.StatusOK, "Ganancias recuperadas", earnings)
 }
-

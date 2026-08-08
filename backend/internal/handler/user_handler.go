@@ -19,13 +19,6 @@ func NewUserHandler(service *service.UserService) *UserHandler {
 	return &UserHandler{service: service}
 }
 
-func (h *UserHandler) RegisterRoutes(mux *http.ServeMux) {
-	// Group under prefix handled externally or register fully
-	mux.HandleFunc("GET /users/me", h.GetMe)
-	mux.HandleFunc("PUT /users/me", h.UpdateMe)
-	mux.HandleFunc("GET /users/{id}", h.GetByID)
-}
-
 func (h *UserHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	userID, ok := middleware.GetUserID(r.Context())
 	if !ok {

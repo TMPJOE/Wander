@@ -17,11 +17,6 @@ func NewPaymentHandler(service *service.PaymentService) *PaymentHandler {
 	return &PaymentHandler{service: service}
 }
 
-func (h *PaymentHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /payments/bookings/{id}/intent", h.CreateIntent)
-	mux.HandleFunc("POST /payments/bookings/{id}/confirm", h.Confirm)
-}
-
 func (h *PaymentHandler) CreateIntent(w http.ResponseWriter, r *http.Request) {
 	idStr := r.PathValue("id")
 	id, err := strconv.Atoi(idStr)

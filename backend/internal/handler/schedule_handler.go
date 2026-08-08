@@ -19,13 +19,6 @@ func NewTourScheduleHandler(service *service.TourScheduleService) *TourScheduleH
 	return &TourScheduleHandler{service: service}
 }
 
-func (h *TourScheduleHandler) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /tours/{tourId}/schedules", h.ListByTourID)
-	mux.HandleFunc("POST /schedules", h.Create)
-	mux.HandleFunc("PUT /schedules/{id}", h.Update)
-	mux.HandleFunc("DELETE /schedules/{id}", h.Delete)
-}
-
 func (h *TourScheduleHandler) ListByTourID(w http.ResponseWriter, r *http.Request) {
 	tourIDStr := r.PathValue("tourId")
 	tourID, err := strconv.Atoi(tourIDStr)
