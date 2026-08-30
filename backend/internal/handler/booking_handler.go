@@ -20,7 +20,8 @@ func NewBookingHandler(service *service.BookingService) *BookingHandler {
 }
 
 func (h *BookingHandler) Create(w http.ResponseWriter, r *http.Request) {
-	userID, ok := middleware.GetUserID(r.Context())
+	ctx := r.Context()
+	userID, ok := middleware.GetUserID(ctx)
 	if !ok {
 		utils.SendError(w, http.StatusUnauthorized, "No autorizado", nil)
 		return

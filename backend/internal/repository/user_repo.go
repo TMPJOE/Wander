@@ -28,7 +28,7 @@ func (r *PgUserRepository) Create(ctx context.Context, req models.UserCreateRequ
 		RETURNING id, email, username, first_name, last_name, role, bio, phone, avatar_url, languages, created_at, updated_at
 	`
 	user := &models.User{}
-	err := r.pool.QueryRow(ctx, query,
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query,
 		req.Email, req.Username, hashedPassword, req.FirstName, req.LastName, role,
 	).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
@@ -48,7 +48,7 @@ func (r *PgUserRepository) GetByID(ctx context.Context, id int) (*models.User, e
 		FROM users WHERE id = $1
 	`
 	user := &models.User{}
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, id).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.FirstName, &user.LastName,
 		&user.Role, &user.Bio, &user.Phone, &user.AvatarURL, &user.Languages,
 		&user.CreatedAt, &user.UpdatedAt,
@@ -65,7 +65,7 @@ func (r *PgUserRepository) GetByEmail(ctx context.Context, email string) (*model
 		FROM users WHERE email = $1
 	`
 	user := &models.User{}
-	err := r.pool.QueryRow(ctx, query, email).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, email).Scan(
 		&user.ID, &user.Email, &user.Username, &user.PasswordHash, &user.FirstName, &user.LastName,
 		&user.Role, &user.Bio, &user.Phone, &user.AvatarURL, &user.Languages,
 		&user.CreatedAt, &user.UpdatedAt,
@@ -131,7 +131,7 @@ func (r *PgUserRepository) Update(ctx context.Context, id int, req models.UserUp
 	args = append(args, id)
 
 	user := &models.User{}
-	err := r.pool.QueryRow(ctx, query, args...).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, args...).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.Role, &user.Bio, &user.Phone, &user.AvatarURL, &user.Languages,
 		&user.CreatedAt, &user.UpdatedAt,
@@ -144,7 +144,7 @@ func (r *PgUserRepository) Update(ctx context.Context, id int, req models.UserUp
 }
 
 func (r *PgUserRepository) Delete(ctx context.Context, id int) error {
-	_, err := r.pool.Exec(ctx, "DELETE FROM users WHERE id = $1", id)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "DELETE FROM users WHERE id = $1", id)
 	if err != nil {
 		return fmt.Errorf("delete user db: %w", err)
 	}
@@ -158,7 +158,7 @@ func (r *PgUserRepository) List(ctx context.Context, limit, offset int) ([]model
 		ORDER BY id
 		LIMIT $1 OFFSET $2
 	`
-	rows, err := r.pool.Query(ctx, query, limit, offset)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, limit, offset)
 	if err != nil {
 		return nil, fmt.Errorf("list users db: %w", err)
 	}

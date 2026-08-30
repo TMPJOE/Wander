@@ -10,16 +10,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type BookingRepository interface {
-	Create(ctx context.Context, b models.Booking) (*models.Booking, error)
-	GetByID(ctx context.Context, id int) (*models.Booking, error)
-	ListByUserID(ctx context.Context, userID int) ([]models.Booking, error)
-	ListByGuideID(ctx context.Context, guideID int) ([]models.Booking, error)
-	UpdateStatus(ctx context.Context, id int, status string) error
-	UpdatePayment(ctx context.Context, id int, intentID string, status string) error
-	GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error)
-}
-
 type PgBookingRepository struct {
 	pool *pgxpool.Pool
 }
@@ -35,7 +25,7 @@ func (r *PgBookingRepository) Create(ctx context.Context, b models.Booking) (*mo
 		RETURNING id, user_id, schedule_id, tour_id, guest_count, total_price, status, notes, created_at, updated_at
 	`
 	res := &models.Booking{}
-	err := r.pool.QueryRow(ctx, query, b.UserID, b.ScheduleID, b.TourID, b.GuestCount, b.TotalPrice, b.Status, b.Notes).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, b.UserID, b.ScheduleID, b.TourID, b.GuestCount, b.TotalPrice, b.Status, b.Notes).Scan(
 		&res.ID, &res.UserID, &res.ScheduleID, &res.TourID, &res.GuestCount, &res.TotalPrice, &res.Status, &res.Notes, &res.CreatedAt, &res.UpdatedAt,
 	)
 	if err != nil {
@@ -62,7 +52,7 @@ func (r *PgBookingRepository) GetByID(ctx context.Context, id int) (*models.Book
 	`
 	b := &models.Booking{}
 	var tourImage *string
-	err := r.pool.QueryRow(ctx, query, id).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, id).Scan(
 		&b.ID, &b.UserID, &b.ScheduleID, &b.TourID, &b.GuestCount, &b.TotalPrice, &b.Status, &b.Notes, &b.CreatedAt, &b.UpdatedAt,
 		&b.PaymentStatus, &b.StripePaymentIntentID,
 		&b.TourTitle, &b.TourLocation, &b.MeetingPoint, &b.TourLatitude, &b.TourLongitude, &tourImage, &b.GuideName, &b.GuideAvatar, &b.UserName, &b.ScheduleStart, &b.ScheduleEnd,
@@ -90,7 +80,7 @@ func (r *PgBookingRepository) ListByUserID(ctx context.Context, userID int) ([]m
 		WHERE b.user_id = $1
 		ORDER BY s.start_time DESC
 	`
-	rows, err := r.pool.Query(ctx, query, userID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list bookings user: %w", err)
 	}
@@ -129,7 +119,7 @@ func (r *PgBookingRepository) ListByGuideID(ctx context.Context, guideID int) ([
 		WHERE t.guide_id = $1
 		ORDER BY s.start_time DESC
 	`
-	rows, err := r.pool.Query(ctx, query, guideID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, guideID)
 	if err != nil {
 		return nil, fmt.Errorf("list bookings guide: %w", err)
 	}
@@ -156,7 +146,7 @@ func (r *PgBookingRepository) ListByGuideID(ctx context.Context, guideID int) ([
 }
 
 func (r *PgBookingRepository) UpdateStatus(ctx context.Context, id int, status string) error {
-	_, err := r.pool.Exec(ctx, "UPDATE bookings SET status = $1 WHERE id = $2", status, id)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "UPDATE bookings SET status = $1 WHERE id = $2", status, id)
 	if err != nil {
 		return fmt.Errorf("update booking status: %w", err)
 	}
@@ -164,7 +154,7 @@ func (r *PgBookingRepository) UpdateStatus(ctx context.Context, id int, status s
 }
 
 func (r *PgBookingRepository) UpdatePayment(ctx context.Context, id int, intentID string, status string) error {
-	_, err := r.pool.Exec(ctx, "UPDATE bookings SET payment_status = $1, stripe_payment_intent_id = $2 WHERE id = $3", status, intentID, id)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "UPDATE bookings SET payment_status = $1, stripe_payment_intent_id = $2 WHERE id = $3", status, intentID, id)
 	if err != nil {
 		return fmt.Errorf("update booking payment: %w", err)
 	}
@@ -198,7 +188,7 @@ func (r *PgBookingRepository) GetEarnings(ctx context.Context, guideID int, peri
 		  AND ($2 = false OR b.created_at >= $3)
 	`
 	earnings := &models.GuideEarnings{ByTour: []models.TourEarning{}}
-	err := r.pool.QueryRow(ctx, totalsQuery, guideID, filterTime, since).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, totalsQuery, guideID, filterTime, since).Scan(
 		&earnings.TotalAuthorized, &earnings.TotalPaid,
 	)
 	if err != nil {
@@ -221,7 +211,7 @@ func (r *PgBookingRepository) GetEarnings(ctx context.Context, guideID int, peri
 		GROUP BY t.id, t.title, b.payment_status
 		ORDER BY revenue DESC
 	`
-	rows, err := r.pool.Query(ctx, breakdownQuery, guideID, filterTime, since)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, breakdownQuery, guideID, filterTime, since)
 	if err != nil {
 		return nil, fmt.Errorf("query earnings breakdown: %w", err)
 	}

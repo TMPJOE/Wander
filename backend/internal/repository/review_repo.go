@@ -9,13 +9,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type ReviewRepository interface {
-	Create(ctx context.Context, userID int, tourID int, bookingID *int, req models.ReviewCreateRequest) (*models.Review, error)
-	Update(ctx context.Context, reviewID int, userID int, req models.ReviewCreateRequest) (*models.Review, error)
-	ListByTourID(ctx context.Context, tourID int) ([]models.Review, error)
-	ListByUserID(ctx context.Context, userID int) ([]models.Review, error)
-}
-
 type PgReviewRepository struct {
 	pool *pgxpool.Pool
 }
@@ -31,7 +24,7 @@ func (r *PgReviewRepository) Create(ctx context.Context, userID int, tourID int,
 		RETURNING id, user_id, tour_id, booking_id, rating, title, comment, created_at
 	`
 	res := &models.Review{}
-	err := r.pool.QueryRow(ctx, query, userID, tourID, bookingID, req.Rating, req.Title, req.Comment).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, userID, tourID, bookingID, req.Rating, req.Title, req.Comment).Scan(
 		&res.ID, &res.UserID, &res.TourID, &res.BookingID, &res.Rating, &res.Title, &res.Comment, &res.CreatedAt,
 	)
 	if err != nil {
@@ -48,7 +41,7 @@ func (r *PgReviewRepository) Update(ctx context.Context, reviewID int, userID in
 		RETURNING id, user_id, tour_id, booking_id, rating, title, comment, created_at
 	`
 	res := &models.Review{}
-	err := r.pool.QueryRow(ctx, query, req.Rating, req.Title, req.Comment, reviewID, userID).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, req.Rating, req.Title, req.Comment, reviewID, userID).Scan(
 		&res.ID, &res.UserID, &res.TourID, &res.BookingID, &res.Rating, &res.Title, &res.Comment, &res.CreatedAt,
 	)
 	if err != nil {
@@ -67,7 +60,7 @@ func (r *PgReviewRepository) ListByUserID(ctx context.Context, userID int) ([]mo
 		ORDER BY r.created_at DESC
 	`
 
-	rows, err := r.pool.Query(ctx, query, userID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list reviews user: %w", err)
 	}
@@ -97,7 +90,7 @@ func (r *PgReviewRepository) ListByTourID(ctx context.Context, tourID int) ([]mo
 		WHERE r.tour_id = $1
 		ORDER BY r.created_at DESC
 	`
-	rows, err := r.pool.Query(ctx, query, tourID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, tourID)
 	if err != nil {
 		return nil, fmt.Errorf("list reviews: %w", err)
 	}

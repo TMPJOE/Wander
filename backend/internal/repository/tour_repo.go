@@ -90,7 +90,7 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 		WHERE t.id = $1
 	`
 	t := &models.Tour{}
-	err := r.pool.QueryRow(ctx, query, id, userID).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, id, userID).Scan(
 		&t.ID, &t.GuideID, &t.CategoryID, &t.Title, &t.Description, &t.Location, &t.Latitude, &t.Longitude,
 		&t.DurationMinutes, &t.PricePerPerson, &t.MaxGuests, &t.Difficulty, &t.Languages, &t.WhatIncluded,
 		&t.MeetingPoint, &t.IsPublished, &t.AvgRating, &t.ReviewCount, &t.CreatedAt, &t.UpdatedAt,
@@ -101,7 +101,7 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 	}
 
 	// Fetch images
-	rows, err := r.pool.Query(ctx, `
+	rows, err := GetDB(ctx, r.pool).Query(ctx, `
 		SELECT url FROM tour_images WHERE tour_id = $1 ORDER BY position ASC
 	`, id)
 	if err != nil {
@@ -118,7 +118,7 @@ func (r *PgTourRepository) GetByID(ctx context.Context, id int, userID int) (*mo
 	}
 
 	// Fetch itinerary items
-	itineraryRows, err := r.pool.Query(ctx, `
+	itineraryRows, err := GetDB(ctx, r.pool).Query(ctx, `
 		SELECT id, sort_order, title, description, duration_minutes, location_label, latitude, longitude, created_at, updated_at
 		FROM tour_itinerary_items
 		WHERE tour_id = $1
@@ -378,7 +378,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 	query += fmt.Sprintf(" ORDER BY t.avg_rating DESC, t.id DESC LIMIT $%d OFFSET $%d", argID, argID+1)
 	args = append(args, limit, offset)
 
-	rows, err := r.pool.Query(ctx, query, args...)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list tours query: %w", err)
 	}
@@ -406,7 +406,7 @@ func (r *PgTourRepository) List(ctx context.Context, filter models.TourFilter) (
 	if len(tourIDs) > 0 {
 		// Bulk fetch images to avoid N+1 query problem
 		imgQuery := `SELECT tour_id, url FROM tour_images WHERE tour_id = ANY($1) ORDER BY position ASC`
-		imgRows, err := r.pool.Query(ctx, imgQuery, tourIDs)
+		imgRows, err := GetDB(ctx, r.pool).Query(ctx, imgQuery, tourIDs)
 		if err != nil {
 			return nil, fmt.Errorf("fetch list images: %w", err)
 		}
@@ -461,7 +461,7 @@ func (r *PgTourRepository) GetStats(ctx context.Context, guideID int, period str
 		WHERE t.guide_id = $1
 	`
 	stats := &models.GuideStats{}
-	err := r.pool.QueryRow(ctx, query, guideID, filterTime, since).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, guideID, filterTime, since).Scan(
 		&stats.TotalTours, &stats.PublishedTours, &stats.TotalBookings, &stats.PendingBookings,
 		&stats.TotalRevenue, &stats.AvgRating, &stats.TotalReviews,
 	)

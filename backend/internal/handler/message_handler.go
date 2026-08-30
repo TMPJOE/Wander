@@ -108,7 +108,7 @@ func (h *MessageHandler) StreamMessages(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 	w.Header().Set("Access-Control-Allow-Credentials", "true")
 
-	messageChan := make(chan models.Message, 10)
+	messageChan := make(chan models.Message, 20)
 	h.service.RegisterStream(userID, messageChan)
 	defer h.service.UnregisterStream(userID, messageChan)
 

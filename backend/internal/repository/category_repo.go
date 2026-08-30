@@ -8,11 +8,6 @@ import (
 	"wander/backend/internal/models"
 )
 
-type CategoryRepository interface {
-	List(ctx context.Context) ([]models.Category, error)
-	GetByID(ctx context.Context, id int) (*models.Category, error)
-}
-
 type PgCategoryRepository struct {
 	pool *pgxpool.Pool
 }
@@ -22,7 +17,7 @@ func NewPgCategoryRepository(pool *pgxpool.Pool) CategoryRepository {
 }
 
 func (r *PgCategoryRepository) List(ctx context.Context) ([]models.Category, error) {
-	rows, err := r.pool.Query(ctx, "SELECT id, name, slug, icon, description, sort_order, created_at FROM categories ORDER BY sort_order ASC")
+	rows, err := GetDB(ctx, r.pool).Query(ctx, "SELECT id, name, slug, icon, description, sort_order, created_at FROM categories ORDER BY sort_order ASC")
 	if err != nil {
 		return nil, fmt.Errorf("list categories: %w", err)
 	}
@@ -42,7 +37,7 @@ func (r *PgCategoryRepository) List(ctx context.Context) ([]models.Category, err
 
 func (r *PgCategoryRepository) GetByID(ctx context.Context, id int) (*models.Category, error) {
 	c := &models.Category{}
-	err := r.pool.QueryRow(ctx, "SELECT id, name, slug, icon, description, sort_order, created_at FROM categories WHERE id = $1", id).
+	err := GetDB(ctx, r.pool).QueryRow(ctx, "SELECT id, name, slug, icon, description, sort_order, created_at FROM categories WHERE id = $1", id).
 		Scan(&c.ID, &c.Name, &c.Slug, &c.Icon, &c.Description, &c.SortOrder, &c.CreatedAt)
 	if err != nil {
 		return nil, models.ErrNotFound

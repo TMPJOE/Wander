@@ -7,7 +7,7 @@ import (
 )
 
 // Logger logs HTTP requests using structured logging (slog).
-func Logger(next http.Handler) http.Handler {
+func HanldeLogger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 

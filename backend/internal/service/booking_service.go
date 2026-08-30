@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"wander/backend/internal/models"
@@ -14,58 +15,76 @@ type BookingService struct {
 	scheduleRepo   repository.TourScheduleRepository
 	tourRepo       repository.TourRepository
 	paymentService *PaymentService
+	txManager      repository.TransactionManager
 }
 
-func NewBookingService(repo repository.BookingRepository, scheduleRepo repository.TourScheduleRepository, tourRepo repository.TourRepository, paymentService *PaymentService) *BookingService {
+func NewBookingService(repo repository.BookingRepository, scheduleRepo repository.TourScheduleRepository, tourRepo repository.TourRepository, paymentService *PaymentService, txManager repository.TransactionManager) *BookingService {
 	return &BookingService{
 		repo:           repo,
 		scheduleRepo:   scheduleRepo,
 		tourRepo:       tourRepo,
 		paymentService: paymentService,
+		txManager:      txManager,
 	}
 }
 
 func (s *BookingService) Create(ctx context.Context, userID int, req models.BookingCreateRequest) (*models.Booking, error) {
-	schedule, err := s.scheduleRepo.GetByID(ctx, req.ScheduleID)
-	if err != nil {
-		return nil, fmt.Errorf("find schedule: %w", err)
-	}
+	var createdBooking *models.Booking
 
-	if !schedule.IsActive || schedule.AvailableSpots < req.GuestCount {
-		return nil, fmt.Errorf("insufficient spots or schedule inactive: %w", models.ErrConflict)
-	}
+	err := s.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		schedule, err := s.scheduleRepo.GetByID(txCtx, req.ScheduleID)
+		if err != nil {
+			return fmt.Errorf("find schedule: %w", err)
+		}
 
-	tour, err := s.tourRepo.GetByID(ctx, schedule.TourID, 0)
-	if err != nil {
-		return nil, fmt.Errorf("find tour: %w", err)
-	}
+		if !schedule.IsActive || schedule.AvailableSpots < req.GuestCount {
+			return fmt.Errorf("insufficient spots or schedule inactive: %w", models.ErrConflict)
+		}
 
-	totalPrice := tour.PricePerPerson * float64(req.GuestCount)
+		tour, err := s.tourRepo.GetByID(txCtx, schedule.TourID, 0)
+		if err != nil {
+			return fmt.Errorf("find tour: %w", err)
+		}
 
-	booking := models.Booking{
-		UserID:     userID,
-		ScheduleID: req.ScheduleID,
-		TourID:     schedule.TourID,
-		GuestCount: req.GuestCount,
-		TotalPrice: totalPrice,
-		Status:     "pending",
-		Notes:      req.Notes,
-	}
+		totalPrice := tour.PricePerPerson * float64(req.GuestCount)
 
-	// Adjust spots inside the schedule.
-	err = s.scheduleRepo.AdjustSpots(ctx, req.ScheduleID, -req.GuestCount)
+		booking := models.Booking{
+			UserID:     userID,
+			ScheduleID: req.ScheduleID,
+			TourID:     schedule.TourID,
+			GuestCount: req.GuestCount,
+			TotalPrice: totalPrice,
+			Status:     "pending",
+			Notes:      req.Notes,
+		}
+
+		// Adjust spots inside the schedule securely in transaction.
+		if err := s.scheduleRepo.AdjustSpots(txCtx, req.ScheduleID, -req.GuestCount); err != nil {
+			return err
+		}
+
+		b, err := s.repo.Create(txCtx, booking)
+		if err != nil {
+			return err
+		}
+		
+		createdBooking = b
+		return nil
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
-	b, err := s.repo.Create(ctx, booking)
-	if err != nil {
-		// Rollback spots adjustment.
-		_ = s.scheduleRepo.AdjustSpots(ctx, req.ScheduleID, req.GuestCount)
-		return nil, err
-	}
+	slog.Info("audit: booking created",
+		"event", "booking_created",
+		"booking_id", createdBooking.ID,
+		"user_id", userID,
+		"tour_id", createdBooking.TourID,
+		"total_price", createdBooking.TotalPrice,
+	)
 
-	return b, nil
+	return createdBooking, nil
 }
 
 func (s *BookingService) GetByID(ctx context.Context, id int, userID int, userRole string) (*models.Booking, error) {
@@ -135,13 +154,26 @@ func (s *BookingService) Cancel(ctx context.Context, id int, userID int) (*model
 		}
 	}
 
-	err = s.repo.UpdateStatus(ctx, id, "cancelled")
+	err = s.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		if err := s.repo.UpdateStatus(txCtx, id, "cancelled"); err != nil {
+			return err
+		}
+		if err := s.scheduleRepo.AdjustSpots(txCtx, b.ScheduleID, b.GuestCount); err != nil {
+			return err
+		}
+		return nil
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Restore spots.
-	_ = s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
+	slog.Info("audit: booking cancelled",
+		"event", "booking_cancelled",
+		"booking_id", id,
+		"user_id", userID,
+		"refund_amount", refundAmount,
+		"message", msg,
+	)
 
 	return &models.CancellationResult{
 		BookingID:    id,
@@ -175,6 +207,8 @@ func (s *BookingService) Confirm(ctx context.Context, id int, guideID int) error
 		return err
 	}
 
+	slog.Info("audit: booking confirmed", "event", "booking_confirmed", "booking_id", id, "guide_id", guideID)
+
 	if s.paymentService != nil {
 		if err := s.paymentService.CapturePayment(ctx, id); err != nil {
 			fmt.Printf("warning: capture payment failed for booking %d: %v\n", id, err)
@@ -203,7 +237,12 @@ func (s *BookingService) Complete(ctx context.Context, id int, guideID int) erro
 		return fmt.Errorf("booking is not confirmed: %w", models.ErrConflict)
 	}
 
-	return s.repo.UpdateStatus(ctx, id, "completed")
+	if err := s.repo.UpdateStatus(ctx, id, "completed"); err != nil {
+		return err
+	}
+
+	slog.Info("audit: booking completed", "event", "booking_completed", "booking_id", id, "guide_id", guideID)
+	return nil
 }
 
 func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error {
@@ -225,16 +264,24 @@ func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error 
 		return fmt.Errorf("booking already %s: %w", b.Status, models.ErrConflict)
 	}
 
-	if err := s.repo.UpdateStatus(ctx, id, "cancelled"); err != nil {
+	err = s.txManager.RunInTx(ctx, func(txCtx context.Context) error {
+		if err := s.repo.UpdateStatus(txCtx, id, "cancelled"); err != nil {
+			return err
+		}
+		return s.scheduleRepo.AdjustSpots(txCtx, b.ScheduleID, b.GuestCount)
+	})
+	
+	if err != nil {
 		return err
 	}
+
+	slog.Info("audit: booking rejected", "event", "booking_rejected", "booking_id", id, "guide_id", guideID)
 
 	if s.paymentService != nil {
 		_ = s.paymentService.CancelPaymentIntent(ctx, id)
 	}
 
-	// Restore spots to the schedule.
-	return s.scheduleRepo.AdjustSpots(ctx, b.ScheduleID, b.GuestCount)
+	return nil
 }
 
 func (s *BookingService) GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error) {

@@ -18,21 +18,34 @@ import (
 	"wander/backend/migrations"
 )
 
+const (
+	LevelInfo        = slog.LevelInfo
+	LevelInfoVerbose = slog.LevelInfo - 2
+)
+
 func main() {
-	// Initialize structured logging (slog).
-	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
-		Level: slog.LevelDebug,
-	}))
-	slog.SetDefault(logger)
-
-	slog.Info("starting Wander API server...")
-
 	// Load configuration.
 	cfg, err := config.Load()
 	if err != nil {
-		slog.Error("failed to load configuration", "error", err)
+		fmt.Printf("failed to load configuration: %v", err)
 		os.Exit(1)
 	}
+
+	logLvl := slog.LevelInfo
+
+	if cfg.AppEnv == "development" {
+		logLvl = slog.LevelDebug
+	}
+
+	// Initialize structured logging
+	hldOpts := &slog.HandlerOptions{
+		Level: logLvl,
+	}
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, hldOpts))
+	slog.SetDefault(logger)
+
+	slog.Info("starting Wander API server...")
 
 	// Initialize DB Connection pool.
 	dbPool, err := config.ConnectDB(cfg)
@@ -106,7 +119,7 @@ func main() {
 			os.Exit(1)
 		}
 		provider = p
-		slog.Info("storage provider", "driver", "local", "dir", uploadsDir, "base", cfg.Storage.PublicBaseURL)
+		slog.Info("storage provider", "driver", "local", "dir", locallyRelative, "base", cfg.Storage.PublicBaseURL)
 
 	default:
 		slog.Error("unknown STORAGE_DRIVER", "driver", cfg.Storage.Driver)
@@ -120,7 +133,8 @@ func main() {
 	tourService := service.NewTourService(tourRepo, provider)
 	scheduleService := service.NewTourScheduleService(scheduleRepo, tourRepo)
 	paymentService := service.NewPaymentService(bookingRepo, cfg.StripeSecretKey, cfg.StripePublishableKey)
-	bookingService := service.NewBookingService(bookingRepo, scheduleRepo, tourRepo, paymentService)
+	txManager := repository.NewPgTransactionManager(dbPool)
+	bookingService := service.NewBookingService(bookingRepo, scheduleRepo, tourRepo, paymentService, txManager)
 	reviewService := service.NewReviewService(reviewRepo, bookingRepo)
 	favoriteService := service.NewFavoriteService(favoriteRepo)
 	messageService := service.NewMessageService(messageRepo)
@@ -162,7 +176,7 @@ func main() {
 	}
 
 	if info, err := os.Stat(distDir); err == nil && info.IsDir() {
-		slog.Info("serving frontend static files", "path", distDir)
+		slog.Info("serving frontend static files", "path", "frontend/dist")
 	} else {
 		slog.Warn("frontend dist/ not found, serving API only", "checked", distDir)
 		distDir = "" // signals SetupStaticRoutes to skip the SPA handler
@@ -175,11 +189,11 @@ func main() {
 	// Apply middleware.
 	var server http.Handler
 	server = middleware.Recovery(r)
-	server = middleware.Logger(server)
+	server = middleware.HanldeLogger(server)
 	server = middleware.CORS(cfg.AllowedOrigins)(server)
 
 	addr := fmt.Sprintf("%s:%s", cfg.AppHost, cfg.AppPort)
-	slog.Info("🚀 Server running", "addr", fmt.Sprintf("http://%s", addr))
+	slog.Info("Server running", "addr", fmt.Sprintf("http://%s", addr))
 	if err := http.ListenAndServe(addr, server); err != nil {
 		slog.Error("server execution failed", "error", err)
 		os.Exit(1)

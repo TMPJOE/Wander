@@ -8,12 +8,6 @@ import (
 	"wander/backend/internal/models"
 )
 
-type FavoriteRepository interface {
-	Add(ctx context.Context, userID int, tourID int) error
-	Remove(ctx context.Context, userID int, tourID int) error
-	List(ctx context.Context, userID int) ([]models.Tour, error)
-}
-
 type PgFavoriteRepository struct {
 	pool *pgxpool.Pool
 }
@@ -23,7 +17,7 @@ func NewPgFavoriteRepository(pool *pgxpool.Pool) FavoriteRepository {
 }
 
 func (r *PgFavoriteRepository) Add(ctx context.Context, userID int, tourID int) error {
-	_, err := r.pool.Exec(ctx, "INSERT INTO favorites (user_id, tour_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", userID, tourID)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "INSERT INTO favorites (user_id, tour_id) VALUES ($1, $2) ON CONFLICT DO NOTHING", userID, tourID)
 	if err != nil {
 		return fmt.Errorf("add favorite: %w", err)
 	}
@@ -31,7 +25,7 @@ func (r *PgFavoriteRepository) Add(ctx context.Context, userID int, tourID int) 
 }
 
 func (r *PgFavoriteRepository) Remove(ctx context.Context, userID int, tourID int) error {
-	_, err := r.pool.Exec(ctx, "DELETE FROM favorites WHERE user_id = $1 AND tour_id = $2", userID, tourID)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "DELETE FROM favorites WHERE user_id = $1 AND tour_id = $2", userID, tourID)
 	if err != nil {
 		return fmt.Errorf("remove favorite: %w", err)
 	}
@@ -59,7 +53,7 @@ func (r *PgFavoriteRepository) List(ctx context.Context, userID int) ([]models.T
 		WHERE f.user_id = $1
 		ORDER BY f.created_at DESC
 	`
-	rows, err := r.pool.Query(ctx, query, userID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("list favorites: %w", err)
 	}
@@ -91,7 +85,7 @@ func (r *PgFavoriteRepository) List(ctx context.Context, userID int) ([]models.T
 		// Bulk fetch images for all favorited tours in one query, mirroring
 		// tour_repo.List so favorites cards can render image galleries.
 		imgQuery := `SELECT tour_id, url FROM tour_images WHERE tour_id = ANY($1) ORDER BY position ASC`
-		imgRows, err := r.pool.Query(ctx, imgQuery, tourIDs)
+		imgRows, err := GetDB(ctx, r.pool).Query(ctx, imgQuery, tourIDs)
 		if err != nil {
 			return nil, fmt.Errorf("fetch favorite tour images: %w", err)
 		}

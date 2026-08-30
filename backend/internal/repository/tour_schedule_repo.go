@@ -23,7 +23,7 @@ func (r *PgTourScheduleRepository) Create(ctx context.Context, s models.TourSche
 		RETURNING id, tour_id, start_time, end_time, available_spots, is_active, created_at
 	`
 	res := &models.TourSchedule{}
-	err := r.pool.QueryRow(ctx, query, s.TourID, s.StartTime, s.EndTime, s.AvailableSpots, s.IsActive).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, s.TourID, s.StartTime, s.EndTime, s.AvailableSpots, s.IsActive).Scan(
 		&res.ID, &res.TourID, &res.StartTime, &res.EndTime, &res.AvailableSpots, &res.IsActive, &res.CreatedAt,
 	)
 	if err != nil {
@@ -34,7 +34,7 @@ func (r *PgTourScheduleRepository) Create(ctx context.Context, s models.TourSche
 
 func (r *PgTourScheduleRepository) GetByID(ctx context.Context, id int) (*models.TourSchedule, error) {
 	s := &models.TourSchedule{}
-	err := r.pool.QueryRow(ctx, "SELECT id, tour_id, start_time, end_time, available_spots, is_active, created_at FROM tour_schedules WHERE id = $1", id).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, "SELECT id, tour_id, start_time, end_time, available_spots, is_active, created_at FROM tour_schedules WHERE id = $1", id).Scan(
 		&s.ID, &s.TourID, &s.StartTime, &s.EndTime, &s.AvailableSpots, &s.IsActive, &s.CreatedAt,
 	)
 	if err != nil {
@@ -50,7 +50,7 @@ func (r *PgTourScheduleRepository) ListByTourID(ctx context.Context, tourID int,
 	}
 	query += " ORDER BY start_time ASC"
 
-	rows, err := r.pool.Query(ctx, query, tourID)
+	rows, err := GetDB(ctx, r.pool).Query(ctx, query, tourID)
 	if err != nil {
 		return nil, fmt.Errorf("list schedules: %w", err)
 	}
@@ -103,7 +103,7 @@ func (r *PgTourScheduleRepository) Update(ctx context.Context, id int, req model
 	args = append(args, id)
 
 	s := &models.TourSchedule{}
-	err := r.pool.QueryRow(ctx, query, args...).Scan(
+	err := GetDB(ctx, r.pool).QueryRow(ctx, query, args...).Scan(
 		&s.ID, &s.TourID, &s.StartTime, &s.EndTime, &s.AvailableSpots, &s.IsActive, &s.CreatedAt,
 	)
 	if err != nil {
@@ -113,7 +113,7 @@ func (r *PgTourScheduleRepository) Update(ctx context.Context, id int, req model
 }
 
 func (r *PgTourScheduleRepository) Delete(ctx context.Context, id int) error {
-	_, err := r.pool.Exec(ctx, "DELETE FROM tour_schedules WHERE id = $1", id)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "DELETE FROM tour_schedules WHERE id = $1", id)
 	if err != nil {
 		return fmt.Errorf("delete schedule: %w", err)
 	}
@@ -121,7 +121,7 @@ func (r *PgTourScheduleRepository) Delete(ctx context.Context, id int) error {
 }
 
 func (r *PgTourScheduleRepository) AdjustSpots(ctx context.Context, id int, delta int) error {
-	_, err := r.pool.Exec(ctx, "UPDATE tour_schedules SET available_spots = available_spots + $1 WHERE id = $2", delta, id)
+	_, err := GetDB(ctx, r.pool).Exec(ctx, "UPDATE tour_schedules SET available_spots = available_spots + $1 WHERE id = $2", delta, id)
 	if err != nil {
 		return fmt.Errorf("adjust spots: %w", err)
 	}
