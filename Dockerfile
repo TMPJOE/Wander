@@ -93,8 +93,6 @@ COPY --from=frontend-build /build/frontend/dist ./frontend/dist
 # The Go server binary.
 COPY --from=backend-build /out/wander-server ./server
 
-# Optional seed binary (not used by the start command; present for manual runs).
-COPY --from=backend-build /out/wander-seed ./seed
 
 # Volume mount point for local-mode uploads. In S3 storage mode this
 # directory stays empty and is ignored.
