@@ -37,13 +37,17 @@ func (s *BookingService) Create(ctx context.Context, userID int, req models.Book
 			return fmt.Errorf("find schedule: %w", err)
 		}
 
-		if !schedule.IsActive || schedule.AvailableSpots < req.GuestCount {
+		if !schedule.IsActive || schedule.AvailableSpots < req.GuestCount || req.GuestCount < 1 {
 			return fmt.Errorf("insufficient spots or schedule inactive: %w", models.ErrConflict)
 		}
 
 		tour, err := s.tourRepo.GetByID(txCtx, schedule.TourID, 0)
 		if err != nil {
 			return fmt.Errorf("find tour: %w", err)
+		}
+
+		if req.GuestCount > tour.MaxGuests {
+			return fmt.Errorf("insufficient spots: %w", models.ErrConflict)
 		}
 
 		totalPrice := tour.PricePerPerson * float64(req.GuestCount)
@@ -67,7 +71,7 @@ func (s *BookingService) Create(ctx context.Context, userID int, req models.Book
 		if err != nil {
 			return err
 		}
-		
+
 		createdBooking = b
 		return nil
 	})
@@ -270,7 +274,7 @@ func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error 
 		}
 		return s.scheduleRepo.AdjustSpots(txCtx, b.ScheduleID, b.GuestCount)
 	})
-	
+
 	if err != nil {
 		return err
 	}
@@ -287,4 +291,3 @@ func (s *BookingService) Reject(ctx context.Context, id int, guideID int) error 
 func (s *BookingService) GetEarnings(ctx context.Context, guideID int, period string) (*models.GuideEarnings, error) {
 	return s.repo.GetEarnings(ctx, guideID, period)
 }
-

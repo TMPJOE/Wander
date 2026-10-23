@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Wander high-level runtime architecture",
+    "quality_profile": "showcase",
+    "viewBox": [1400, 900]
+  },
+  "layout": {
+    "mode": "grid",
+    "origin": [80, 100],
+    "cols": 4,
+    "gapX": 40,
+    "gapY": 80,
+    "cellW": 260,
+    "cellH": 130
+  },
+  "components": [
+    {
+      "id": "traveler",
+      "type": "external",
+      "label": "Traveler / Guide",
+      "tag": "actor",
+      "pos": [50, 350],
+      "size": [180, 110]
+    },
+    {
+      "id": "web_app",
+      "type": "frontend",
+      "label": "Vue web app",
+      "tag": "client",
+      "pos": [280, 350],
+      "size": [220, 110]
+    },
+    {
+      "id": "api",
+      "type": "backend",
+      "label": "Go HTTP API",
+      "tag": "service",
+      "pos": [550, 350],
+      "size": [220, 110]
+    },
+    {
+      "id": "auth",
+      "type": "security",
+      "label": "Auth boundary",
+      "tag": "trust boundary",
+      "pos": [550, 170],
+      "size": [220, 100]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "Domain services",
+      "tag": "business logic",
+      "pos": [820, 350],
+      "size": [260, 110]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "tag": "state",
+      "pos": [820, 610],
+      "size": [260, 110]
+    },
+    {
+      "id": "object_storage",
+      "type": "cloud",
+      "label": "Object storage",
+      "tag": "media",
+      "pos": [820, 170],
+      "size": [260, 100]
+    },
+    {
+      "id": "payment_provider",
+      "type": "external",
+      "label": "Payment provider",
+      "tag": "external dependency",
+      "pos": [1130, 350],
+      "size": [220, 110]
+    },
+    {
+      "id": "maps_provider",
+      "type": "external",
+      "label": "Maps provider",
+      "tag": "external dependency",
+      "pos": [280, 610],
+      "size": [220, 110]
+    },
+    {
+      "id": "runtime_config",
+      "type": "cloud",
+      "label": "Runtime configuration",
+      "tag": "operational input",
+      "pos": [550, 610],
+      "size": [220, 110]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "security-group",
+      "label": "Wander application trust boundary",
+      "wraps": ["web_app", "api", "auth", "domain", "postgres", "object_storage", "runtime_config"],
+      "pad": 34
+    }
+  ],
+  "connections": [
+    { "id": "request", "from": "traveler", "to": "web_app", "label": "HTTPS page + interaction", "labelDy": -70, "route": "straight", "fromSide": "right", "toSide": "left", "variant": "emphasis" },
+    { "id": "api_call", "from": "web_app", "to": "api", "label": "JSON API requests", "labelDy": -70, "route": "straight", "fromSide": "right", "toSide": "left", "variant": "emphasis" },
+    { "id": "guard", "from": "api", "to": "auth", "label": "authenticate / authorize", "route": "orthogonal-v", "fromSide": "top", "toSide": "bottom", "variant": "security" },
+    { "id": "dispatch", "from": "api", "to": "domain", "label": "route to use case", "labelDy": -70, "route": "straight", "fromSide": "right", "toSide": "left", "variant": "emphasis" },
+    { "id": "persist", "from": "domain", "to": "postgres", "label": "read / write transactional data", "route": "orthogonal-v", "fromSide": "bottom", "toSide": "top" },
+    { "id": "media", "from": "domain", "to": "object_storage", "label": "upload / signed URL", "route": "orthogonal-v", "fromSide": "top", "toSide": "bottom" },
+    { "id": "charge", "from": "domain", "to": "payment_provider", "label": "authorize / capture", "labelDy": -70, "route": "straight", "fromSide": "right", "toSide": "left" },
+    { "id": "maps", "from": "web_app", "to": "maps_provider", "label": "map tiles / geocoding", "route": "orthogonal-v", "fromSide": "bottom", "toSide": "top" },
+    { "id": "config", "from": "runtime_config", "to": "api", "label": "environment settings", "route": "orthogonal-v", "fromSide": "top", "toSide": "bottom" }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Primary path",
+      "items": [
+        "A browser action enters the Vue SPA, crosses the JSON API, is authorized, and reaches a domain service.",
+        "Transactional state is persisted in PostgreSQL; media and payment calls branch at the domain boundary."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Runtime ownership",
+      "items": [
+        "Frontend owns navigation, user interaction, API composition, and map presentation.",
+        "Backend owns authorization, business rules, persistence orchestration, payments, messaging, and uploads."
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Evidence in repository",
+      "items": [
+        "Vue/Vite client under frontend/; Go service under backend/.",
+        "Migration history and repository adapters show PostgreSQL plus pluggable local/S3 media storage."
+      ]
+    }
+  ]
+}

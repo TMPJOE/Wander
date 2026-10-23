@@ -4,8 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jackc/pgx/v5/pgxpool"
 	"wander/backend/internal/models"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 type PgUserRepository struct {
@@ -17,9 +18,9 @@ func NewPgUserRepository(pool *pgxpool.Pool) UserRepository {
 }
 
 func (r *PgUserRepository) Create(ctx context.Context, req models.UserCreateRequest, hashedPassword string) (*models.User, error) {
-	role := req.Role
-	if role == "" {
-		role = "traveler"
+
+	if req.Role != "traveler" && req.Role != "guide" {
+		req.Role = "traveler"
 	}
 
 	query := `
@@ -29,7 +30,7 @@ func (r *PgUserRepository) Create(ctx context.Context, req models.UserCreateRequ
 	`
 	user := &models.User{}
 	err := GetDB(ctx, r.pool).QueryRow(ctx, query,
-		req.Email, req.Username, hashedPassword, req.FirstName, req.LastName, role,
+		req.Email, req.Username, hashedPassword, req.FirstName, req.LastName, req.Role,
 	).Scan(
 		&user.ID, &user.Email, &user.Username, &user.FirstName, &user.LastName,
 		&user.Role, &user.Bio, &user.Phone, &user.AvatarURL, &user.Languages,
